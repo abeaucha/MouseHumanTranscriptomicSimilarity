@@ -362,6 +362,7 @@ fig4_distributions_title_grob <- textGrob("Rank of canonical human homologue",
                                           just = c("right", "bottom"))
 ```
 
+
 ```{r}
 #Generate a mouse tree with 67 leaf nodes
 treeMouse_67 <- Clone(treeMouse)
@@ -456,6 +457,9 @@ plot.phylo(treePlotPhylo)
 ```
 
 ```{r}
+library(tidytree)
+library(ggtree)
+
 dfTreePlotPhylo <- as_tibble(treePlotPhylo)
 
 dfTreeColours <- treePlot$Get("color_hex_triplet") %>% 
@@ -469,12 +473,6 @@ dfTreePlotPhylo <- inner_join(dfTreePlotPhylo,
                               by = "label")
 
 treePlotPhylo <- as.treedata(dfTreePlotPhylo)
-```
-
-
-```{r}
-library(tidytree)
-library(ggtree)
 ```
 
 ```{r}
@@ -496,11 +494,13 @@ ggtree(treePlotPhylo, aes(color = label),
 ```{r}
 dfCanonicalPairs_H88M67_TopMatch_Summary <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
   mutate(Target = ifelse(Target == "Heschl's gyrus", "Heschls gyrus", Target))
+```
 
+```{r}
 seeds_Hipp <- c("Field CA1", "Field CA2", "Field CA3") 
 seeds_CbCx <- c("Declive (VI)", "Lingula (I)")
 dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
-  filter(Seed %in% c(seeds_Hipp, seeds_CbCx)) %>% 
+  filter(Seed %in% c(seeds_Hipp, seeds_CbCx)) %>%
   pivot_wider(id_cols = Target, names_from = Seed, values_from = Prop) %>% 
   rename(label = Target) %>% 
   mutate(label = str_remove_all(label, ","),
@@ -516,7 +516,7 @@ p <- ggtree(treePlotPhylo, aes(color = label),
        open.angle = 20,
        ladderize = F) + 
   # coord_cartesian(xlim = c(0, 5)) + 
-  # coord_polar(theta = "y", start = 90) + 
+  coord_polar(theta = "y", start = 0) +
   # xlim(0, 5) + 
   # geom_tiplab() + 
   scale_color_manual(values = colourPalette,
@@ -547,6 +547,71 @@ gheatmap(p2, df_cbcx, offset = 2,
          width = 0.3, colnames = T, colnames_angle = 265, hjust = -0.05,
          color = "grey40") + 
   scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9]) 
+```
+
+
+```{r fig.width = 4, fig.height = 4}
+df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
+  select(seeds_Hipp)
+
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none", 
+       layout = "fan",
+       open.angle = 180,
+       ladderize = F) + 
+  # coord_cartesian(xlim = c(0, 5)) + 
+  coord_polar(theta = "y", start = 0) +
+  # xlim(0, 5) + 
+  # geom_tiplab() + 
+  scale_color_manual(values = colourPalette,
+                     guide = F) 
+
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+temp <- ggplotGrob(p1) %>% grid.force()
+
+p1
+```
+
+```{r fig.width = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none", 
+       layout = "rectangular",
+       # open.angle = 180,
+       ladderize = F) + 
+  coord_cartesian(xlim = c(0, 10)) +
+  # coord_polar(theta = "y", start = 0) +
+  # xlim(0, 5) + 
+  # geom_tiplab() + 
+  scale_color_manual(values = colourPalette,
+                     guide = F) + 
+  theme_tree2()
+
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+temp <- ggplotGrob(p1) %>% grid.force()
+
+p1
+```
+
+
+```{r}
+grid.ls(temp)
+```
+
+
+```{r fig.width = 4, fig.asp = 1}
+grid.newpage()
+grid.draw(temp$children$`panel.7-5-7-5`$children$)
+grid.rect(gp = gpar(fill = NA))
 ```
 
 
