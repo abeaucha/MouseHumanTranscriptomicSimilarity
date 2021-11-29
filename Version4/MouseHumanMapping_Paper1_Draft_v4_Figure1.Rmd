@@ -715,3 +715,110 @@ save(fig1_grob,
      sliceAMBALegend_panel_grob,
      file = fileout)
 ```
+
+
+# Numeric values
+
+
+```{r}
+matSim_H88M67_AllGenes[c("cerebellar nuclei", "pons", "myelencephalon"), "Cerebellar nuclei"]
+```
+
+```{r}
+matSim_H88M67_AllGenes["cerebellar nuclei", c("Cerebellar nuclei", "Pons", "Medulla")]
+```
+
+
+```{r}
+cortexMouse <- dfLabelsMouse %>% 
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  filter(Region11 == "Isocortex") %>% 
+  pull(Region67)
+
+cortexHuman <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(Region16 %in% c("limbic lobe", "frontal lobe", "insula", "occipital lobe", "parietal lobe", "temporal lobe")) %>% 
+  filter(!(Region88 %in% c("dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field"))) %>% 
+  pull()
+
+indCortexMouse <- colnames(matSim_H88M67_AllGenes) %in% cortexMouse
+indCortexHuman <- rownames(matSim_H88M67_AllGenes) %in% cortexHuman
+
+meanCortex <- matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse] %>% 
+  as.numeric() %>% 
+  mean()
+
+sdCortex <- matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse] %>% 
+  as.numeric() %>% 
+  sd()
+
+meanNotCortex <- matSim_H88M67_AllGenes[!indCortexHuman, indCortexMouse] %>% 
+  as.numeric() %>% 
+  mean()
+
+sdNotCortex <- matSim_H88M67_AllGenes[!indCortexHuman, indCortexMouse] %>% 
+  as.numeric() %>% 
+  sd()
+
+print(round(meanCortex, 2))
+print(round(2*sdCortex, 2))
+```
+
+```{r}
+cbMouse <- dfLabelsMouse %>% 
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  filter(Region11 == "Cerebellar cortex") %>% 
+  pull(Region67)
+
+cbHuman <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(Region16 == "cerebellar cortex") %>% 
+  pull()
+
+indCbMouse <- colnames(matSim_H88M67_AllGenes) %in% cbMouse
+indCbHuman <- rownames(matSim_H88M67_AllGenes) %in% cbHuman
+
+meanCb <- matSim_H88M67_AllGenes[indCbHuman, indCbMouse] %>% 
+  as.numeric() %>% 
+  mean()
+
+sdCb <- matSim_H88M67_AllGenes[indCbHuman, indCbMouse] %>% 
+  as.numeric() %>% 
+  sd()
+
+meanNotCb <- matSim_H88M67_AllGenes[!indCbHuman, indCbMouse] %>% 
+  as.numeric() %>% 
+  mean()
+
+sdNotCb <- matSim_H88M67_AllGenes[!indCbHuman, indCbMouse] %>% 
+  as.numeric() %>% 
+  sd()
+
+print(round(meanCb, 2))
+print(round(2*sdCb, 2))
+```
+
+```{r}
+matSim_H88M67_AllGenes %>% 
+  t() %>% 
+  .[,c("precentral gyrus", "cuneus")] %>% 
+  cor()
+```
+
+```{r}
+meanCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>% 
+  as.numeric() %>% 
+  mean()
+
+sdCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>% 
+  as.numeric() %>% 
+  sd()
+
+print(round(meanCrus1, 2))
+print(round(sdCrus1, 2))
+```
+
