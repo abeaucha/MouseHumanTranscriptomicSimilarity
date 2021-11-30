@@ -746,24 +746,14 @@ cortexHuman <- dfLabelsHuman %>%
 indCortexMouse <- colnames(matSim_H88M67_AllGenes) %in% cortexMouse
 indCortexHuman <- rownames(matSim_H88M67_AllGenes) %in% cortexHuman
 
-meanCortex <- matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse] %>% 
-  as.numeric() %>% 
-  mean()
+meanCortex <- mean(matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse])
+sdCortex <- sd(matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse])
 
-sdCortex <- matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse] %>% 
-  as.numeric() %>% 
-  sd()
-
-meanNotCortex <- matSim_H88M67_AllGenes[!indCortexHuman, indCortexMouse] %>% 
-  as.numeric() %>% 
-  mean()
-
-sdNotCortex <- matSim_H88M67_AllGenes[!indCortexHuman, indCortexMouse] %>% 
-  as.numeric() %>% 
-  sd()
+varCortex <- sdCortex^2
 
 print(round(meanCortex, 2))
 print(round(2*sdCortex, 2))
+print(round(varCortex, 4))
 ```
 
 ```{r}
@@ -790,17 +780,22 @@ sdCb <- matSim_H88M67_AllGenes[indCbHuman, indCbMouse] %>%
   as.numeric() %>% 
   sd()
 
-meanNotCb <- matSim_H88M67_AllGenes[!indCbHuman, indCbMouse] %>% 
-  as.numeric() %>% 
-  mean()
-
-sdNotCb <- matSim_H88M67_AllGenes[!indCbHuman, indCbMouse] %>% 
-  as.numeric() %>% 
-  sd()
+varCb <- sdCb^2
 
 print(round(meanCb, 2))
 print(round(2*sdCb, 2))
+print(round(varCb, 4))
 ```
+
+```{r}
+varTot <- sd(matSim_H88M67_AllGenes)^2
+```
+
+```{r}
+varCortex/varTot
+varCb/varTot
+```
+
 
 ```{r}
 matSim_H88M67_AllGenes %>% 
@@ -810,6 +805,8 @@ matSim_H88M67_AllGenes %>%
 ```
 
 ```{r}
+matSim_H88M67_AllGenes["crus I", indCbMouse]
+
 meanCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>% 
   as.numeric() %>% 
   mean()
@@ -818,7 +815,15 @@ sdCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>%
   as.numeric() %>% 
   sd()
 
-print(round(meanCrus1, 2))
-print(round(sdCrus1, 2))
+print(round(meanCrus1, 3))
+print(round(sdCrus1, 3))
+```
+
+```{r}
+matSim_H88M67_AllGenes %>% 
+  t() %>% 
+  .[,indCbHuman] %>% 
+  cor() %>% 
+  .[,"crus I"]
 ```
 
