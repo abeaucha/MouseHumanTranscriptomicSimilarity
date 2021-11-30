@@ -444,6 +444,9 @@ dfCanonicalPairs_H88M67_TopMatch_Summary_Seed <- dfCanonicalPairs_H88M67_TopMatc
 
 ```{r}
 library(ape)
+library(tidytree)
+library(ggtree)
+
 treePlot <- Clone(treeHuman_88)
 treePlot <- FindNode(treePlot, "gray matter")
 treePlot$Do(function(node){
@@ -453,12 +456,6 @@ treePlot$Do(function(node){
 })
 
 treePlotPhylo <- as.phylo(treePlot)
-plot.phylo(treePlotPhylo)
-```
-
-```{r}
-library(tidytree)
-library(ggtree)
 
 dfTreePlotPhylo <- as_tibble(treePlotPhylo)
 
@@ -468,9 +465,17 @@ dfTreeColours <- treePlot$Get("color_hex_triplet") %>%
   mutate(label = str_remove_all(label, ","),
          label = str_replace_all(label, " ", "_"))
 
-dfTreePlotPhylo <- inner_join(dfTreePlotPhylo,
-                              dfTreeColours,
-                              by = "label")
+dfTreeAcronyms <- treePlot$Get("acronym") %>% 
+  enframe(name = "label",
+          value = "acronym")%>% 
+  mutate(label = str_remove_all(label, ","),
+         label = str_replace_all(label, " ", "_"))
+
+dfTreePlotPhylo <- dfTreePlotPhylo %>%
+  inner_join(dfTreeColours,
+             by = "label") %>%
+  inner_join(dfTreeAcronyms,
+             by = "label")
 
 treePlotPhylo <- as.treedata(dfTreePlotPhylo)
 ```
@@ -482,11 +487,10 @@ colourPalette <- dfTreeColours %>%
   pull(color_hex_triplet)
 ```
 
-
 ```{r fig.width = 10}
 ggtree(treePlotPhylo, aes(color = label),
        branch.length = "none", layout = "circular") + 
-  geom_tiplab() + 
+  geom_tiplab(aes(label = acronym)) + 
   scale_color_manual(values = colourPalette) + 
   theme(legend.position = "none")
 ```
@@ -498,7 +502,7 @@ dfCanonicalPairs_H88M67_TopMatch_Summary <- dfCanonicalPairs_H88M67_TopMatch_Sum
 
 ```{r}
 seeds_Hipp <- c("Field CA1", "Field CA2", "Field CA3") 
-seeds_CbCx <- c("Declive (VI)", "Lingula (I)")
+seeds_CbCx <- c("Lingula (I)", "Uvula (IX)", "Crus 1")
 dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
   filter(Seed %in% c(seeds_Hipp, seeds_CbCx)) %>%
   pivot_wider(id_cols = Target, names_from = Seed, values_from = Prop) %>% 
@@ -508,64 +512,121 @@ dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds <- dfCanonicalPairs_H88M67_TopMat
   column_to_rownames("label")
 ```
 
-
-```{r}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none", 
-       layout = "fan",
-       open.angle = 20,
-       ladderize = F) + 
-  # coord_cartesian(xlim = c(0, 5)) + 
-  coord_polar(theta = "y", start = 0) +
-  # xlim(0, 5) + 
-  # geom_tiplab() + 
-  scale_color_manual(values = colourPalette,
-                     guide = F) 
-p
-```
-
-```{r fig.width = 8, fig.height = 8}
-gheatmap(p, dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds, offset = -0.2,
-         width = 0.3, colnames = T, colnames_angle = 265, hjust = -0.05,
-         color = "grey40", low = "grey90", high = brewer.pal(n = 9, name = "Blues")[9]) 
-```
-
-```{r fig.width = 8, fig.height = 8}
+```{r fig.width = 4, fig.height = 4}
 df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
   select(seeds_Hipp)
 df_cbcx <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
   select(seeds_CbCx)
+```
 
-p1 <- gheatmap(p, df_hipp, offset = 0,
-         width = 0.3, colnames = T, colnames_angle = 265, hjust = -0.05,
-         color = "grey40") + 
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9]) 
+```{r fig.width = 4, fig.height = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = 0, align = TRUE, size = 1) +
+  # xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p
+```
+
+
+```{r fig.width = 2.2, fig.height = 4.55}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = 4.95, align = F, size = 1.5) +
+  xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p1 <- gheatmap(p, df_hipp, offset = 0.05,
+               width = 0.3, colnames = F, colnames_angle = 0, hjust = -0.05,
+               color = "black") + 
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
+                      guide = FALSE) 
+
+# p1
 
 p2 <- p1 + new_scale_fill()
 
-gheatmap(p2, df_cbcx, offset = 2,
-         width = 0.3, colnames = T, colnames_angle = 265, hjust = -0.05,
-         color = "grey40") + 
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9]) 
+ptree <- gheatmap(p2, df_cbcx, offset = 2.2,
+                  width = 0.3, colnames = F, colnames_angle = 265, hjust = -0.05,
+                  color = "grey40") +
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
+                      guide = F)
+
+treegrob <- ggplotGrob(ptree) %>% grid.force()
 ```
 
+```{r fig.width = 3, fig.height = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  # geom_tiplab(offset = 3, align = TRUE) + 
+  # xlim(NA, 20) +
+  # coord_polar(theta = "y", start = 0) + 
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.8, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9], guide = F) + 
+  scale_x_ggtree()
+
+p1
+```
+
+
+```{r fig.width = 10, fig.height = 10}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none",
+       layout = "fan",
+       open.angle = 0) + 
+  geom_tiplab(offset = 3, align = TRUE) + 
+  xlim(NA, 20) +
+  # coord_polar(theta = "y", start = 0) + 
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p
+```
+
+
+```{r fig.width = 10, fig.height = 10}
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+p1
+```
 
 ```{r fig.width = 4, fig.height = 4}
 df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
   select(seeds_Hipp)
 
+angle <- 20
+
 p <- ggtree(treePlotPhylo, aes(color = label),
        branch.length = "none", 
        layout = "fan",
-       open.angle = 180,
+       open.angle = 20,
        ladderize = F) + 
+  geom_tiplab() +
   # coord_cartesian(xlim = c(0, 5)) + 
-  coord_polar(theta = "y", start = 0) +
+  # coord_polar(theta = "y", start = (angle/2)*(pi/180)) +
   # xlim(0, 5) + 
-  # geom_tiplab() + 
   scale_color_manual(values = colourPalette,
                      guide = F) 
 
+p
+```
+
+```{r}
 p1 <- gheatmap(p, df_hipp, offset = 0,
          width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
          font.size = 2, color = "grey30") + 
@@ -602,17 +663,6 @@ temp <- ggplotGrob(p1) %>% grid.force()
 p1
 ```
 
-
-```{r}
-grid.ls(temp)
-```
-
-
-```{r fig.width = 4, fig.asp = 1}
-grid.newpage()
-grid.draw(temp$children$`panel.7-5-7-5`$children$)
-grid.rect(gp = gpar(fill = NA))
-```
 
 
 ```{r results2-fig4-plot-treedist, eval=FALSE}
@@ -777,32 +827,43 @@ rm(treeMouse_11,
    dfMouseColours)
 ```
 
+```{r fig.width = 2.2, fig.height = 4.55}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = -12, align = F, size = 1.5, hjust = 1) +
+  xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F) + 
+  scale_x_reverse() + 
+  theme_tree2()
+#offset is the offset in x coordinate as measured from the leaf nodes of the tree
+#use theme_tree2() to see the scale bar for reference
+
+p1 <- gheatmap(p, df_hipp, offset = 0.05,
+               width = 0.6, colnames = F, colnames_angle = 0, hjust = -0.05,
+               color = "black") + 
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
+                      guide = FALSE) 
+#width argument is percentage of the width size of the tree diagram
+
+# p1
+
+p2 <- p1 + new_scale_fill()
+
+ptree <- gheatmap(p2, df_cbcx, offset = 4.5,
+                  width = 1, colnames = F, colnames_angle = 265, hjust = -0.05,
+                  color = "black") +
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
+                      guide = F)
+
+ptree <- ptree + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = 'in'))
+
+treegrob <- ggplotGrob(ptree) %>% grid.force()
+```
+
 ```{r results2-fig4-grob}
 #Generate figure 4 grob
-#Old grob with tree distance proportions
-# fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
-#                          fig4_distributions_ytext_grob,#2
-#                          fig4_distributions_ytitle_grob,#3
-#                          fig4_distributions_xtext_grob,#4
-#                          fig4_distributions_xtitle_grob,#5
-#                          fig4_distributions_legend_grob, #6
-#                          fig4_distributions_title_grob, #7
-#                          fig4_treedist_panel_grob, #8
-#                          fig4_treedist_xtext_grob, #9
-#                          fig4_treedist_xtitle_grob, #10
-#                          fig4_treedist_legend_grob, #11
-#                          fig4_ss_grob, #12
-#                          fig4_ss_title_grob, #13
-#                          layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA, 13),
-#                                                c( 3,  2, 1, NA,  8, NA, 12),
-#                                                c(NA, NA, 4, NA,  9, NA, NA),
-#                                                c(NA, NA, 5, NA, 10, NA, NA),
-#                                                c(NA, NA, 6, NA, NA, NA, NA),
-#                                                c(NA, NA, 6, NA, 11, NA, NA)),
-#                          widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.2, 0.25, 2.5), 'inch'),
-#                          heights = unit(c(0.5, 4.55, 0.175, 0.175, 0.1, 0.7), 'inch'))
-
-#New grob for tree plot
 fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
                          fig4_distributions_ytext_grob,#2
                          fig4_distributions_ytitle_grob,#3
@@ -811,14 +872,14 @@ fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
                          fig4_distributions_legend_grob, #6
                          fig4_distributions_title_grob, #7
                          fig4_ss_grob, #8
-                         textGrob("Panel C\nTree proportions plot\nTree diagrams for two seeds\n(e.g. Declive and CA2)\nEdges and nodes coloured\nwith Allen colours\nSize of nodes = proportion\nof times that node is the\ntop match for the given seed\nacross latent spaces."), #10
-                         layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA, NA),
-                                               c( 3,  2, 1, NA,  8, NA, 10),
-                                               c(NA, NA, 4, NA, NA, NA, NA),
-                                               c(NA, NA, 5, NA, NA, NA, NA),
-                                               c(NA, NA, 6, NA, NA, NA, NA),
-                                               c(NA, NA, 6, NA, NA, NA, NA)),
-                         widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.5, 0.25, 2.2), 'inch'),
+                         treegrob, #9
+                         layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA),
+                                               c( 3,  2, 1, NA,  8, 9),
+                                               c(NA, NA, 4, NA, NA, NA),
+                                               c(NA, NA, 5, NA, NA, NA),
+                                               c(NA, NA, 6, NA, NA, NA),
+                                               c(NA, NA, 6, NA, NA, NA)),
+                         widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.5, 2.45), 'inch'),
                          heights = unit(c(0.4, 4.55, 0.175, 0.175, 0.1, 0.6), 'inch'))
 ```
 
