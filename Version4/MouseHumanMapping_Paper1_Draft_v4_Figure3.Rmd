@@ -638,3 +638,96 @@ save(fig3_grob,
      sliceAMBALegend_panel_grob,
      file = fileout)
 ```
+
+
+# Numeric
+
+```{r}
+dfRankDifferencesSummary <- dfRankDifferences %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
+  group_by(Seed) %>% 
+  summarise(RankDiffMean = mean(RankDiff),
+            RankDiffSd = sd(RankDiff),
+            RankDiffLower = RankDiffMean - 2*RankDiffSd,
+            RankDiffUpper = RankDiffMean + 2*RankDiffSd,
+            PropNonPos = sum(NonPositive)/n()) %>% 
+  ungroup() 
+```
+
+```{r}
+head(dfRankDifferences)
+```
+
+```{r}
+nMLP <- length(unique(dfRankDifferences$Data))
+
+temp <- dfRankDifferences %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE),
+         Positive = !NonPositive) %>%  
+  group_by(Seed) %>% 
+  summarise(PropPositive = sum(Positive)/nMLP,
+            PropNonPositive = sum(NonPositive)/nMLP,
+            RankDiffMean = mean(RankDiff),
+            RankDiffSd = sd(RankDiff)) %>% 
+  ungroup() 
+```
+
+```{r}
+temp %>% 
+  summarise(nregions = sum(RankDiffMean <= 0),
+            fracregions = nregions/n())
+```
+
+```{r}
+temp %>% 
+  summarise(sum(PropNonPositive >= 0.80)/n())
+```
+
+
+```{r}
+temp %>% 
+  filter(Seed %in% c("Main olfactory bulb", "Accessory olfactory bulb", "Cerebellar nuclei"))
+```
+
+```{r}
+structsCx <- dfLabelsMouse %>%
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  filter(Region11 == "Isocortex") %>% 
+  pull(Region67)
+
+temp %>% 
+  filter(Seed %in% structsCx) %>% 
+  summarise(nregions = sum(PropNonPositive >= 0.96),
+            fracregions = nregions/n())
+```
+
+```{r}
+structsCb <- dfLabelsMouse %>%
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  filter(Region11 == "Cerebellar cortex") %>% 
+  pull(Region67)
+
+temp %>% 
+  filter(Seed %in% structsCb) %>% 
+  summarise(nregions = sum(PropNonPositive >= 0.96),
+            fracregions = nregions/n())
+```
+
+temp %>% 
+filter(Seed == "Thalamus")
+
+```{r}
+structsSubCx <- dfLabelsMouse %>% 
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  filter(Region11 %in% c("Cerebral nuclei", "Diencephalon", "Midbrain", "Pons", "Medulla")) %>% 
+  pull(Region67)
+
+dfRankDifferences %>% 
+  filter(Seed %in% structsSubCx) %>% 
+  pull(RankDiff) %>% 
+  sd()
+```
+
