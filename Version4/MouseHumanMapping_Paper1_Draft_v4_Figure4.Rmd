@@ -909,3 +909,104 @@ save(fig4_grob,
      file = fileout)
 ```
 
+#Numeric
+
+```{r}
+dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
+  group_by(Seed) %>% 
+  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
+  ungroup()
+```
+
+```{r}
+dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+  summarise(nregions = sum(PropNonPos >= 0.80),
+            fracregions = nregions/n())
+```
+
+```{r}
+thresholds <- seq(0, 1, by = 0.005)
+dfPropNonPos <- tibble(thresholds = thresholds,
+                       nRegions = 0,
+                       fracRegions = 0)
+
+for(i in 1:length(thresholds)){
+  dfTemp <- dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+    summarise(nRegions = sum(PropNonPos >= thresholds[i]),
+              fracRegions = nRegions/n())
+  dfPropNonPos[i,"nRegions"] <- dfTemp$nRegions
+  dfPropNonPos[i,"fracRegions"] <- dfTemp$fracRegions
+}
+
+ggplot(dfPropNonPos, aes(x = thresholds, y = fracRegions)) + 
+  geom_point(size = 0.5) + 
+  coord_fixed(xlim = c(0,1),
+              ylim = c(0,1)) +
+  labs(x = "Proportion of latent spaces",
+       y = "Proportion of regions showing improvement") + 
+  theme_bw()
+```
+
+```{r}
+x <- dfPropNonPos$thresholds
+y <- dfPropNonPos$fracRegions
+AUC <- sum(diff(x)*zoo::rollmean(y, k = 2))
+AUC
+```
+
+
+```{r}
+dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
+  select(Seed, Data2, TargetRank) %>% 
+  group_by(Seed, Data2) %>% 
+  summarise(mean(TargetRank))
+```
+
+```{r}
+dfCanonicalPairs_H88M67_Ranks %>% 
+filter(Seed %in% c("Pallidum", "Striatum ventral region", "Caudoputamen", "Hypothalamus", "Thalamus", "Inferior colliculus", "Superior colliculus, sensory related", "Pons", "Medulla"),
+       Data != "AllGenes") %>% 
+  select(Seed, TargetRank) %>% 
+  group_by(Seed) %>% 
+  summarise(prop = sum(TargetRank == 1)/nMLPsamples) %>% 
+  ungroup() %>% 
+  arrange(prop)
+```
+
+```{r}
+temp <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Data != "AllGenes") %>% 
+  rename(HumanPair = Human)
+
+rank <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(str_detect(Region16, "cerebellar")) %>% 
+  nrow()
+
+temp2 <- temp %>% 
+  filter(Seed == "Copula pyramidis",
+         TargetRank <= rank) %>% 
+  select(Target, TargetRank) %>% 
+  group_by(Target, TargetRank) %>% 
+  summarise(prop = n()/nMLPsamples) %>% 
+  ungroup() %>% 
+  mutate(Target = factor(Target, listLabelsHumanReordered$Region88_reordered),
+         TargetRank = factor(TargetRank))
+```
+
+```{r}
+ggplot(temp2, aes(x = TargetRank, y = Target, fill = prop)) + 
+  # geom_tile(col = "grey50") + 
+  geom_raster(interpolate = T) + 
+  scale_fill_gradient(low = "white", high = "black") + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+
