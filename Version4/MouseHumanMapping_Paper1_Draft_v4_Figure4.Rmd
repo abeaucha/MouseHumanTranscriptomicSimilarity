@@ -393,9 +393,20 @@ fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$P
 fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
   overlay(mincArray(fig4_ss_array), low = 0, high = 1) %>% 
-  legend("Proportion of non-positive rank differences") %>% 
+  legend("Proportion of non-positive rank differences") %>%
   grobify()
 ```
+
+```{r}
+fig4_ss_legend_palette <- matrix(colorRampPalette(c("red", "yellow"))(255), nrow = 1, ncol = 100)
+
+fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
+                                        x = 0, y = 0.95,
+                                        width = 1,
+                                        height = 0.2,
+                                        just = c("left", "top"))
+```
+
 
 ```{r}
 treeHuman_88 <- Clone(treeHuman)
@@ -862,6 +873,78 @@ ptree <- ptree + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = '
 treegrob <- ggplotGrob(ptree) %>% grid.force()
 ```
 
+```{r}
+temp <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Data != "AllGenes") %>% 
+  rename(HumanPair = Human)
+
+rank <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(str_detect(Region16, "cerebellar")) %>% 
+  nrow()
+
+structsCb <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(str_detect(Region16, "cerebellar")) %>% 
+  pull(Region88)
+
+seedsCb <- c("Copula pyramidis", "Crus 1")
+
+temp2 <- temp %>% 
+  filter(Seed %in% seedsCb) %>% 
+  filter(TargetRank <= rank) %>% 
+  select(Seed, Target, TargetRank) %>% 
+  group_by(Seed, Target, TargetRank) %>% 
+  summarise(prop = n()/nMLPsamples) %>% 
+  ungroup() 
+
+dfCombinations <- expand_grid(Seed = unique(temp2$Seed),
+                              Target = unique(temp2$Target),
+                              TargetRank = unique(temp2$TargetRank))
+
+temp3 <- temp2 %>% 
+  right_join(dfCombinations,
+             by = c("Seed", "Target", "TargetRank")) %>% 
+  mutate(prop = ifelse(is.na(prop), 0, prop)) %>% 
+  filter(Target %in% structsCb) %>% 
+  mutate(Target = factor(Target, listLabelsHumanReordered$Region88_reordered),
+         TargetRank = factor(TargetRank)) 
+```
+
+```{r}
+ptemp <- ggplot(temp3, aes(x = Target, y = TargetRank, fill = prop)) + 
+  geom_tile(col = "grey50") +
+  facet_wrap(~Seed, nrow = 2) + 
+  scale_fill_gradient(low = "white", high = "black") + 
+  scale_y_discrete(position = "right") + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        plot.margin = margin(t = 0, b = 0, l = 0, unit = 'in'))
+
+ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
+# ptemp_xtext_grob <- getGrob(ptemp_grob, "axis-b-1-2.14-5-14-5")
+# ptemp_xtitle_grob <- getGrob(ptemp_grob, "xlab-b.15-5-15-5")
+# 
+# ptemp <- ptemp + 
+#   theme(axis.text.x = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.ticks.x = element_blank())
+# ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
+```
+
+```{r}
+grid.ls(ptemp_grob)
+```
+
+
 ```{r results2-fig4-grob}
 #Generate figure 4 grob
 fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
@@ -872,15 +955,16 @@ fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
                          fig4_distributions_legend_grob, #6
                          fig4_distributions_title_grob, #7
                          fig4_ss_grob, #8
-                         treegrob, #9
+                         ptemp_grob,
                          layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA),
-                                               c( 3,  2, 1, NA,  8, 9),
+                                               c( 3,  2, 1, NA,  8,  9),
+                                               c(NA, NA, 4, NA, NA,  9),
                                                c(NA, NA, 4, NA, NA, NA),
                                                c(NA, NA, 5, NA, NA, NA),
                                                c(NA, NA, 6, NA, NA, NA),
                                                c(NA, NA, 6, NA, NA, NA)),
                          widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.5, 2.45), 'inch'),
-                         heights = unit(c(0.4, 4.55, 0.175, 0.175, 0.1, 0.6), 'inch'))
+                         heights = unit(c(0.4, 4.55, 0.09, 0.09, 0.175, 0.1, 0.6), 'inch'))
 ```
 
 ```{r results2-fig4-interactive, include=TRUE, echo=FALSE, fig.width=10, fig.height=6.2}
@@ -903,7 +987,7 @@ grid.text(c("A.", "B."),
 ```
 
 ```{r results2-fig4-write}
-fileout <- str_c(pathHome, "Draft/", "Version3/", "Figure4.RData")
+fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure4.RData")
 save(fig4_grob,
      sliceAMBALegend_panel_grob,
      file = fileout)
@@ -976,37 +1060,18 @@ filter(Seed %in% c("Pallidum", "Striatum ventral region", "Caudoputamen", "Hypot
 ```
 
 ```{r}
-temp <- dfSimilarityProfiles %>% 
-  inner_join(dfCanonicalPairs_H88M67,
-             by = c("Seed" = "Mouse")) %>% 
-  filter(Data != "AllGenes") %>% 
-  rename(HumanPair = Human)
-
-rank <- dfLabelsHuman %>% 
-  select(Region16, Region88) %>% 
-  distinct() %>% 
-  filter(str_detect(Region16, "cerebellar")) %>% 
-  nrow()
-
-temp2 <- temp %>% 
-  filter(Seed == "Copula pyramidis",
-         TargetRank <= rank) %>% 
-  select(Target, TargetRank) %>% 
-  group_by(Target, TargetRank) %>% 
-  summarise(prop = n()/nMLPsamples) %>% 
-  ungroup() %>% 
-  mutate(Target = factor(Target, listLabelsHumanReordered$Region88_reordered),
-         TargetRank = factor(TargetRank))
+temp3 %>% 
+  filter(Seed == "Crus 1",
+         Target == "crus I") %>% 
+  ggplot(aes(x = TargetRank, y = prop)) + 
+  geom_col()
 ```
 
 ```{r}
-ggplot(temp2, aes(x = TargetRank, y = Target, fill = prop)) + 
-  # geom_tile(col = "grey50") + 
-  geom_raster(interpolate = T) + 
-  scale_fill_gradient(low = "white", high = "black") + 
-  theme_bw() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+temp3 %>% 
+  filter(Seed == "Crus 1",
+         Target == "crus I") %>% 
+  filter(prop == max(prop)) %>% 
+  pull(TargetRank)
 ```
-
 
