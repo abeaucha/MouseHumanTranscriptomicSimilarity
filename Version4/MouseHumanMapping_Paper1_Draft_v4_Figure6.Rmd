@@ -97,12 +97,14 @@ dsurqeAverage_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMa
 indMask <- dsurqeMask_200um == 1
 indGM <- dsurqeLabels_200um %in% treeMouse$`Basic cell groups and regions`$label
 indVoxels <- indMask & indGM
+rm(indGM, indMask)
 
 #Create an empty array and assign IDs to non-null voxels
 emptyArray <- numeric(length(dsurqeLabels_200um))
 names(emptyArray) <- character(length(emptyArray))
 voxelNames <- str_c("V", 1:sum(indVoxels))
 names(emptyArray)[indVoxels] <- voxelNames
+rm(indVoxels)
 ```
 
 ```{r import-humansample-sim}
@@ -217,6 +219,7 @@ makeSimilarityDataFrame <- function(sim){
 dfSimStriatum <- map_dfr(.x = listSimStriatum,
                          .f = makeSimilarityDataFrame,
                          .id = "Data")
+rm(listSimStriatum)
 
 #Number of MLP samples
 nMLPSamples <- length(unique(dfSimStriatum$Data))
@@ -495,10 +498,6 @@ dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportion
   pivot_wider(id_cols = "VoxelID", names_from = HumanRegion, values_from = Prop) %>% 
   column_to_rownames("VoxelID")
 
-
-# save(dfSimStriatum_MaxSim_Proportions_HumanTargets, 
-#      file = "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Draft/Version4/StriatumProportions.RData")
-  
 #Initialize the MINC arrays for visualization at 200um
 listArrayHumanTargets_200um <- vector(mode = "list", length = ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets))
 names(listArrayHumanTargets_200um) <- colnames(dfSimStriatum_MaxSim_Proportions_HumanTargets)
@@ -556,17 +555,6 @@ humanTargets_labels <- c("Caudate",
 #Overlay range
 propLow = 0.1
 propHigh = 1
-
-#Create the base of the slice series, 200um
-# fig6_ss_base <- sliceSeries(nrow = 1, ncol = 8, begin = 36, end = 49) %>% 
-#   anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>%
-#   overlay(mincArray(listArrayHumanTargets_200um[["caudate nucleus"]]), low = propLow, high = propHigh) %>%
-#   sliceSeries() %>% anatomy() %>%
-#   overlay(mincArray(listArrayHumanTargets_200um[["putamen"]]), low = propLow, high = propHigh) %>%
-#   sliceSeries() %>% anatomy() %>%
-#   overlay(mincArray(listArrayHumanTargets_200um[["nucleus accumbens"]]), low = propLow, high = propHigh) %>%
-#   sliceSeries() %>% anatomy() %>%
-#   overlay(mincArray(listArrayHumanTargets_200um[["septal nuclei"]]), low = propLow, high = propHigh) 
 
 #Create the base of the slice series, 50um
 fig6_ss_base <- sliceSeries(nrow = 1, ncol = 8, begin = 144, end = 192) %>%
@@ -657,6 +645,68 @@ save(fig6_grob,
      fig6_height,
      file = fileout)
 ```
+
+# Numeric
+
+```{r}
+mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
+
+#For every pair of human striatum regions and mouse targets, get the similarity value for the maximum voxel in every latent space
+dfSimStriatum_Distributions <- dfSimStriatum %>% 
+  filter(MouseRegion %in% mouseTargets) %>% 
+  group_by(Data, HumanRegion, MouseRegion) %>% 
+  summarise(MaxPerPair = max(Similarity),
+            MeanPerPair = mean(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(HumanRegion = factor(str_to_sentence(HumanRegion), levels = str_to_sentence(striatumHuman)),
+         MouseRegion = factor(MouseRegion, levels = mouseTargets))
+```
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% c("Caudate nucleus"),
+         MouseRegion == "Caudoputamen") %>% 
+  summarise(sum(MeanPerPair >= 0.9)/nMLPSamples,
+            sum(MeanPerPair >= 0.95)/nMLPSamples)
+```
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% c("Putamen"),
+         MouseRegion == "Caudoputamen") %>% 
+  summarise(sum(MeanPerPair >= 0.9)/nMLPSamples,
+            sum(MeanPerPair >= 0.95)/nMLPSamples)
+```
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% c("Putamen"),
+         MouseRegion == "Caudoputamen") %>% 
+  summarise(mean(MeanPerPair),
+            median(MeanPerPair))
+
+```
+
+Caudate to caudoputamen histogram values:
+
+```{r}
+ggplot_build(fig6_histogram)$data[[1]] %>% 
+  filter(group == 1, PANEL == 1) %>% 
+  select(y, count, x) %>% 
+  arrange(desc(y)) %>% 
+  head()
+```
+
+Putamen to caudoputamen histogram values: 
+
+```{r}
+ggplot_build(fig6_histogram)$data[[1]] %>% 
+  filter(group == 1, PANEL == 2) %>% 
+  select(y, count, x) %>% 
+  arrange(desc(y)) %>% 
+  head()
+```
+
 
 
 
