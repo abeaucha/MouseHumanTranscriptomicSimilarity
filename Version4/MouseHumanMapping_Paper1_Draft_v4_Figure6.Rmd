@@ -650,6 +650,7 @@ save(fig6_grob,
 
 ```{r}
 mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
+humanSeeds <- c("Caudate nucleus", "Putamen", "Nucleus accumbens")
 
 #For every pair of human striatum regions and mouse targets, get the similarity value for the maximum voxel in every latent space
 dfSimStriatum_Distributions <- dfSimStriatum %>% 
@@ -662,29 +663,30 @@ dfSimStriatum_Distributions <- dfSimStriatum %>%
          MouseRegion = factor(MouseRegion, levels = mouseTargets))
 ```
 
+
+
 ```{r}
 dfSimStriatum_Distributions %>% 
-  filter(HumanRegion %in% c("Caudate nucleus"),
-         MouseRegion == "Caudoputamen") %>% 
-  summarise(sum(MeanPerPair >= 0.9)/nMLPSamples,
-            sum(MeanPerPair >= 0.95)/nMLPSamples)
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(MouseRegion, HumanRegion) %>% 
+  summarise(DistMean = mean(MeanPerPair),
+            DistMedian = median(MeanPerPair),
+            DistSd = sd(MeanPerPair)) %>% 
+  select(HumanRegion, MouseRegion, starts_with("Dist")) %>% 
+  arrange(HumanRegion)
 ```
 
 ```{r}
 dfSimStriatum_Distributions %>% 
-  filter(HumanRegion %in% c("Putamen"),
-         MouseRegion == "Caudoputamen") %>% 
-  summarise(sum(MeanPerPair >= 0.9)/nMLPSamples,
-            sum(MeanPerPair >= 0.95)/nMLPSamples)
-```
-
-```{r}
-dfSimStriatum_Distributions %>% 
-  filter(HumanRegion %in% c("Putamen"),
-         MouseRegion == "Caudoputamen") %>% 
-  summarise(mean(MeanPerPair),
-            median(MeanPerPair))
-
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(MouseRegion, HumanRegion) %>% 
+  summarise(thresh0.95 = sum(MeanPerPair >= 0.95)/nMLPSamples,
+            thresh0.90 = sum(MeanPerPair >= 0.90)/nMLPSamples,
+            thresh0.80 = sum(MeanPerPair >= 0.80)/nMLPSamples) %>% 
+  select(HumanRegion, MouseRegion, starts_with("thresh")) %>% 
+  arrange(HumanRegion)
 ```
 
 Caudate to caudoputamen histogram values:
@@ -707,6 +709,95 @@ ggplot_build(fig6_histogram)$data[[1]] %>%
   head()
 ```
 
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(HumanRegion) %>% 
+  summarise(sd(MeanPerPair))
+```
+
+```{r}
+#Specify human targets
+humanTargets <- c("caudate nucleus", 
+                  "putamen",
+                  "nucleus accumbens",
+                  "septal nuclei",
+                  "amygdala")
+
+#Extract the proportions to the selected human targets
+dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
+  select(-MouseRegion) %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  pivot_wider(id_cols = "VoxelID", names_from = HumanRegion, values_from = Prop) %>% 
+  column_to_rownames("VoxelID")
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = PropSum)) + 
+  geom_histogram()
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup %>% 
+  summarise(sum(PropSum >= 0.95)/n(),
+            sum(PropSum == 1)/n())
+```
+
+```{r}
+voxelSelection <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup() %>% 
+  filter(PropSum < 0.95) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(VoxelID %in% voxelSelection) %>% 
+  ggplot(aes(x = Prop)) + 
+  geom_histogram() +
+  facet_wrap(~HumanRegion)
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(VoxelID %in% voxelSelection) %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = c("nucleus accumbens", "caudate nucleus", "putamen", "septal nuclei", "amygdala"))) %>% 
+  ggplot(aes(x = HumanRegion, y = Prop, group = VoxelID)) + 
+  geom_line(size = 0.05) + 
+  geom_point(size = 0.25) +
+  geom_hline(yintercept = 0.95,
+             linetype = "dashed",
+             col = "red") + 
+  theme_bw()
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  summarise(sum(Prop >= 0.8),
+            sum(Prop >= 0.8)/n())
+```
 
 
 
