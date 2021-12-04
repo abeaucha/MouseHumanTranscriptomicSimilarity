@@ -799,6 +799,61 @@ dfSimStriatum_MaxSim_Proportions %>%
             sum(Prop >= 0.8)/n())
 ```
 
+```{r}
+dfNumVoxels <- dfSimStriatum_MaxSim_Proportions %>% 
+  select(VoxelID, MouseRegion) %>% 
+  distinct() %>% 
+  group_by(MouseRegion) %>% 
+  summarise(nVoxels = n()) %>% 
+  ungroup()
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "septal nuclei") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop >= 0.8) %>% 
+  group_by(MouseRegion) %>% 
+  count() %>% 
+  ungroup() %>% 
+  inner_join(dfNumVoxels, by = "MouseRegion") %>% 
+  mutate(Prop = n/nVoxels)
+```
+
+```{r}
+voxelNAcc <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  filter(MouseRegion == "Nucleus accumbens") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop < 0.8) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(VoxelID %in% voxelNAcc) %>% 
+  filter(Prop >= 0.3) %>% 
+  group_by(VoxelID) %>% 
+  top_n(n = 1, wt = Prop) %>% 
+  group_by(HumanRegion) %>% 
+  count()
+```
+
+```{r}
+voxelNAcc <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  filter(MouseRegion == "Olfactory tubercle") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop < 0.8) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(VoxelID %in% voxelNAcc) %>% 
+  filter(Prop >= 0.3) %>% 
+  group_by(VoxelID) %>% 
+  top_n(n = 1, wt = Prop) %>% 
+  group_by(HumanRegion) %>% 
+  count()
+```
 
 
 # Supplementary
