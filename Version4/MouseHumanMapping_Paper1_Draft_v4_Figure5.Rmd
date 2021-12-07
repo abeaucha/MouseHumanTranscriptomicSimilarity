@@ -339,7 +339,8 @@ dfCombinations <- expand_grid(Seed = c(structsMouse_Cx),
 temp <- dfSimilarityProfiles_Cx_MaxSim %>% 
   mutate(Target = ifelse(Target %in% structsHuman_Cx, Target, "Not cortical")) %>% 
   group_by(Seed, Target) %>% 
-  summarise(prop = n()/500) %>% 
+  summarise(prop = n()/500,
+            meansim = mean(Similarity)) %>% 
   ungroup()
 
 temp2 <- temp %>% 
@@ -348,28 +349,6 @@ temp2 <- temp %>%
   mutate(prop = ifelse(is.na(prop), 0, prop))
 
 ```
-
-
-```{r fig.height = 10}
-library(ggalluvial)
-
-filteredlist <- temp2 %>% 
-  group_by(Target) %>% 
-  summarise(x = sum(prop)) %>% 
-  ungroup() %>% 
-  filter(x >= 0.2) %>% 
-  pull(Target)
-
-temp2 %>% 
-  filter(Target %in% filteredlist) %>% 
-ggplot(aes(axis1 = Seed, axis2 = Target, y = prop)) + 
-  geom_alluvium() + 
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  theme_minimal()
-```
-
-
 
 
 I'm not sure what to look at here. I feel like this is a mess. 
@@ -465,6 +444,31 @@ psankey <- ggplot(temp4,
 psankey
 ```
 
+```{r fig.width=10}
+psankey_meansim <- ggplot(temp4,
+       aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
+  geom_alluvium(aes(fill = meansim),
+                col = "grey50") + 
+  geom_stratum() + 
+  geom_text(stat = "stratum",
+            aes(label = after_stat(stratum),
+                col = Region16),
+            size = 3, fontface = "bold") + 
+  scale_x_discrete(limits = c("Mouse", "Human"), expand = expansion(mult = 0.1)) + 
+  scale_fill_distiller(palette = "Blues", direction = 1) +
+  scale_colour_manual(values = coloursHuman) + 
+  labs(fill = "Average correlation",
+       col = "Human cerebral lobes",
+       title = "Human regions maximally similar to mouse isocortical regions\nin the highest proportion of latent spaces",
+       caption = "Mouse regions ordered according to average maximal correlation\nHuman regions ordered anatomically") + 
+  theme_minimal() + 
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(face = "bold", size = 12),
+        panel.grid = element_blank())
+psankey_meansim
+```
+
 
 ```{r fig.width=10}
 temp5 <- temp3 %>% 
@@ -496,7 +500,7 @@ ggplot(temp5, aes(x = Target, y = Seed)) +
             alpha = 0.7) + 
   geom_point(aes(size = prop, col = IsMaxProp),
              na.rm = T) + 
-  scale_fill_manual(values = colourPalette) + 
+  scale_fill_manual(values = coloursHuman) + 
   scale_size_continuous(range = c(0, 4)) + 
   scale_color_manual(values = c("grey50", "black")) + 
     labs(x = "Human cortical target",
@@ -511,6 +515,118 @@ ggplot(temp5, aes(x = Target, y = Seed)) +
         panel.grid.minor = element_blank())
 ```
 
+```{r fig.width=10}
+ggplot(temp5, aes(x = Target, y = Seed)) + 
+  geom_tile(aes(fill = Region16),
+            col = "grey50",
+            alpha = 0.7) + 
+  geom_point(aes(size = meansim, col = IsMaxProp),
+             na.rm = T) + 
+  scale_fill_manual(values = coloursHuman) + 
+  scale_size_continuous(range = c(0, 4)) + 
+  scale_color_manual(values = c("grey50", "black")) + 
+    labs(x = "Human cortical target",
+         y = "Mouse isocortical seed",
+         fill = "Human cerebral lobes",
+         col = "Highest proportion?",
+         size = "Average correlation",
+         caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically",
+         title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+```{r}
+temp5 %>% 
+  filter(Seed == "Primary somatosensory area") %>% 
+  filter(!is.na(prop)) %>% 
+  select(Seed, Target, Proportion = prop, AvgCorrelation = meansim) %>% 
+  arrange(desc(Proportion))
+```
+
+```{r fig.width = 10, fig.height = 5}
+dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
+  group_by(Data, Seed) %>% 
+  filter(Similarity == max(Similarity)) %>% 
+  ungroup()
+
+dfS1 <- dfSimilarityProfiles_Cx %>% 
+  filter(Seed == "Primary somatosensory area") %>% 
+  group_by(Target) %>% 
+  summarise(SimilarityMean = mean(Similarity),
+            SimilaritySd = sd(Similarity),
+            SimilarityUpper = SimilarityMean + 2*SimilaritySd,
+            SimilarityLower = SimilarityMean - 2*SimilaritySd) %>% 
+  ungroup() %>% 
+  inner_join(dfColoursHuman_16,
+            by = c("Target" = "Region88")) %>% 
+  mutate(Target = factor(Target, levels = Target[order(SimilarityMean)]),
+         Region16 = factor(Region16, levels = structsHuman_Cx_16))
+
+ggplot(dfS1, aes(x = fct_rev(Target), col = Region16)) + 
+  geom_pointrange(aes(y = SimilarityMean, ymin = SimilarityLower, ymax = SimilarityUpper)) + 
+  scale_color_manual(values = coloursHuman) + 
+  labs(x = "Human cerebral target",
+       y = "Correlation",
+       col = "Human cerebral lobes",
+       title = "Correlation to mouse S1") + 
+  theme_dark() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r}
+matExprMouse_scaled <- dfExprMouse_scaled %>% 
+  select(Region67, genes) %>% 
+  group_by(Region67) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region67") %>% 
+  as.matrix() %>% 
+  t()
+
+matExprHuman_scaled <- dfExprHuman_scaled %>% 
+  select(Region88, genes) %>% 
+  group_by(Region88) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region88") %>% 
+  as.matrix() %>% 
+  t()
+
+matSim_AllGenes <- buildSimilarityMatrix(x1 = matExprHuman_scaled,
+                                         x2 = matExprMouse_scaled)
+
+matSim_AllGenes[,"Primary somatosensory area"] %>% 
+  enframe(name = "HumanRegion",
+          value = "Correlation") %>% 
+  inner_join(dfColoursHuman_16,
+             by = c("HumanRegion" = "Region88")) %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = HumanRegion[order(Correlation)])) %>% 
+  arrange(desc(HumanRegion))
+```
+
+```{r}
+matSimCx <- dfSimilarityProfiles_Cx %>% 
+  filter(Seed %in% structsMouse_Cx,
+         Target %in% structsHuman_Cx) %>% 
+  group_by(Seed, Target) %>% 
+  summarise(SimilarityMean = mean(Similarity)) %>% 
+  ungroup() %>% 
+  pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
+  column_to_rownames("Target") %>% 
+  as.matrix()
+```
+
+
+```{r fig.width = 6, fig.height = 8}
+pheatmap(matSimCx, cluster_cols = T, cluster_rows  = F)
+```
+
+```{r fig.width = 10, fig.height = 8}
+pheatmap(matSimCx, cluster_cols = T, cluster_rows  = T)
+```
 
 
 
