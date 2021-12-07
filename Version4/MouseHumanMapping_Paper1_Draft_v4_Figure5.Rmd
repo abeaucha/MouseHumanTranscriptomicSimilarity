@@ -441,7 +441,7 @@ coloursHuman <- temp4 %>%
 
 
 library(ggalluvial)
-ggplot(temp4,
+psankey <- ggplot(temp4,
        aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = prop),
                 col = "grey50") + 
@@ -462,6 +462,7 @@ ggplot(temp4,
         axis.text.y = element_blank(),
         axis.text.x = element_text(face = "bold", size = 12),
         panel.grid = element_blank())
+psankey
 ```
 
 
