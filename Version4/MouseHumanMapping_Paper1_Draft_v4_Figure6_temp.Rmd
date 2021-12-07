@@ -1,0 +1,1462 @@
+---
+title: "Mouse Human Mapping Paper 1"
+subtitle: "Figure 6"
+author: "Antoine Beauchamp"
+date: "November 12th, 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
+
+# Main
+
+```{r libraries}
+#Libraries
+suppressPackageStartupMessages(library(tidyverse))
+library(grid)
+library(gridExtra)
+library(pheatmap)
+library(ggplotify)
+library(ggnewscale)
+library(RMINC)
+library(MRIcrotome)
+library(data.tree)
+library(RColorBrewer)
+```
+
+```{r functions}
+#Functions
+source("/projects/abeauchamp/Functions/TreeTools.R")
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
+```
+
+```{r import-general}
+#Path
+pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
+
+#Import mouse voxelwise gene expression matrix
+dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled_scaled.csv"))) 
+dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled_scaled.csv"))) 
+
+#Extract gene names
+genes <- colnames(dfExprMouse)[!str_detect(colnames(dfExprMouse), "Region")]
+
+#Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
+load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+
+#Import MICe data tree
+load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+treeMouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+#Remove white matter and ventricles
+pruneAnatTree(treeMouse,
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Import AHBA data tree
+load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+treeHuman <- Clone(treeHumanExpr)
+rm(treeHumanExpr)
+
+#Fix human colour names (need to start with #)
+treeHuman$Do(function(node){
+  node$color_hex_triplet <- str_c("#", node$color_hex_triplet)
+})
+
+#Remove white matter and ventricles
+pruneAnatTree(treeHuman,
+              nodes = c("white matter", "sulci & spaces"),
+              method = "AtNode")
+
+#Import DSURQE images in AMBA space
+dsurqeLabels_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_labels.mnc")
+dsurqeMask_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/coronal_200um_coverage_bin0.8.mnc")
+dsurqeAverage_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average.mnc")
+
+#Create a correspondence between voxels in the image space and in the expression matrices
+
+#Indices for the mask and for grey matter ROIs
+indMask <- dsurqeMask_200um == 1
+indGM <- dsurqeLabels_200um %in% treeMouse$`Basic cell groups and regions`$label
+indVoxels <- indMask & indGM
+rm(indGM, indMask)
+
+#Create an empty array and assign IDs to non-null voxels
+emptyArray <- numeric(length(dsurqeLabels_200um))
+names(emptyArray) <- character(length(emptyArray))
+voxelNames <- str_c("V", 1:sum(indVoxels))
+names(emptyArray)[indVoxels] <- voxelNames
+rm(indVoxels)
+```
+
+```{r normalization}
+#Extract labels from data frames
+#Extract mouse voxel labels
+dfLabelsMouse <- dfExprMouse %>% 
+  select(contains("Region")) %>% 
+  mutate(VoxelID = str_c("V", 1:nrow(.)))
+
+#Extract mouse samples labels
+dfLabelsHuman <- dfExprHuman %>% 
+  select(contains("Region")) %>% 
+  mutate(SampleID = str_c("S", 1:nrow(.)))
+
+#Normalize mouse data
+dfExprMouse_scaled <- dfExprMouse %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsMouse)
+
+#Normalize human data
+dfExprHuman_scaled <- dfExprHuman %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsHuman)
+
+#Extract genes list from mouse data (same as human)
+genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), "Region|VoxelID")]
+
+rm(dfExprMouse, dfExprHuman)
+```
+
+
+
+```{r}
+striatumHuman <- c("caudate nucleus", 
+                   "putamen",
+                   "nucleus accumbens")
+
+matExprHuman_Striatum <- dfExprHuman_scaled %>%
+  select(Region88, genes) %>% 
+  filter(Region88 %in% striatumHuman) %>% 
+  group_by(Region88) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region88") %>% 
+  as.matrix() %>% 
+  t()
+
+matExprMouse_CP <- dfExprMouse_scaled %>% 
+  filter(Region67 == "Caudoputamen") %>% 
+  select(VoxelID, genes) %>% 
+  column_to_rownames("VoxelID") %>% 
+  as.matrix() %>% 
+  t() 
+
+matSim_CP <- buildSimilarityMatrix(x1 = matExprHuman_Striatum, 
+                                   x2 = matExprMouse_CP)
+
+matSim_CP_t <- t(matSim_CP)
+```
+
+```{r}
+listArrayHumanTargets <- vector(mode = "list", length = ncol(matSim_CP_t))
+names(listArrayHumanTargets) <- colnames(matSim_CP_t)
+listArrayHumanTargets <- map(listArrayHumanTargets, function(x){return(emptyArray)})
+for(j in 1:ncol(matSim_CP_t)){
+  indVoxelMatch <- match(rownames(matSim_CP_t), names(emptyArray))
+  listArrayHumanTargets[[j]][indVoxelMatch] <- matSim_CP_t[,j]
+  attributes(listArrayHumanTargets[[j]]) <- attributes(dsurqeLabels_200um)
+}
+```
+
+```{r fig.width = 10, fig.height = 3}
+overlayRange <- c(0.3, 0.4)
+sliceSeries(nrow = 1, ncol = 8, begin = 34, end = 47) %>% 
+  anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets[["caudate nucleus"]]), symmetric = T, low = overlayRange[1], high = overlayRange[2]) %>% 
+  addtitle("Caudate") %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets[["putamen"]]), symmetric = T, low = overlayRange[1], high = overlayRange[2]) %>% 
+  addtitle("Putamen") %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets[["nucleus accumbens"]]), symmetric = T, low = overlayRange[1], high = overlayRange[2]) %>% 
+  addtitle("Accumbens") %>% 
+  legend("Correlation") %>% 
+  draw(layout = "row")
+```
+
+```{r}
+vdiff <- matSim_CP_t[,"caudate nucleus"] - matSim_CP_t[,"putamen"]
+arrayDiff <- emptyArray
+indVoxelMatch <- match(names(vdiff), names(emptyArray)) 
+arrayDiff[indVoxelMatch] <- vdiff
+attributes(arrayDiff) <- attributes(dsurqeLabels_200um)
+
+sliceSeries(nrow = 4, ncol = 4, begin = 34, end = 47) %>% 
+  anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>% 
+  overlay(mincArray(arrayDiff), symmetric = T, low = 0, high = 0.02) %>% 
+  legend("Correlation difference") %>% 
+  addtitle("[Caudate correlation] - [putamen correlation]") %>% 
+  draw()
+```
+
+
+```{r}
+matExprMouse_scaled <- dfExprMouse_scaled %>% 
+  select(VoxelID,genes) %>% 
+  column_to_rownames("VoxelID") %>% 
+  as.matrix()
+```
+
+```{r}
+library(ica)
+temp <- icajade(X = matExprMouse_scaled,
+                nc = 80,
+                center = FALSE)
+```
+
+```{r}
+temp <- prcomp(x = matExprMouse_scaled,
+               center = F, scale = F)
+```
+
+
+
+```{r}
+matSim_CP_mouse <- buildSimilarityMatrix(x1 = matExprMouse_CP, x2 = matExprMouse_CP)
+```
+
+```{r}
+hist(matSim_CP_mouse)
+
+for(j in 1:ncol(matSim_CP_mouse)){
+  matSim_CP_mouse[j,j] <- NA
+}
+
+```
+
+
+```{r}
+voxelSample <- sample(1:ncol(matSim_CP_mouse), size = 100, replace = F)
+pheatmap(matSim_CP_mouse[voxelSample, voxelSample],
+         cluster_cols = T, cluster_rows = T,
+         show_rownames = F, show_colnames = F,
+         border_color = NA)
+```
+
+```{r fig.width = 10}
+voxelSample <- sample(1:ncol(matExprMouse_CP), size = 100, replace = F)
+temp <- dist(t(matExprMouse_CP[,voxelSample]), method = "euclidean")
+hclust_temp <- hclust(temp)
+plot(hclust_temp)
+```
+
+```{r}
+clusterLabels <- cutree(hclust_temp, k = 3)
+
+arrayClusters <- emptyArray
+names(arrayClusters) <- names(emptyArray)
+indVoxelMatch <- match(names(clusterLabels), names(emptyArray))
+arrayClusters[indVoxelMatch] <- clusterLabels
+attributes(arrayClusters) <- attributes(dsurqeLabels_200um)
+```
+
+
+```{r}
+library(umap)
+```
+
+
+
+```{r import-humansample-sim}
+#Specify mouse and human striatal regions based on Balsters et al. 2020
+striatumHuman <- c("caudate nucleus",
+                   "putamen",
+                   "nucleus accumbens")
+striatumMouse <- c("Caudoputamen",
+                   "Nucleus accumbens")
+
+#ROI labels for human striatum samples
+dfLabelsHumanStriatum <- dfLabelsHuman %>% 
+  select(SampleID, Region = Region88) %>% 
+  filter(Region %in% striatumHuman) 
+
+#List of mouse ROIs
+mouseROIs <- dfLabelsMouse %>% 
+  select(VoxelID, Region67, Region134) %>% 
+  mutate(Region = ifelse(Region67 == "Striatum ventral region", Region134, Region67)) %>% 
+  pull(Region) %>% 
+  unique() %>% 
+  sort()
+
+#Compute the similarity matrix between human striatal samples and mouse ROIs
+#for every latent space generated by the MLP
+#Run time is about 30 mins
+runSimMat <- FALSE
+if(runSimMat){
+  
+  #Get the names of latent space voxel and samples matrices
+  files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
+    map(function(x){
+      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+    })
+  
+  #' Title
+  #'
+  #' @param mouse Name of file containing mouse voxelwise latent space matrix
+  #' @param human Name of file containing human samplewise latent space matrix
+  #'
+  #' @return Similarity matrix for human striatal samples and mouse striatal ROIs
+  computeSimilarityMatrix <- function(mouse, human){
+    
+    #Import mouse voxelwise latent space matrix and compute average hidden unit values
+    #for mouse ROIs
+    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+      select(-Region) %>% 
+      mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
+      inner_join(dfLabelsMouse %>% 
+                   select(VoxelID, Region67, Region134),
+                 by = "VoxelID") %>% 
+      mutate(Region = ifelse(Region67 == "Striatum ventral region", Region134, Region67)) %>% 
+      select(-VoxelID, -Region67, -Region134) %>% 
+      group_by(Region) %>% 
+      summarise_all(mean) %>% 
+      ungroup() %>% 
+      column_to_rownames("Region") %>% 
+      as.matrix() %>% 
+      t()
+    
+    #Import human samplewise latent space matrix and filter for samples in the striatum
+    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+      mutate(SampleID = str_c("S", 1:nrow(.))) %>%
+      filter(Region %in% striatumHuman) %>% 
+      select(-Region) %>% 
+      column_to_rownames("SampleID") %>% 
+      as.matrix() %>% 
+      t()
+    
+    #Compute the similarity matrix
+    matSim <- buildSimilarityMatrix(x1 = matHuman,
+                                    x2 = matMouse,
+                                    method = "correlation")
+    
+    return(matSim)
+  }
+  
+  #Map the function over all latent space matrices
+  ti <- Sys.time()
+  listSimStriatum <- map2(.x = files[["Mouse"]],
+                          .y = files[["Human"]],
+                          .f = computeSimilarityMatrix)
+  names(listSimStriatum) <- str_c("MLP", 1:length(listSimStriatum))
+  
+  #Save the resulting list to file
+  save(listSimStriatum,
+       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_HumanSamples.RData"))
+  
+  tf <- Sys.time()
+  
+  print(tf-ti)
+} else{
+  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_HumanSamples.RData"))
+  listSimStriatum <- listSimilarity
+  rm(listSimilarity)
+  ## FIX THIS --------
+}
+
+makeSimilarityDataFrame <- function(sim){
+  out <- sim %>% 
+    as_tibble(rownames = "SampleID") %>% 
+    inner_join(dfLabelsHuman %>% select(SampleID, Region88),
+               by = "SampleID") %>% 
+    rename(HumanRegion = Region88) %>% 
+    pivot_longer(cols = -c(SampleID, HumanRegion),
+                 names_to = "MouseRegion",
+                 values_to = "Similarity")
+  return(out)
+}
+
+#Convert similarity matrices to long form data frames
+dfSimStriatum <- map_dfr(.x = listSimStriatum,
+                         .f = makeSimilarityDataFrame,
+                         .id = "Data")
+rm(listSimStriatum)
+
+#Number of MLP samples
+nMLPSamples <- length(unique(dfSimStriatum$Data))
+```
+
+```{r top-mouse-targets}
+#Identify mouse targets that are either maximal or in the striatum
+dfSimStriatum_MaxSim <- dfSimStriatum %>% 
+  group_by(Data, SampleID) %>% 
+  mutate(IsMaximal = Similarity == max(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(IsStriatal = MouseRegion %in% striatumMouse) %>% 
+  filter(IsMaximal | IsStriatal)
+
+#Data frame to indicate striatum matches
+dfStriatalMatch <- tibble(HumanRegion = striatumHuman,
+                          MouseRegion = c("Caudoputamen", "Caudoputamen", "Nucleus accumbens"))
+
+#For every sample in the striatum, compute the average maximal similarity to the expected match
+dfSimStriatum_MaxSim_Mean <- dfSimStriatum_MaxSim %>% 
+  semi_join(dfStriatalMatch, 
+            by = c("HumanRegion", "MouseRegion")) %>% 
+  group_by(SampleID) %>% 
+  summarise(MeanSimilarity = mean(Similarity)) %>% 
+  ungroup()
+
+#Data frame containing bins for proportion values
+dfBins <- tibble(BinID = 1:5,
+                 BinLabel = c("[0.0, 0.2]",
+                              "(0.2, 0.4]",
+                              "(0.4, 0.6]",
+                              "(0.6, 0.8]",
+                              "(0.8, 1.0]")) %>% 
+  mutate(BinLabel = factor(BinLabel, levels = BinLabel[order(BinID)]))
+
+#Create a data frame with all combinations of human samples and mouse target regions
+dfCombinationGrid <- expand_grid(SampleID = unique(dfSimStriatum_MaxSim$SampleID),
+                                 MouseRegion = unique(dfSimStriatum_MaxSim$MouseRegion)) %>% 
+  inner_join(dfLabelsHumanStriatum,
+             by = "SampleID") %>% 
+  rename(HumanRegion = Region) 
+
+#For every sample, compute the proportion of latent spaces where the top hit is the expected match
+dfSimStriatum_MaxSim_Proportions <- dfSimStriatum_MaxSim %>% 
+  filter(IsMaximal) %>% 
+  group_by(SampleID, HumanRegion, MouseRegion) %>% 
+  summarise(Prop = n()/nMLPSamples) %>% 
+  ungroup() %>% 
+  right_join(dfCombinationGrid,
+             by = c("SampleID", "HumanRegion", "MouseRegion")) %>% 
+  mutate(Prop = ifelse(is.na(Prop), 0, Prop),
+         BinID = case_when(Prop <= 0.20 ~ 1,
+                           Prop > 0.2 & Prop <= 0.4 ~ 2,
+                           Prop > 0.4 & Prop <= 0.6 ~ 3,
+                           Prop > 0.6 & Prop <= 0.8 ~ 4,
+                           Prop > 0.8 ~ 5)) %>% 
+  left_join(dfBins,
+            by = "BinID") 
+
+inner_join(dfSimStriatum_MaxSim_Proportions,
+           dfSimStriatum_MaxSim_Mean,
+           by = "SampleID") %>% 
+  mutate(HumanRegion = as.character(HumanRegion)) %>% 
+  filter(MeanSimilarity > 0.6) %>% 
+  group_by(HumanRegion, MouseRegion) %>% 
+  summarise(MeanProp = mean(Prop)) %>% 
+  ungroup() %>% 
+  filter(MeanProp != 0) %>% 
+  group_by(HumanRegion) %>% 
+  top_n(n = 5, wt = MeanProp) %>% 
+  mutate(MeanProp = round(MeanProp, 4)) %>% 
+  arrange(desc(MeanProp), .by_group = TRUE)
+```
+
+```{r fig6-panelA-histogram}
+#Specify mouse targets to examine
+mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
+
+#For every pair of human striatum regions and mouse targets, get the similarity value for the maximum voxel in every latent space
+dfSimStriatum_Distributions <- dfSimStriatum %>% 
+  filter(MouseRegion %in% mouseTargets) %>% 
+  group_by(Data, HumanRegion, MouseRegion) %>% 
+  summarise(MaxPerPair = max(Similarity),
+            MeanPerPair = mean(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(HumanRegion = factor(str_to_sentence(HumanRegion), levels = str_to_sentence(striatumHuman)),
+         MouseRegion = factor(MouseRegion, levels = mouseTargets))
+
+fig6_histogram <- ggplot(dfSimStriatum_Distributions, aes(x = MeanPerPair, y = ..count../nMLPSamples, fill = MouseRegion)) + 
+  geom_histogram(col = "grey30",
+                 bins = 20,
+                 position = "dodge") +
+  facet_wrap(~HumanRegion, ncol = length(striatumHuman)) + 
+  coord_cartesian(xlim = c(0.6, 1),
+                  ylim = c(0,1)) + 
+  scale_fill_manual(values = brewer.pal(n = 9, name = "PuBu")[seq(9, 3, by = -2)]) + 
+  labs(x = "Average similarity over human samples",
+       y = "Proportion of latent spaces",
+       fill = "Mouse targets") + 
+  theme_bw() + 
+  theme(legend.position = "bottom",
+        plot.margin = margin(b = 0, l = 0, r = 0, t = 0, unit = 'inch'))
+
+#Convert ggplot to grob
+fig6_histogram_grob <- ggplotGrob(fig6_histogram) %>% grid.force()
+
+#Extract legend from grob
+fig6_histogram_legend_grob <- getGrob(fig6_histogram_grob, "guides.3-3-3-3")
+
+#Remove legend from main plot and make new grob
+fig6_histogram <- fig6_histogram +
+  theme(legend.position = "none")
+fig6_histogram_grob <- ggplotGrob(fig6_histogram) %>% grid.force()
+
+#Title grob
+fig6_histogram_title_grob <- textGrob("Similarity of human striatal regions to targets in the mouse striatum",
+                                      x = unit(0.5, 'inch'),
+                                      y = 0.25,
+                                      just = c("left", "bottom"))
+```
+
+```{r import-mousevoxel-sim}
+#Human striatal regions
+striatumHuman <- c("caudate nucleus",
+                   "putamen",
+                   "nucleus accumbens")
+
+#Prune the AMBA tree down to 134 bilateral regions
+treeMouse_134 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_134,
+              nodes = unique(dfLabelsMouse$Region134),
+              method = "BelowNode")
+
+#Extract striatum ROIs from the tree
+striatumMouse <- FindNode(treeMouse_134, "Striatum")$Get("name", filterFun = isLeaf)
+names(striatumMouse) <- NULL
+
+
+#Run time is about 40 minutes
+runSimMat <- FALSE
+if(runSimMat){
+  
+  files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
+    map(function(x){
+      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+    })
+  
+  computeStriatumSimilarity <- function(mouse, human){
+    
+    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+      select(-Region) %>% 
+      mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
+      inner_join(dfLabelsMouse %>% 
+                   select(VoxelID, Region = Region134),
+                 by = "VoxelID") %>% 
+      filter(Region %in% striatumMouse) %>% 
+      select(-Region) %>% 
+      column_to_rownames("VoxelID") %>% 
+      as.matrix() %>% 
+      t()
+    
+    
+    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+      group_by(Region) %>% 
+      summarise_all(.funs = mean) %>% 
+      ungroup() %>% 
+      column_to_rownames("Region") %>% 
+      as.matrix() %>% 
+      t()
+    
+    #Compute similarity matrix
+    matSim <- buildSimilarityMatrix(x1 = matHuman,
+                                    x2 = matMouse,
+                                    method = "correlation")
+    
+    return(matSim)
+  }
+  
+  nVoxels <- dfLabelsMouse %>% 
+    filter(Region134 %in% striatumMouse) %>% 
+    nrow()
+  
+  nROIs <- length(listLabelsHumanReordered$Region88_reordered) 
+  
+  arraySimStriatum <- array(data = 0,
+                            dim = c(nROIs, nVoxels, length(files$Mouse)))
+  
+  ti <- Sys.time()
+  for(i in 1:length(files$Mouse)){
+    if(i %% 10 == 0){
+      print(i)
+    }
+    mouse <- files$Mouse[i]
+    human <- files$Human[i]
+    matSim <- computeStriatumSimilarity(mouse, human)
+    arraySimStriatum[ , , i] <- matSim 
+  }
+  dimnames(arraySimStriatum) <- list(rownames(matSim), colnames(matSim), str_c("MLP", 1:length(files$Mouse)))
+  
+  save(arraySimStriatum,
+       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxels.RData"))
+  
+  tf <- Sys.time()
+  
+  print(tf-ti)
+  
+} else {
+  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxels.RData"))
+}
+```
+
+
+```{r compute-max-similarity}
+#For every latent space, compute the max similarity of every mouse striatal voxel
+#Done using a for loop because purrr functions overload memory
+listSimStriatum_MaxSim <- vector(mode = "list", length = dim(arraySimStriatum)[3])
+for(k in 1:dim(arraySimStriatum)[3]){
+  if(k %% 50 == 0){print(k)}
+  
+  listSimStriatum_MaxSim[[k]] <- arraySimStriatum[,,k] %>%
+    as_tibble(rownames = "HumanRegion") %>% 
+    pivot_longer(cols = -HumanRegion, names_to = "VoxelID", values_to = "Similarity") %>% 
+    group_by(VoxelID) %>% 
+    filter(Similarity == max(Similarity)) %>% 
+    ungroup() %>% 
+    mutate(Data = str_c("MLP_", k))
+}
+
+#Reduce list into a data frame
+dfSimStriatum_MaxSim <- reduce(listSimStriatum_MaxSim, bind_rows)
+rm(listSimStriatum_MaxSim)
+```
+
+```{r top-human-targets}
+#Combinations of every mouse voxel and human target
+dfCombinations <- expand_grid(VoxelID = unique(dfSimStriatum_MaxSim$VoxelID),
+                              HumanRegion = unique(dfSimStriatum_MaxSim$HumanRegion))
+
+#Compute the proportion of latent spaces for which human targets are the maximal match
+dfSimStriatum_MaxSim_Proportions <- dfSimStriatum_MaxSim %>% 
+  group_by(VoxelID, HumanRegion) %>% 
+  summarise(Prop = n()/dim(arraySimStriatum)[3]) %>% 
+  ungroup() %>% 
+  right_join(dfCombinations, by = c("VoxelID", "HumanRegion")) %>% 
+  mutate(Prop = ifelse(is.na(Prop), 0, Prop)) %>% 
+  inner_join(dfLabelsMouse %>% select(VoxelID, MouseRegion = Region134),
+             by = "VoxelID")
+
+#Identify the human ROIs with the top 5 highest proportions of latent spaces
+dfSimStriatum_MaxSim_Proportions_TopHits <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(Prop != 0) %>% 
+  group_by(VoxelID) %>% 
+  top_n(n = 5, wt = Prop) %>% 
+  ungroup()
+
+#Identify the most commonly occurring human regions for voxels in the mouse caudoputamen and nucleus accumbens
+dfSimStriatum_MaxSim_Proportions_TopHits %>% 
+  group_by(MouseRegion, HumanRegion) %>% 
+  summarise(MeanProp = mean(Prop)) %>% 
+  top_n(n = 5, wt = MeanProp) %>% 
+  arrange(MouseRegion, desc(MeanProp))
+```
+
+```{r make-slice-series}
+#Specify human targets
+humanTargets <- c("caudate nucleus", 
+                  "putamen",
+                  "nucleus accumbens",
+                  "septal nuclei",
+                  "amygdala")
+
+#Extract the proportions to the selected human targets
+dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
+  select(-MouseRegion) %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  pivot_wider(id_cols = "VoxelID", names_from = HumanRegion, values_from = Prop) %>% 
+  column_to_rownames("VoxelID")
+
+#Initialize the MINC arrays for visualization at 200um
+listArrayHumanTargets_200um <- vector(mode = "list", length = ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets))
+names(listArrayHumanTargets_200um) <- colnames(dfSimStriatum_MaxSim_Proportions_HumanTargets)
+listArrayHumanTargets_200um <- map(listArrayHumanTargets_200um, function(x){return(emptyArray)})
+
+#For each of the human targets, map the proportions to voxels in a MINC array
+for(j in 1:ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets)){
+  indVoxelMatch <- match(rownames(dfSimStriatum_MaxSim_Proportions_HumanTargets), names(emptyArray))
+  listArrayHumanTargets_200um[[j]][indVoxelMatch] <- dfSimStriatum_MaxSim_Proportions_HumanTargets[,j]
+  attributes(listArrayHumanTargets_200um[[j]]) <- attributes(dsurqeLabels_200um)
+}
+
+#Paths and commands to resample to 50um
+outfiles <- str_c("Figure6_ss_", str_remove(names(listArrayHumanTargets_200um), " "), "_200um.mnc")
+outpaths <- str_c(pathHome, "Draft/", "Version4/", outfiles)
+anatomy50um <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um.mnc"
+newpaths <- str_replace(outpaths, "200um", "50um")
+resampleCommands <- str_c("mincresample",
+                          "-like",
+                          anatomy50um,
+                          outpaths,
+                          newpaths,
+                          "-clobber",
+                          "-nearest_neighbour",
+                          sep = " ")
+
+#Resample the images to 50um
+listArrayHumanTargets_50um <- vector(mode = "list", length(listArrayHumanTargets_200um))
+names(listArrayHumanTargets_50um) <- names(listArrayHumanTargets_200um)
+for(i in 1:length(listArrayHumanTargets_200um)){
+  
+  mincWriteVolume(listArrayHumanTargets_200um[[i]],
+                  output.filename = outpaths[i],
+                  like.filename = attributes(listArrayHumanTargets_200um[[i]])$likeVolume,
+                  clobber = TRUE)
+  
+  system(resampleCommands[i])
+  
+  listArrayHumanTargets_50um[[i]] <- mincGetVolume(newpaths[i])
+}
+
+dsurqeMask_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um_mask.mnc")
+dsurqeAverage_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average_50um.mnc")
+
+dsurqeAverage_50um[dsurqeMask_50um == 0] <- 0
+```
+
+```{r fig6-panelB-sliceseries}
+#Labels for human targets
+humanTargets_labels <- c("Caudate",
+                         "Putamen",
+                         "Nucleus\naccumbens",
+                         "Septal\nnuclei")
+
+#Overlay range
+propLow = 0.1
+propHigh = 1
+
+#Create the base of the slice series, 50um
+fig6_ss_base <- sliceSeries(nrow = 1, ncol = 8, begin = 144, end = 192) %>%
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>%
+  overlay(mincArray(listArrayHumanTargets_50um[["caudate nucleus"]]), low = propLow, high = propHigh) %>%
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_50um[["putamen"]]), low = propLow, high = propHigh) %>%
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_50um[["nucleus accumbens"]]), low = propLow, high = propHigh) %>%
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_50um[["septal nuclei"]]), low = propLow, high = propHigh)
+
+#Convert the base slice series to grob
+fig6_ss_grob <- grobify(fig6_ss_base, layout = "row")
+
+#Add the legend to the slice series and extract
+fig6_ss_legend_grob <- fig6_ss_base %>%
+  legend("Proportion of gene\nexpression latent spaces") %>%
+  grobify() %>%
+  getGrob("legend")
+
+#Modify some of the legend text parameters
+fig6_ss_legend_grob$children[[2]]$x <- unit(0.25, 'npc')
+fig6_ss_legend_grob$children[[3]]$x <- unit(0.25, 'npc')
+fig6_ss_legend_grob$children[[4]]$x <- unit(0.8, 'npc')
+fig6_ss_legend_grob$children[[4]]$gp <- gpar(lineheight = 1)
+
+#Create a set of labels for human targets
+fig6_ss_labels_grob <- textGrob(rev(humanTargets_labels),
+                                x = 0.75,
+                                just = "right",
+                                y = unit(0.12 + 0.25*(0:3), 'npc'),
+                                gp = gpar(lineheight = 1,
+                                          fontsize = 8))
+
+#Create title for panel B
+fig6_ss_title_grob <- textGrob("Mouse striatal voxels maximally similar to human striatal regions",
+                               x = 0,
+                               y = 0.25,
+                               just = c("left", "bottom"))
+```
+
+```{r fig6-grob, fig.width = 9, fig.height = 6.25}
+#Figure 6 main grob
+fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
+                               fig6_histogram_grob, #2
+                               fig6_histogram_legend_grob, #3
+                               fig6_ss_title_grob, #4
+                               # rectGrob(),
+                               fig6_ss_labels_grob, #5
+                               fig6_ss_grob, #6
+                               fig6_ss_legend_grob, #7
+                               layout_matrix = rbind(c(NA, 1, 1, NA),
+                                                     c(NA, 2, 2, NA),
+                                                     c(NA, 3, 3, NA),
+                                                     c(NA, NA, 4, NA),
+                                                     c(NA, 5, 6, 7),
+                                                     c(NA, NA, NA, NA)),
+                               widths = unit(c(0.25, 0.5, 7.25, 1), 'inch'),
+                               heights = unit(c(0.5, 2, 0.5, 0.5, 2.5, 0.25), 'inch'))
+
+#Grob for panel labels
+fig6_panelid_grob <- textGrob(c("A.", "B."),
+                              x = unit(c(0.34, 0.34), 'inch'),
+                              y = unit(c(5.94, 2.94), 'inch'),
+                              gp = gpar(fontsize = 14, fontface = "bold"))
+
+#Grob for figure border
+fig6_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Complete grob for Figure 6
+fig6_grob <- gTree(children = gList(fig6_plots_grob,
+                                    fig6_panelid_grob,
+                                    fig6_border_grob))
+
+
+fig6_width <- 9
+fig6_height <- 6.25
+
+grid.newpage()
+grid.draw(fig6_grob)
+```
+
+```{r fig6-export}
+fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure6.RData")
+save(fig6_grob,
+     fig6_width,
+     fig6_height,
+     file = fileout)
+```
+
+# Numeric
+
+```{r}
+mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
+humanSeeds <- c("Caudate nucleus", "Putamen", "Nucleus accumbens")
+
+#For every pair of human striatum regions and mouse targets, get the similarity value for the maximum voxel in every latent space
+dfSimStriatum_Distributions <- dfSimStriatum %>% 
+  filter(MouseRegion %in% mouseTargets) %>% 
+  group_by(Data, HumanRegion, MouseRegion) %>% 
+  summarise(MaxPerPair = max(Similarity),
+            MeanPerPair = mean(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(HumanRegion = factor(str_to_sentence(HumanRegion), levels = str_to_sentence(striatumHuman)),
+         MouseRegion = factor(MouseRegion, levels = mouseTargets))
+```
+
+
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(MouseRegion, HumanRegion) %>% 
+  summarise(DistMean = mean(MeanPerPair),
+            DistMedian = median(MeanPerPair),
+            DistSd = sd(MeanPerPair)) %>% 
+  select(HumanRegion, MouseRegion, starts_with("Dist")) %>% 
+  arrange(HumanRegion)
+```
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(MouseRegion, HumanRegion) %>% 
+  summarise(thresh0.95 = sum(MeanPerPair >= 0.95)/nMLPSamples,
+            thresh0.90 = sum(MeanPerPair >= 0.90)/nMLPSamples,
+            thresh0.80 = sum(MeanPerPair >= 0.80)/nMLPSamples) %>% 
+  select(HumanRegion, MouseRegion, starts_with("thresh")) %>% 
+  arrange(HumanRegion)
+```
+
+Caudate to caudoputamen histogram values:
+
+```{r}
+ggplot_build(fig6_histogram)$data[[1]] %>% 
+  filter(group == 1, PANEL == 1) %>% 
+  select(y, count, x) %>% 
+  arrange(desc(y)) %>% 
+  head()
+```
+
+Putamen to caudoputamen histogram values: 
+
+```{r}
+ggplot_build(fig6_histogram)$data[[1]] %>% 
+  filter(group == 1, PANEL == 2) %>% 
+  select(y, count, x) %>% 
+  arrange(desc(y)) %>% 
+  head()
+```
+
+```{r}
+dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  group_by(HumanRegion) %>% 
+  summarise(sd(MeanPerPair))
+```
+
+```{r}
+#Specify human targets
+humanTargets <- c("caudate nucleus", 
+                  "putamen",
+                  "nucleus accumbens",
+                  "septal nuclei",
+                  "amygdala")
+
+#Extract the proportions to the selected human targets
+dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
+  select(-MouseRegion) %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  pivot_wider(id_cols = "VoxelID", names_from = HumanRegion, values_from = Prop) %>% 
+  column_to_rownames("VoxelID")
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = PropSum)) + 
+  geom_histogram()
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup %>% 
+  summarise(sum(PropSum >= 0.95)/n(),
+            sum(PropSum == 1)/n())
+```
+
+```{r}
+voxelSelection <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  group_by(VoxelID) %>% 
+  summarise(PropSum = sum(Prop)) %>% 
+  ungroup() %>% 
+  filter(PropSum < 0.95) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(VoxelID %in% voxelSelection) %>% 
+  ggplot(aes(x = Prop)) + 
+  geom_histogram() +
+  facet_wrap(~HumanRegion)
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(VoxelID %in% voxelSelection) %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = c("nucleus accumbens", "caudate nucleus", "putamen", "septal nuclei", "amygdala"))) %>% 
+  ggplot(aes(x = HumanRegion, y = Prop, group = VoxelID)) + 
+  geom_line(size = 0.05) + 
+  geom_point(size = 0.25) +
+  geom_hline(yintercept = 0.95,
+             linetype = "dashed",
+             col = "red") + 
+  theme_bw()
+```
+
+```{r}
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  summarise(sum(Prop >= 0.8),
+            sum(Prop >= 0.8)/n())
+```
+
+```{r}
+dfNumVoxels <- dfSimStriatum_MaxSim_Proportions %>% 
+  select(VoxelID, MouseRegion) %>% 
+  distinct() %>% 
+  group_by(MouseRegion) %>% 
+  summarise(nVoxels = n()) %>% 
+  ungroup()
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "septal nuclei") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop >= 0.8) %>% 
+  group_by(MouseRegion) %>% 
+  count() %>% 
+  ungroup() %>% 
+  inner_join(dfNumVoxels, by = "MouseRegion") %>% 
+  mutate(Prop = n/nVoxels)
+```
+
+```{r}
+voxelNAcc <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  filter(MouseRegion == "Nucleus accumbens") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop < 0.8) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(VoxelID %in% voxelNAcc) %>% 
+  filter(Prop >= 0.3) %>% 
+  group_by(VoxelID) %>% 
+  top_n(n = 1, wt = Prop) %>% 
+  group_by(HumanRegion) %>% 
+  count()
+```
+
+```{r}
+voxelNAcc <- dfSimStriatum_MaxSim_Proportions %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  filter(MouseRegion == "Olfactory tubercle") %>% 
+  arrange(desc(Prop)) %>% 
+  filter(Prop < 0.8) %>% 
+  pull(VoxelID)
+
+dfSimStriatum_MaxSim_Proportions %>% 
+  filter(VoxelID %in% voxelNAcc) %>% 
+  filter(Prop >= 0.3) %>% 
+  group_by(VoxelID) %>% 
+  top_n(n = 1, wt = Prop) %>% 
+  group_by(HumanRegion) %>% 
+  count()
+```
+
+
+# Supplementary
+
+
+```{r}
+dfSimStriatumMean <- rowMeans(arraySimStriatum, dims = 2) %>% 
+  as_tibble(rownames = "HumanRegion") %>% 
+  pivot_longer(cols = -HumanRegion,
+               names_to = "VoxelID",
+               values_to = "Similarity") %>% 
+  inner_join(dfLabelsMouse %>% select(VoxelID, Region134),
+             by = "VoxelID") %>% 
+  rename(MouseRegion = Region134)
+
+#Specify human targets
+humanTargets <- c("caudate nucleus", 
+                  "putamen",
+                  "nucleus accumbens",
+                  "substantia innominata",
+                  "amygdala")
+
+dfSimStriatumMean_HumanTargets <- dfSimStriatumMean %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  select(-MouseRegion) %>% 
+  pivot_wider(id_cols = VoxelID, names_from = HumanRegion, values_from = Similarity) %>% 
+  column_to_rownames("VoxelID")
+
+listArrayHumanTargets_200um <- vector(mode = "list", length = ncol(dfSimStriatumMean_HumanTargets))
+names(listArrayHumanTargets_200um) <- colnames(dfSimStriatumMean_HumanTargets)
+listArrayHumanTargets_200um <- map(listArrayHumanTargets_200um, function(x){return(emptyArray)})
+
+#For each of the human targets, map the proportions to voxels in a MINC array
+for(j in 1:ncol(dfSimStriatumMean_HumanTargets)){
+  indVoxelMatch <- match(rownames(dfSimStriatumMean_HumanTargets), names(emptyArray))
+  listArrayHumanTargets_200um[[j]][indVoxelMatch] <- dfSimStriatumMean_HumanTargets[,j]
+  attributes(listArrayHumanTargets_200um[[j]]) <- attributes(dsurqeLabels_200um)
+}
+```
+
+```{r fig.width = 4, fig.height = 8}
+fig6_ss_caudoputamen_grob <- sliceSeries(nrow = 8, ncol = 1, begin = 36, end = 46) %>%
+  anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["caudate nucleus"]]), low = 0.95, high = 0.98) %>%
+  addtitle("caudate") %>% 
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["putamen"]]), low = 0.95, high = 0.98) %>%
+  legend("average similarity over latent spaces") %>% 
+  addtitle("putamen") %>% 
+  draw()
+  # grobify(layout = "row")
+```
+
+```{r fig.height = 8, fig.width = 7}
+#Make base slice series
+simlow <- 0.7
+simhigh <- 0.95
+sliceSeries(nrow = 8, ncol = 1, begin = 36, end = 49) %>% 
+  anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["caudate nucleus"]]), low = simlow, high = simhigh) %>%
+  addtitle("caudate") %>% 
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["putamen"]]), low = simlow, high = simhigh) %>%
+  addtitle("putamen") %>% 
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["nucleus accumbens"]]), low = simlow, high = simhigh) %>%
+  addtitle("accumbens") %>% 
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["substantia innominata"]]), low = simlow, high = simhigh) %>%
+  addtitle("sub. innominata") %>% 
+  sliceSeries() %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_200um[["amygdala"]]), low = simlow, high = simhigh) %>% 
+  addtitle("amygdala") %>% 
+  legend("average similarity over latent spaces") %>% 
+  draw()
+```
+
+
+
+
+
+```{r import-voxel-sim}
+#Human striatal regions
+striatumHuman <- c("caudate nucleus",
+                   "putamen",
+                   "nucleus accumbens")
+
+#Prune the AMBA tree down to 134 bilateral regions
+treeMouse_134 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_134,
+              nodes = unique(dfLabelsMouse$Region134),
+              method = "BelowNode")
+
+#Extract striatum ROIs from the tree
+striatumMouse <- FindNode(treeMouse_134, "Striatum")$Get("name", filterFun = isLeaf)
+names(striatumMouse) <- NULL
+
+
+#Run time is about 2 hours
+runSimMat <- FALSE
+if(runSimMat){
+  
+  files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
+    map(function(x){
+      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+    })
+  
+  computeMaxSimilarity <- function(mouse, human){
+    
+    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+      select(-Region) %>% 
+      mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
+      inner_join(dfLabelsMouse %>% 
+                   select(VoxelID, Region = Region134),
+                 by = "VoxelID") %>% 
+      filter(Region %in% striatumMouse) %>% 
+      select(-Region) %>% 
+      column_to_rownames("VoxelID") %>% 
+      as.matrix() %>% 
+      t()
+    
+    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+      mutate(SampleID = str_c("S", 1:nrow(.))) %>%
+      select(-Region) %>% 
+      column_to_rownames("SampleID") %>% 
+      as.matrix() %>% 
+      t()
+    
+    #Compute similarity matrix
+    matSim <- buildSimilarityMatrix(x1 = matHuman,
+                                    x2 = matMouse,
+                                    method = "correlation")
+    
+    #Extract maximal similarity
+    out <- matSim %>% 
+      as_tibble(rownames = "SampleID") %>% 
+      inner_join(dfLabelsHuman %>% select(SampleID, Region88),
+                 by = "SampleID") %>% 
+      rename(HumanRegion = Region88) %>% 
+      pivot_longer(cols = -c(SampleID, HumanRegion),
+                   names_to = "VoxelID",
+                   values_to = "Similarity") %>% 
+      inner_join(dfLabelsMouse %>% select(VoxelID, Region134),
+                 by = "VoxelID") %>% 
+      rename(MouseRegion = Region134) %>% 
+      group_by(VoxelID) %>% 
+      filter(Similarity == max(Similarity)) %>% 
+      ungroup()
+    
+    return(out)
+  }
+  
+  ti <- Sys.time()
+  listSimStriatum_MaxSim <- map2(.x = files[["Mouse"]],
+                                 .y = files[["Human"]],
+                                 .f = computeMaxSimilarity)
+  names(listSimStriatum_MaxSim) <- str_c("MLP", 1:length(listSimStriatum_MaxSim))
+  
+  save(listSimStriatum_MaxSim,
+       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxelwiseMax.RData"))
+  
+  tf <- Sys.time()
+  
+  print(tf-ti)
+  
+} else {
+  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxelwiseMax.RData"))
+  listSimStriatum_MaxSim <- listMaxSimilarity
+  rm(listMaxSimilarity)
+  # FIX THIS -------
+}
+
+#Reduce list of maximum similarities to a data frame
+dfSimStriatum_MaxSim <- map_dfr(.x = listSimStriatum_MaxSim,
+                                .f = function(x){return(x)},
+                                .id = "Data") %>% 
+  mutate(HumanRegionCoarse = ifelse(HumanRegion %in% striatumHuman, HumanRegion, "other"))
+```
+
+```{r fig6-panelB-ss-caudoputamen}
+#Make slice series grob
+# fig6_ss_caudoputamen_grob <- sliceSeries(nrow = 1, ncol = 4, slices = c(36, 39, 42, 45)) %>% 
+#   anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>% 
+#   overlay(mincArray(listArrayHumanTargets_200um[[1]]), low = 0.1, high = 1) %>%
+#   sliceSeries(nrow = 1, ncol = 4, slices = c(36, 39, 42, 45)) %>% anatomy() %>% 
+#   overlay(mincArray(listArrayHumanTargets_200um[[2]]), low = 0.1, high = 1) %>% 
+#   grobify(layout = "row")
+
+slicesCaudoputamen <- c(144, 154, 166, 176)
+fig6_ss_caudoputamen_grob <- sliceSeries(nrow = 1, ncol = 4, slices = slicesCaudoputamen) %>%
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>%
+  overlay(mincArray(listArrayHumanTargets_50um[[1]]), low = 0.1, high = 1) %>%
+  sliceSeries(nrow = 1, ncol = 4, slices = slicesCaudoputamen) %>% anatomy() %>%
+  overlay(mincArray(listArrayHumanTargets_50um[[2]]), low = 0.1, high = 1) %>%
+  grobify(layout = "row")
+
+#Make target labels grob
+fig6_ss_caudoputamen_labels_grob <- textGrob(humanTargets_labels[2:1],
+                                             x = 0.75,
+                                             y = unit(c(0.25, 0.75), 'npc'),
+                                             rot = 90,
+                                             gp = gpar(fontsize = 10))
+
+#Panel B title
+fig6_ss_caudoputamen_title_grob <- textGrob("Voxels in the mouse caudoputamen maximally\nsimilar to human striatal regions",
+                                            x = 0, y = 0.2,
+                                            just = c("left", "bottom"),
+                                            gp = gpar(lineheight = 1))
+```
+
+```{r fig6-panelC-ss-accumbens}
+#Make base slice series
+# fig6_ss_accumbens_base <- sliceSeries(nrow = 1, ncol = 5, begin = 42, end = 49) %>%
+#   anatomy(mincArray(dsurqeAverage_200um), low = 700, high = 1400) %>% 
+#   overlay(mincArray(listArrayHumanTargets_200um[[3]]), low = 0.1, high = 1) %>% 
+#   sliceSeries() %>% anatomy() %>% 
+#   overlay(mincArray(listArrayHumanTargets_200um[[4]]), low = 0.1, high = 1) %>% 
+#   sliceSeries() %>% anatomy() %>% 
+#   overlay(mincArray(listArrayHumanTargets_200um[[5]]), low = 0.1, high = 1) 
+
+fig6_ss_accumbens_base <- sliceSeries(nrow = 1, ncol = 5, begin = 178, end = 193) %>%
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_50um[[3]]), low = 0.1, high = 1) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_50um[[4]]), low = 0.1, high = 1) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_50um[[5]]), low = 0.1, high = 1) 
+
+#Create the grob from the base slice series
+fig6_ss_accumbens_grob <- grobify(fig6_ss_accumbens_base, layout = "row")
+
+#Create a separate legend grob from the slice series
+fig6_ss_accumbens_legend_grob <- fig6_ss_accumbens_base %>%
+  legend("Proportion of latent spaces") %>%
+  grobify() %>%
+  getGrob("legend")
+fig6_ss_accumbens_legend_grob$children[[2]]$x <- unit(0.25, 'npc')
+fig6_ss_accumbens_legend_grob$children[[3]]$x <- unit(0.25, 'npc')
+fig6_ss_accumbens_legend_grob$children[[4]]$x <- unit(0.8, 'npc')
+
+#Make targets labels grob
+fig6_ss_accumbens_labels_grob <- textGrob(humanTargets_labels[5:3],
+                                          x = 0.75,
+                                          y = unit(c(0.15, 0.5, 0.85), 'npc'),
+                                          rot = 90,
+                                          gp = gpar(lineheight = 1,
+                                                    fontsize = 8))
+
+#Panel C title
+fig6_ss_accumbens_title_grob <- textGrob("Voxels in the mouse nucleus accumbens maximally\nsimilar to human striatal regions",
+                                         x = 0, y = 0.2,
+                                         just = c("left", "bottom"),
+                                         gp = gpar(lineheight = 1))
+```
+
+```{r fig6-beeswarm}
+#Identify mouse targets that are either maximal or in the striatum
+dfSimStriatum_MaxSim <- dfSimStriatum %>% 
+  group_by(Data, SampleID) %>% 
+  mutate(IsMaximal = Similarity == max(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(IsStriatal = MouseRegion %in% striatumMouse) %>% 
+  filter(IsMaximal | IsStriatal)
+
+#Data frame to indicate striatum matches
+dfStriatalMatch <- tibble(HumanRegion = striatumHuman,
+                          MouseRegion = c("Caudoputamen", "Caudoputamen", "Nucleus accumbens"))
+
+#For every sample in the striatum, compute the average maximal similarity to the expected match
+dfSimStriatum_MaxSim_Mean <- dfSimStriatum_MaxSim %>% 
+  semi_join(dfStriatalMatch, 
+            by = c("HumanRegion", "MouseRegion")) %>% 
+  group_by(SampleID) %>% 
+  summarise(MeanSimilarity = mean(Similarity)) %>% 
+  ungroup()
+
+#Data frame containing bins for proportion values
+dfBins <- tibble(BinID = 1:5,
+                 BinLabel = c("[0.0, 0.2]",
+                              "(0.2, 0.4]",
+                              "(0.4, 0.6]",
+                              "(0.6, 0.8]",
+                              "(0.8, 1.0]")) %>% 
+  mutate(BinLabel = factor(BinLabel, levels = BinLabel[order(BinID)]))
+
+#Create a data frame with all combinations of human samples and mouse target regions
+dfCombinationGrid <- expand_grid(SampleID = unique(dfSimStriatum_MaxSim$SampleID),
+                                 MouseRegion = unique(dfSimStriatum_MaxSim$MouseRegion)) %>% 
+  inner_join(dfLabelsHumanStriatum,
+             by = "SampleID") %>% 
+  rename(HumanRegion = Region) 
+
+#For every sample, compute the proportion of latent spaces where the top hit is the expected match
+dfSimStriatum_MaxSim_Proportions <- dfSimStriatum_MaxSim %>% 
+  filter(IsMaximal) %>% 
+  group_by(SampleID, HumanRegion, MouseRegion) %>% 
+  summarise(Prop = n()/nMLPSamples) %>% 
+  ungroup() %>% 
+  right_join(dfCombinationGrid,
+             by = c("SampleID", "HumanRegion", "MouseRegion")) %>% 
+  mutate(Prop = ifelse(is.na(Prop), 0, Prop),
+         BinID = case_when(Prop <= 0.20 ~ 1,
+                           Prop > 0.2 & Prop <= 0.4 ~ 2,
+                           Prop > 0.4 & Prop <= 0.6 ~ 3,
+                           Prop > 0.6 & Prop <= 0.8 ~ 4,
+                           Prop > 0.8 ~ 5)) %>% 
+  left_join(dfBins,
+            by = "BinID") 
+
+#Join average similarity and proportion information
+dfSimStriatum_MaxSim_Proportions_Match <- inner_join(dfSimStriatum_MaxSim_Proportions,
+                                                     dfSimStriatum_MaxSim_Mean,
+                                                     by = "SampleID") %>% 
+  semi_join(dfStriatalMatch,
+            by = c("HumanRegion", "MouseRegion")) %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = striatumHuman))
+
+set.seed(1)
+fig6_beeswarm <- ggplot(dfSimStriatum_MaxSim_Proportions_Match, 
+       aes(x = HumanRegion, 
+           y = MeanSimilarity,
+           fill = BinLabel)) +  
+  ggbeeswarm::geom_beeswarm(shape = 21,
+                            col = "grey25",
+                            size = 1.5,
+                            alpha = 0.8,
+                            cex = 1) + 
+  # scale_y_continuous(breaks = seq(0.8, 1, 0.02)) +
+  # scale_x_continuous(labels = c("Caudate", "Putamen", "Nucleus\naccumbens"),
+  #                    breaks = 1:3,
+  #                    expand = expansion(mult = 0.1)) + 
+  scale_fill_manual(values = RColorBrewer::brewer.pal(n = 9, name = "Blues")[9:4]) +
+  labs(x = "Human striatal region",
+       y = "Average maximal similarity to expected match",
+       fill = "Proportion of\nlatent spaces") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
+
+fig6_beeswarm_grob <- ggplotGrob(fig6_beeswarm) %>% grid.force()
+
+# fig6_beeswarm_panel_grob <- getGrob(fig6_beeswarm_grob, "panel.7-5-7-5") 
+# fig6_beeswarm_ytext_grob <- getGrob(fig6_beeswarm_grob, "axis-l.7-4-7-4")
+# fig6_beeswarm_ytitle_grob <- getGrob(fig6_beeswarm_grob, "ylab-l.7-3-7-3")
+# fig6_beeswarm_xtext_grob <- getGrob(fig6_beeswarm_grob, "axis-b.8-5-8-5")
+# fig6_beeswarm_xtitle_grob <- getGrob(fig6_beeswarm_grob, "xlab-b.9-5-9-5")
+# fig6_beeswarm_legend_grob <- getGrob(fig6_beeswarm_grob, "guide-box.7-9-7-9")
+```
+
+```{r fig6-accumbens, eval = FALSE, include = FALSE}
+#Identify the top 5 mouse ROIs for every sample in the human accumbens in every latent space
+#Calculate the proportion of MLP samples in which each mouse region is in the top 5
+dfSimStriatum_NAcc_Top5 <- dfSimStriatum %>%
+  filter(HumanRegion == "nucleus accumbens") %>% 
+  group_by(SampleID, Data) %>% 
+  top_n(n = 5, wt = Similarity) %>% 
+  group_by(SampleID, MouseRegion) %>% 
+  summarise(count = n(),
+            Prop = n()/nMLPSamples) %>% 
+  ungroup()
+
+#Proportions of 0 are not counted so we need to add them
+#Create a data frame containing all combinations of accumbens samples and mouse ROIs in the top 5
+dfCombinationGrid <- expand_grid(SampleID = unique(dfSimStriatum_NAcc_Top5$SampleID),
+                              MouseRegion = unique(dfSimStriatum_NAcc_Top5$MouseRegion))
+
+#Include mouse ROIs that have proportions of 0
+dfSimStriatum_NAcc_Top5 <- right_join(dfSimStriatum_NAcc_Top5,
+                                      dfCombinationGrid,
+                                      by = c("SampleID", "MouseRegion")) %>% 
+  mutate(count = ifelse(is.na(count), 0, count),
+         Prop = ifelse(is.na(Prop), 0, Prop),
+         TopN = 5)
+
+#Repeat the process for the top 1-4 matches
+dfSimStriatum_NAcc_TopMatches <- dfSimStriatum_NAcc_Top5
+for(i in 1:4){
+  dfSimStriatum_NAcc_TopMatches_temp <- dfSimStriatum %>% 
+    filter(HumanRegion == "nucleus accumbens") %>% 
+    group_by(SampleID, Data) %>% 
+    top_n(n = i, wt = Similarity) %>% 
+    group_by(SampleID, MouseRegion) %>% 
+    summarise(count = n(),
+              Prop = n()/nMLPSamples) %>% 
+    ungroup() %>% 
+    right_join(dfCombinationGrid, by = c("SampleID", "MouseRegion")) %>% 
+    mutate(count = ifelse(is.na(count), 0, count),
+           Prop = ifelse(is.na(Prop), 0, Prop),
+           TopN = i) 
+  
+  dfSimStriatum_NAcc_TopMatches <- bind_rows(dfSimStriatum_NAcc_TopMatches,
+                                             dfSimStriatum_NAcc_TopMatches_temp)
+}
+
+
+#Prune the tree to the level of our mouse atlas
+treeMouse_69 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_69,
+              nodes = mouseROIs,
+              method = "BelowNode")
+
+#Extract AMBA colours corresponding to striatal regions
+dfMouseColours <- treeMouse_69$Get("color_hex_triplet", filterFun = isLeaf) %>% 
+  enframe(name = "MouseRegion",
+          value = "Colour")
+
+#Extract 4 mouse ROIs with highest average proportion 
+mouseLevels <- dfSimStriatum_NAcc_TopMatches %>% 
+  filter(TopN == 5) %>% 
+  group_by(MouseRegion) %>% 
+  summarise(MeanProp = mean(Prop)) %>% 
+  arrange(desc(MeanProp)) %>% 
+  top_n(n = 4, wt = MeanProp) %>% 
+  pull(MouseRegion)
+
+#Extract colours for those mouse ROI
+dfMouseColours <- dfMouseColours %>% 
+  filter(MouseRegion %in% mouseLevels) %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = mouseLevels))
+
+dfSimStriatum_NAcc_TopMatches <- dfSimStriatum_NAcc_TopMatches %>% 
+  filter(MouseRegion %in% mouseLevels) %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = mouseLevels))
+
+
+fig6_nacc_topmatches <- ggplot(dfSimStriatum_NAcc_TopMatches,
+                               aes(x = TopN, y = Prop, group = SampleID, col = MouseRegion)) + 
+  geom_line(alpha = 1) + 
+  geom_point(shape = 21,
+             mapping = aes(fill = MouseRegion),
+             col = "grey25") + 
+  facet_wrap(~MouseRegion, ncol = 2, nrow = 2) +
+  scale_colour_manual(values = arrange(dfMouseColours, MouseRegion)$Colour,
+                      guide = F) + 
+  scale_fill_manual(values = arrange(dfMouseColours, MouseRegion)$Colour,
+                    guide = F) + 
+  labs(x = "Number of top matches",
+       y = "Proportion of latent spaces") + 
+  theme_bw()
+
+fig6_nacc_topmatches_grob <- ggplotGrob(fig6_nacc_topmatches) %>% grid.force()
+fig6_nacc_topmatches
+```
