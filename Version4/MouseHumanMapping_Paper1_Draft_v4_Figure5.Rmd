@@ -371,20 +371,6 @@ ggplot(aes(axis1 = Seed, axis2 = Target, y = prop)) +
 
 
 
-```{r}
-lvls <- dfSimilarityProfiles_Cx_MaxSim_Summary %>% 
-  pull(Seed) %>% 
-  sort() %>% 
-  as.character()
-
-temp3 <- temp2 %>% 
-  mutate(Seed = factor(Seed, levels = lvls),
-         Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical")))
-
-ggplot(temp3, aes(x = Target, y = Seed, fill = prop)) + 
-  geom_tile() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-```
 
 I'm not sure what to look at here. I feel like this is a mess. 
 
@@ -415,40 +401,95 @@ temp3 %>%
   arrange(desc(Seed))
 ```
 
-```{r}
+```{r fig.width = 10}
 temp4 <- temp3 %>% 
+  filter(IsMaxProp == 1) %>% 
+  mutate(y = 1)
+
+structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
+
+dfColoursHuman <- dfLabelsHuman %>% 
+  select(Region88, Region16) %>% 
+  distinct() %>% 
+  mutate(Region16 = ifelse(Region16 %in% structsHuman_Cx_16, Region16, "Not cortical"),
+         Region88 = ifelse(Region16 == "Not cortical", "Not cortical", Region88)) %>% 
+  distinct()
+
+treeHuman_16 <- Clone(treeHuman)
+pruneAnatTree(treeHuman_16,
+              nodes = listLabelsHumanReordered$Region16_reordered,
+              method = "BelowNode")
+dfColoursHuman_16 <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf) %>%
+  enframe(name = "Region16",
+          value = "color_hex_triplet") %>% 
+    right_join(dfColoursHuman,
+               by = "Region16") %>% 
+    mutate(color_hex_triplet = ifelse(Region16 == "Not cortical", "black", color_hex_triplet))
+
+temp4 <- temp4 %>% 
+  left_join(dfColoursHuman_16,
+            by = c("Target" = "Region88")) %>% 
+  mutate(Seed = factor(Seed, levels = lvls),
+         Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical")),
+         Region16 = factor(Region16, levels = c(structsHuman_Cx_16, "Not cortical")))
+
+coloursHuman <- temp4 %>% 
+  select(Region16, color_hex_triplet) %>% 
+  distinct() %>% 
+  arrange(Region16) %>% 
+  pull(color_hex_triplet)
+
+
+library(ggalluvial)
+ggplot(temp4,
+       aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
+  geom_alluvium(aes(fill = prop),
+                col = "grey50") + 
+  geom_stratum() + 
+  geom_text(stat = "stratum",
+            aes(label = after_stat(stratum),
+                col = Region16),
+            size = 3, fontface = "bold") + 
+  scale_x_discrete(limits = c("Mouse", "Human"), expand = expansion(mult = 0.1)) + 
+  scale_fill_distiller(palette = "Blues", direction = 1) +
+  scale_colour_manual(values = coloursHuman) + 
+  labs(fill = "Proportion of latent spaces",
+       col = "Human cerebral lobes",
+       title = "Human regions maximally similar to mouse isocortical regions\nin the highest proportion of latent spaces",
+       caption = "Mouse regions ordered according to average maximal correlation\nHuman regions ordered anatomically") + 
+  theme_minimal() + 
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(face = "bold", size = 12),
+        panel.grid = element_blank())
+```
+
+
+```{r fig.width=10}
+temp5 <- temp3 %>% 
   left_join(dfLabelsHuman %>% 
               select(Region16, Region88) %>% 
               distinct(),
             by = c("Target" = "Region88")) %>% 
   mutate(Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical")))
 
-treeHuman_16 <- Clone(treeHuman)
-pruneAnatTree(treeHuman_16,
-              nodes = listLabelsHumanReordered$Region16_reordered,
-              method = "BelowNode")
-dfColoursHuman <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf) %>% 
-  enframe(name = "Region16",
-          value = "color_hex_triplet")
-
-temp4 <- temp4 %>% 
-  left_join(dfColoursHuman,
+temp5 <- temp5 %>% 
+  left_join(dfColoursHuman_16 %>% 
+              select(Region16, color_hex_triplet) %>% 
+              distinct(),
             by = "Region16") %>% 
   mutate(Region16 = ifelse(is.na(Region16), "Not cortical", Region16),
          color_hex_triplet = ifelse(is.na(color_hex_triplet), "white", color_hex_triplet),
-         Region16 = factor(Region16, levels = c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe", "Not cortical")))
+         Region16 = factor(Region16, levels = c(structsHuman_Cx_16, "Not cortical")))
 
-colourPalette <- temp4 %>%
+coloursHuman <- temp5 %>%
   select(Region16, color_hex_triplet) %>% 
   distinct() %>% 
   arrange(Region16) %>% 
   pull(color_hex_triplet)
-```
 
-
-```{r fig.width = 10}
-temp4 <- temp4 %>% mutate(prop = ifelse(prop == 0, NA, prop))
-ggplot(temp4, aes(x = Target, y = Seed)) + 
+temp5 <- temp5 %>% mutate(prop = ifelse(prop == 0, NA, prop))
+ggplot(temp5, aes(x = Target, y = Seed)) + 
   geom_tile(aes(fill = Region16),
             col = "grey50",
             alpha = 0.7) + 
@@ -458,43 +499,17 @@ ggplot(temp4, aes(x = Target, y = Seed)) +
   scale_size_continuous(range = c(0, 4)) + 
   scale_color_manual(values = c("grey50", "black")) + 
     labs(x = "Human cortical target",
-         y = "Mouse isocortical seed") + 
+         y = "Mouse isocortical seed",
+         fill = "Human cerebral lobes",
+         col = "Highest proportion?",
+         size = "Proportion of latent spaces",
+         caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically\nColumns sum to 1",
+         title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 ```
 
-```{r fig.width = 10}
-temp4 <- temp4 %>% mutate(prop = ifelse(prop == 0, NA, prop))
-ggplot(temp4, aes(x = Target, y = Seed)) + 
-  # geom_tile(aes(fill = Region16),
-  #           col = "grey50",
-  #           alpha = 0.7) + 
-  geom_tile(aes(fill = factor(1)),
-            col = "grey75") + 
-  geom_point(aes(size = prop, col = Region16),
-             na.rm = T) +
-  scale_fill_manual(values = "grey30") + 
-  scale_size_continuous(range = c(0, 4)) + 
-  scale_color_manual(values = colourPalette) + 
-  labs(x = "Human cortical target",
-       y = "Mouse isocortical seed") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
 
-```{r}
-ggplot(temp3, aes(x = Target, y = Seed, fill = prop, col = IsMaxProp, size = IsMaxProp)) + 
-  geom_tile() + 
-  scale_fill_gradient(low = "white", high = "black", breaks = seq(0, 1, 0.25)) +
-  scale_color_manual(values = c("grey50", "red")) + 
-  scale_size_manual(values = c(0.1, 0.5)) + 
-  labs(x = "Human cortical target",
-       y = "Mouse isocortical seed") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-```
 
 
