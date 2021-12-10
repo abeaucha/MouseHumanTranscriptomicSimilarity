@@ -314,43 +314,6 @@ save(fig5_grob,
 # Supplementary
 
 
-```{r}
-#Identify maximal similarity values for every seed and data set
-dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
-  group_by(Data, Seed) %>% 
-  filter(Similarity == max(Similarity)) %>% 
-  ungroup()
-
-structsHuman_Cx <- dfLabelsHuman %>% 
-  select(Region16, Region88) %>% 
-  distinct() %>% 
-  filter(Region16 %in% c("frontal lobe", "limbic lobe", "insula", "occipital lobe", "parietal lobe", "temporal lobe")) %>% 
-  filter(!(Region88 %in% c("claustrum", "dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field", "subiculum"))) %>% 
-  mutate(Region88 = factor(Region88, levels = listLabelsHumanReordered$Region88_reordered)) %>% 
-  arrange(Region88) %>% 
-  pull(Region88) %>% 
-  as.character()
-
-dfCombinations <- expand_grid(Seed = c(structsMouse_Cx),
-                              Target = c(structsHuman_Cx, "Not cortical"))
-
-
-
-temp <- dfSimilarityProfiles_Cx_MaxSim %>% 
-  mutate(Target = ifelse(Target %in% structsHuman_Cx, Target, "Not cortical")) %>% 
-  group_by(Seed, Target) %>% 
-  summarise(prop = n()/500,
-            meansim = mean(Similarity)) %>% 
-  ungroup()
-
-temp2 <- temp %>% 
-  right_join(dfCombinations,
-             by = c("Seed", "Target")) %>% 
-  mutate(prop = ifelse(is.na(prop), 0, prop))
-
-```
-
-
 I'm not sure what to look at here. I feel like this is a mess. 
 
 Anterior-posterior gradient?
@@ -362,31 +325,75 @@ How do I parse this out?
 First let's look at highest proportion for each mouse seed
 
 ```{r}
-lvls <- dfSimilarityProfiles_Cx_MaxSim_Summary %>% 
+#Identify maximal similarity values for every seed and data set
+dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
+  group_by(Data, Seed) %>% 
+  filter(Similarity == max(Similarity)) %>% 
+  ungroup()
+
+#List of human cerebral lobes
+structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
+
+#Get a list of fine human regions in the cortex (excluding hippocampal regions)
+structsHuman_Cx <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(Region16 %in% structsHuman_Cx_16) %>% 
+  filter(!(Region88 %in% c("claustrum", "dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field", "subiculum"))) %>% 
+  mutate(Region88 = factor(Region88, levels = listLabelsHumanReordered$Region88_reordered)) %>% 
+  arrange(Region88) %>% 
+  pull(Region88) %>% 
+  as.character()
+
+#Combination of all mouse and human cortical regions
+dfCombinations <- expand_grid(Seed = c(structsMouse_Cx),
+                              Target = c(structsHuman_Cx, "Not cortical"))
+
+#Compute proportion of latent spaces and average similarity for mouse-human Cx pairs
+dfCortex_MaxSim_Summary <- dfSimilarityProfiles_Cx_MaxSim %>% 
+  mutate(Target = ifelse(Target %in% structsHuman_Cx, Target, "Not cortical")) %>% 
+  group_by(Seed, Target) %>% 
+  summarise(prop = n()/500,
+            avgSimilarity = mean(Similarity)) %>% 
+  ungroup()
+
+#Fill in pairs where proportion is 0
+dfCortex_MaxSim_Summary <- dfCortex_MaxSim_Summary %>% 
+  right_join(dfCombinations,
+             by = c("Seed", "Target")) %>% 
+  mutate(prop = ifelse(is.na(prop), 0, prop))
+
+#Get mouse levels based on average maximal similarity
+lvlsCortexMouse <- dfSimilarityProfiles_Cx_MaxSim_Summary %>% 
   pull(Seed) %>% 
   sort() %>% 
   as.character()
 
-temp3 <- temp2 %>% 
+#Identify which proportion value is maximal for each mouse Cx region
+dfCortex_MaxSim_Summary <- dfCortex_MaxSim_Summary %>% 
   group_by(Seed) %>% 
   mutate(IsMaxProp = ifelse(prop == max(prop), 1, 0)) %>% 
   ungroup() %>% 
   mutate(IsMaxProp = factor(IsMaxProp),
-         Seed = factor(Seed, levels = lvls))
+         Seed = factor(Seed, levels = lvlsCortexMouse))
+```
 
-temp3 %>% 
+For every mouse isocortical region, what is the human match that occurs in the highest proportion of latent spaces? 
+
+```{r}
+dfCortex_MaxSim_Summary %>% 
   filter(IsMaxProp == 1) %>% 
   select(Seed, Target, prop) %>% 
   arrange(desc(Seed))
 ```
 
 ```{r fig.width = 10}
-temp4 <- temp3 %>% 
+#Isolate those pairs with the highest proportions
+dfCortex_MaxSim_Summary_MaxProp <- dfCortex_MaxSim_Summary %>% 
   filter(IsMaxProp == 1) %>% 
   mutate(y = 1)
 
-structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
-
+#Start building data frame with AHBA colours
 dfColoursHuman <- dfLabelsHuman %>% 
   select(Region88, Region16) %>% 
   distinct() %>% 
@@ -394,25 +401,30 @@ dfColoursHuman <- dfLabelsHuman %>%
          Region88 = ifelse(Region16 == "Not cortical", "Not cortical", Region88)) %>% 
   distinct()
 
+#Generate human tree with 16 broad regions
 treeHuman_16 <- Clone(treeHuman)
 pruneAnatTree(treeHuman_16,
               nodes = listLabelsHumanReordered$Region16_reordered,
               method = "BelowNode")
-dfColoursHuman_16 <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf) %>%
+
+#Get colours for cerebral lobes
+dfColoursHuman <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf) %>%
   enframe(name = "Region16",
           value = "color_hex_triplet") %>% 
     right_join(dfColoursHuman,
                by = "Region16") %>% 
     mutate(color_hex_triplet = ifelse(Region16 == "Not cortical", "black", color_hex_triplet))
 
-temp4 <- temp4 %>% 
-  left_join(dfColoursHuman_16,
+#Add colours to max prop data frame
+dfCortex_MaxSim_Summary_MaxProp <- dfCortex_MaxSim_Summary_MaxProp %>% 
+  left_join(dfColoursHuman,
             by = c("Target" = "Region88")) %>% 
-  mutate(Seed = factor(Seed, levels = lvls),
+  mutate(Seed = factor(Seed, levels = lvlsCortexMouse),
          Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical")),
          Region16 = factor(Region16, levels = c(structsHuman_Cx_16, "Not cortical")))
 
-coloursHuman <- temp4 %>% 
+#Extract colour palette for human cerebral lobes
+coloursHuman <- dfCortex_MaxSim_Summary_MaxProp %>% 
   select(Region16, color_hex_triplet) %>% 
   distinct() %>% 
   arrange(Region16) %>% 
@@ -420,7 +432,7 @@ coloursHuman <- temp4 %>%
 
 
 library(ggalluvial)
-psankey <- ggplot(temp4,
+plotCxAlluvial_prop <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
        aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = prop),
                 col = "grey50") + 
@@ -441,13 +453,13 @@ psankey <- ggplot(temp4,
         axis.text.y = element_blank(),
         axis.text.x = element_text(face = "bold", size = 12),
         panel.grid = element_blank())
-psankey
+plotCxAlluvial_prop
 ```
 
 ```{r fig.width=10}
-psankey_meansim <- ggplot(temp4,
+plotCxAlluvial_avgSim <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
        aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
-  geom_alluvium(aes(fill = meansim),
+  geom_alluvium(aes(fill = avgSimilarity),
                 col = "grey50") + 
   geom_stratum() + 
   geom_text(stat = "stratum",
@@ -466,20 +478,19 @@ psankey_meansim <- ggplot(temp4,
         axis.text.y = element_blank(),
         axis.text.x = element_text(face = "bold", size = 12),
         panel.grid = element_blank())
-psankey_meansim
+plotCxAlluvial_avgSim
 ```
 
 
 ```{r fig.width=10}
-temp5 <- temp3 %>% 
+#Include colours to max similarity summary data frame
+dfCortex_MaxSim_Summary_wColours <- dfCortex_MaxSim_Summary %>% 
   left_join(dfLabelsHuman %>% 
               select(Region16, Region88) %>% 
               distinct(),
             by = c("Target" = "Region88")) %>% 
-  mutate(Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical")))
-
-temp5 <- temp5 %>% 
-  left_join(dfColoursHuman_16 %>% 
+  mutate(Target = factor(Target, levels = c(structsHuman_Cx, "Not cortical"))) %>% 
+  left_join(dfColoursHuman %>% 
               select(Region16, color_hex_triplet) %>% 
               distinct(),
             by = "Region16") %>% 
@@ -487,14 +498,16 @@ temp5 <- temp5 %>%
          color_hex_triplet = ifelse(is.na(color_hex_triplet), "white", color_hex_triplet),
          Region16 = factor(Region16, levels = c(structsHuman_Cx_16, "Not cortical")))
 
-coloursHuman <- temp5 %>%
+coloursHuman <- dfCortex_MaxSim_Summary_wColours %>%
   select(Region16, color_hex_triplet) %>% 
   distinct() %>% 
   arrange(Region16) %>% 
   pull(color_hex_triplet)
 
-temp5 <- temp5 %>% mutate(prop = ifelse(prop == 0, NA, prop))
-ggplot(temp5, aes(x = Target, y = Seed)) + 
+#Recode zero proportions as NA
+dfCortex_MaxSim_Summary_wColours <- dfCortex_MaxSim_Summary_wColours %>% mutate(prop = ifelse(prop == 0, NA, prop))
+
+plotCx_Dotmap_prop <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target, y = Seed)) + 
   geom_tile(aes(fill = Region16),
             col = "grey50",
             alpha = 0.7) + 
@@ -513,14 +526,15 @@ ggplot(temp5, aes(x = Target, y = Seed)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+plotCx_Dotmap_prop
 ```
 
 ```{r fig.width=10}
-ggplot(temp5, aes(x = Target, y = Seed)) + 
+plotCx_Dotmap_avgSim <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target, y = Seed)) + 
   geom_tile(aes(fill = Region16),
             col = "grey50",
             alpha = 0.7) + 
-  geom_point(aes(size = meansim, col = IsMaxProp),
+  geom_point(aes(size = avgSimilarity, col = IsMaxProp),
              na.rm = T) + 
   scale_fill_manual(values = coloursHuman) + 
   scale_size_continuous(range = c(0, 4)) + 
@@ -535,23 +549,21 @@ ggplot(temp5, aes(x = Target, y = Seed)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+plotCx_Dotmap_avgSim
 ```
 
+
 ```{r}
-temp5 %>% 
+dfCortex_MaxSim_Summary_wColours %>% 
   filter(Seed == "Primary somatosensory area") %>% 
-  filter(!is.na(prop)) %>% 
-  select(Seed, Target, Proportion = prop, AvgCorrelation = meansim) %>% 
+  filter(prop != 0) %>% 
+  select(Seed, Target, Proportion = prop, AvgCorrelation = avgSimilarity) %>% 
   arrange(desc(Proportion))
 ```
 
 ```{r fig.width = 10, fig.height = 5}
-dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
-  group_by(Data, Seed) %>% 
-  filter(Similarity == max(Similarity)) %>% 
-  ungroup()
-
-dfS1 <- dfSimilarityProfiles_Cx %>% 
+#Create a data frame containing average correlation between mouse S1 and human cortical regions
+dfSimilarity_S1_Summary <- dfSimilarityProfiles_Cx %>% 
   filter(Seed == "Primary somatosensory area") %>% 
   group_by(Target) %>% 
   summarise(SimilarityMean = mean(Similarity),
@@ -559,24 +571,25 @@ dfS1 <- dfSimilarityProfiles_Cx %>%
             SimilarityUpper = SimilarityMean + 2*SimilaritySd,
             SimilarityLower = SimilarityMean - 2*SimilaritySd) %>% 
   ungroup() %>% 
-  inner_join(dfColoursHuman_16,
+  inner_join(dfColoursHuman,
             by = c("Target" = "Region88")) %>% 
   mutate(Target = factor(Target, levels = Target[order(SimilarityMean)]),
          Region16 = factor(Region16, levels = structsHuman_Cx_16))
 
-ggplot(dfS1, aes(x = fct_rev(Target), col = Region16)) + 
+ggplot(dfSimilarity_S1_Summary, aes(x = fct_rev(Target), col = Region16)) + 
   geom_pointrange(aes(y = SimilarityMean, ymin = SimilarityLower, ymax = SimilarityUpper)) + 
   scale_color_manual(values = coloursHuman) + 
   labs(x = "Human cerebral target",
        y = "Correlation",
        col = "Human cerebral lobes",
-       title = "Correlation to mouse S1") + 
+       title = "Correlation between the human cerebrum and mouse S1") + 
   theme_dark() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 
 ```{r}
+#Compute aggregated expression matrix for all mouse regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region67, genes) %>% 
   group_by(Region67) %>% 
@@ -586,6 +599,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
   as.matrix() %>% 
   t()
 
+#Compute aggregated expression matrix for all human regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
   select(Region88, genes) %>% 
   group_by(Region88) %>% 
@@ -595,20 +609,25 @@ matExprHuman_scaled <- dfExprHuman_scaled %>%
   as.matrix() %>% 
   t()
 
+#Compute similarity matrix in homologous gene space
 matSim_AllGenes <- buildSimilarityMatrix(x1 = matExprHuman_scaled,
                                          x2 = matExprMouse_scaled)
+```
 
+What are the top matches to the mouse S1 in the original gene space?
+
+```{r}
 matSim_AllGenes[,"Primary somatosensory area"] %>% 
   enframe(name = "HumanRegion",
           value = "Correlation") %>% 
-  inner_join(dfColoursHuman_16,
+  inner_join(dfColoursHuman,
              by = c("HumanRegion" = "Region88")) %>% 
   mutate(HumanRegion = factor(HumanRegion, levels = HumanRegion[order(Correlation)])) %>% 
   arrange(desc(HumanRegion))
 ```
 
 ```{r}
-matSimCx <- dfSimilarityProfiles_Cx %>% 
+matSim_Cx_MLP <- dfSimilarityProfiles_Cx %>% 
   filter(Seed %in% structsMouse_Cx,
          Target %in% structsHuman_Cx) %>% 
   group_by(Seed, Target) %>% 
@@ -617,16 +636,104 @@ matSimCx <- dfSimilarityProfiles_Cx %>%
   pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
   column_to_rownames("Target") %>% 
   as.matrix()
-```
 
-
-```{r fig.width = 6, fig.height = 8}
-pheatmap(matSimCx, cluster_cols = T, cluster_rows  = F)
+matSim_Cx_AllGenes <- matSim_AllGenes[rownames(matSim_AllGenes) %in% structsHuman_Cx, colnames(matSim_AllGenes) %in% structsMouse_Cx]
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-pheatmap(matSimCx, cluster_cols = T, cluster_rows  = T)
+matSim_Cx_MLP_norm <- matSim_Cx_MLP/max(matSim_Cx_MLP)
+clusteredHeatmap_MLP <- pheatmap(matSim_Cx_MLP_norm, cluster_cols = T, cluster_rows  = T)
 ```
 
+```{r fig.width = 10, fig.height = 8}
+matSim_Cx_AllGenes_norm <- matSim_Cx_AllGenes/max(matSim_Cx_AllGenes)
+clusteredHeatmap_AllGenes <- pheatmap(matSim_Cx_AllGenes_norm, cluster_cols = T, cluster_rows  = T)
+```
+
+```{r}
+computeWCSS <- function(x, hc_tree){
+  wcss_tot <- numeric(ncol(x))
+  for(k in 1:ncol(x)){
+    labs <- cutree(hc_tree, k = k)
+    wcss_k <- numeric(k)
+    for(c in 1:k){
+      x_clust <- as.matrix(x[,labs == c])
+      wcss_k[c] <- sum(colSums((x_clust - rowMeans(x_clust))^2))/ncol(x_clust)
+    }
+    wcss_tot[k] <- mean(wcss_k)
+  }
+  return(wcss_tot)
+}
+
+dfWCSS_Cols_MLP <- tibble(k = 1:ncol(matSim_Cx_MLP_norm),
+                          wcss = computeWCSS(x = matSim_Cx_MLP_norm, clusteredHeatmap_MLP$tree_col),
+                          data = "MLP",
+                          axis = "Mouse")
+dfWCSS_Cols_AllGenes <- tibble(k = 1:ncol(matSim_Cx_AllGenes_norm),
+                               wcss = computeWCSS(x = matSim_Cx_AllGenes_norm, clusteredHeatmap_AllGenes$tree_col),
+                               data = "AllGenes",
+                               axis = "Mouse")
+
+dfWCSS_Rows_MLP <- tibble(k = 1:nrow(matSim_Cx_MLP_norm),
+                          wcss = computeWCSS(x = t(matSim_Cx_MLP_norm), clusteredHeatmap_MLP$tree_row),
+                          data = "MLP",
+                          axis = "Human")
+dfWCSS_Rows_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes_norm),
+                               wcss = computeWCSS(x = t(matSim_Cx_AllGenes_norm), clusteredHeatmap_AllGenes$tree_row),
+                               data = "AllGenes",
+                               axis = "Human")
+
+dfWCSS <- bind_rows(dfWCSS_Cols_MLP, dfWCSS_Cols_AllGenes, dfWCSS_Rows_AllGenes, dfWCSS_Rows_MLP)
+```
+
+```{r}
+ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) + 
+  geom_line() + 
+  geom_point() + 
+  # facet_grid(data~axis, scales = "free_y") + 
+  facet_wrap(~axis, nrow = 2, scales = "free_y") +
+  coord_cartesian(xlim = c(0, 14)) + 
+  scale_x_continuous(breaks = seq(0, 40, 2)) + 
+  scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
+  labs(y = "Within-cluster sum of squares",
+       col = "Data",
+       title = "Hierarchical clustering of cerebral correlation values",
+       caption = "Human: 40 clusters total; Mouse: 19 clusters total") + 
+  theme_bw() + 
+  theme(legend.position = "bottom")
+```
+
+```{r}
+getClusterLabels <- function(x, hc_tree){
+  labels <- matrix(0, ncol = ncol(x), nrow = ncol(x))
+  for(k in 1:ncol(x)){
+    labels[,k] <- cutree(hc_tree, k = k)
+  }
+  rownames(labels) <- colnames(x)
+  colnames(labels) <- str_c("k", 1:ncol(x))
+  return(labels)
+}
+
+dfClustLabels_MLP <- getClusterLabels(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col) %>% 
+  as_tibble(rownames = "Region")
+```
+
+
+```{r}
+library(Rtsne)
+tsne_out <- Rtsne(t(matSim_Cx_MLP), perplexity = 4)
+
+df_tsne <- bind_cols(as_tibble(tsne_out$Y),
+                     dfClustLabels_MLP)
+```
+
+```{r fig.width = 10, fig.asp 1}
+library(ggrepel)
+ggplot(df_tsne, aes(x = V1, y = V2, col = factor(k4))) + 
+  geom_point() + 
+  geom_text_repel(aes(label = Region), size = 2) + 
+  # geom(aes(label = Region), size = 2, alpha = 0.5) + 
+  theme_bw()
+```
 
 
