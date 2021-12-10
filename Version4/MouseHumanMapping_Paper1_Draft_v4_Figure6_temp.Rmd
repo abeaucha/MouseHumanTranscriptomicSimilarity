@@ -203,6 +203,85 @@ sliceSeries(nrow = 4, ncol = 4, begin = 34, end = 47) %>%
   draw()
 ```
 
+```{r}
+j <- sample(1:ncol(matExprMouse_CP), size = 1)
+dfExampleModel <- tibble(HumanCaudate = matExprHuman_Striatum[,"caudate nucleus"],
+                         HumanPutamen = matExprHuman_Striatum[,"putamen"],
+                         MouseCPVoxel = matExprMouse_CP[,j])
+mod_example_caudate <- lm(HumanCaudate ~ MouseCPVoxel, data = dfExampleModel)
+intercept_caudate <- summary(mod_example_caudate)$coef[1, "Estimate"]
+beta_caudate <- summary(mod_example_caudate)$coef[2, "Estimate"]
+
+dfExampleModel <- dfExampleModel %>% 
+  mutate(CaudateResiduals = residuals(mod_example))
+
+mod_example_putamen <- lm(HumanPutamen ~ CaudateResiduals, data = dfExampleModel)
+intercept_putamen <- summary(mod_example_putamen)$coef[1, "Estimate"]
+beta_putamen <- summary(mod_example_putamen)$coef[2, "Estimate"]
+```
+
+```{r fig.width = 10, fig.height = 5}
+pcaudate <- ggplot(dfExampleModel, aes(x = MouseCPVoxel, y = HumanCaudate)) + 
+  geom_point() + 
+  geom_abline(intercept = intercept_caudate, 
+              slope = beta_caudate,
+              linetype = "dashed",
+              col = "red") + 
+  coord_cartesian(xlim = c(-5.5, 5.5),
+                  ylim = c(-6, 6)) +
+  labs(x = "Mouse caudoputamen sample voxel expression",
+       y = "Human caudate average expression") + 
+  theme_bw()
+
+pputamen <- ggplot(dfExampleModel, aes(x = CaudateResiduals, y = HumanPutamen)) + 
+  geom_point() + 
+  geom_abline(intercept = intercept_putamen, 
+              slope = beta_putamen,
+              linetype = "dashed",
+              col = "red") + 
+  coord_cartesian(xlim = c(-5.5, 5.5),
+                  ylim = c(-6, 6)) +
+  labs(x = "Caudate model residuals",
+       y = "Human putamen average expression") + 
+  theme_bw()
+
+library(patchwork)
+pcaudate + pputamen
+```
+
+
+
+```{r}
+dfParams <- tibble(VoxelID = colnames(matExprMouse_CP),
+                   beta = 0,
+                   sigma_beta = 0,
+                   tval = 0,
+                   pval = 0)
+
+for(i in 1:ncol(matExprMouse_CP)){
+  mod_caudate <- lm(matExprHuman_Striatum[,"caudate nucleus"] ~ matExprMouse_CP[,i])
+  mod_caudate_resids <- residuals(mod_caudate)
+  
+  mod_putamen <- lm(matExprHuman_Striatum[,"putamen"] ~ mod_caudate_resids)
+  
+  dfParams[i, "beta"] <- summary(mod_putamen)$coef["mod_caudate_resids", "Estimate"]
+  dfParams[i, "sigma_beta"] <- summary(mod_putamen)$coef["mod_caudate_resids", "Std. Error"]
+  dfParams[i, "tval"] <- summary(mod_putamen)$coef["mod_caudate_resids", "t value"]
+  dfParams[i, "pval"] <- summary(mod_putamen)$coef["mod_caudate_resids", "Pr(>|t|)"]
+}
+```
+
+```{r}
+voxelSample <- sample(1:ncol(matExprMouse_CP), size = 8, replace = F)
+matExprHuman_Striatum[,"caudate nucleus"]
+matExprMouse_CP[,voxelSample]
+```
+
+
+```{r}
+
+```
+
 
 ```{r}
 matExprMouse_scaled <- dfExprMouse_scaled %>% 

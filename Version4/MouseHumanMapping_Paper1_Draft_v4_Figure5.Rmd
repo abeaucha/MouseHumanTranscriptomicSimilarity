@@ -813,24 +813,24 @@ dfClustComp %>%
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k3"]))
-clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k3"]))
+clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k4"]))
+clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k4"]))
 
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[match(clusterOrder_rows, rownames(matSim_Cx_MLP)),
                                        match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 
-dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k3"],
+dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k4"],
                                          name = "MouseRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Cols_AllGenes[,"k3"],
+                                 enframe(dfClustLabels_Cols_AllGenes[,"k4"],
                                          name = "MouseRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "MouseRegion") %>% 
   column_to_rownames("MouseRegion")
-dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k3"],
+dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k4"],
                                          name = "HumanRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Rows_AllGenes[,"k3"],
+                                 enframe(dfClustLabels_Rows_AllGenes[,"k4"],
                                          name = "HumanRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "HumanRegion") %>% 
