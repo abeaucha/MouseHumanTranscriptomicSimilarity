@@ -641,13 +641,13 @@ matSim_Cx_AllGenes <- matSim_AllGenes[rownames(matSim_AllGenes) %in% structsHuma
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-matSim_Cx_MLP_norm <- matSim_Cx_MLP/max(matSim_Cx_MLP)
-clusteredHeatmap_MLP <- pheatmap(matSim_Cx_MLP_norm, cluster_cols = T, cluster_rows  = T)
+# matSim_Cx_MLP_norm <- matSim_Cx_MLP/max(matSim_Cx_MLP)
+clusteredHeatmap_MLP <- pheatmap(matSim_Cx_MLP, cluster_cols = T, cluster_rows  = T)
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-matSim_Cx_AllGenes_norm <- matSim_Cx_AllGenes/max(matSim_Cx_AllGenes)
-clusteredHeatmap_AllGenes <- pheatmap(matSim_Cx_AllGenes_norm, cluster_cols = T, cluster_rows  = T)
+# matSim_Cx_AllGenes_norm <- matSim_Cx_AllGenes/max(matSim_Cx_AllGenes)
+clusteredHeatmap_AllGenes <- pheatmap(matSim_Cx_AllGenes, cluster_cols = T, cluster_rows  = T)
 ```
 
 ```{r}
@@ -665,21 +665,21 @@ computeWCSS <- function(x, hc_tree){
   return(wcss_tot)
 }
 
-dfWCSS_Cols_MLP <- tibble(k = 1:ncol(matSim_Cx_MLP_norm),
-                          wcss = computeWCSS(x = matSim_Cx_MLP_norm, clusteredHeatmap_MLP$tree_col),
+dfWCSS_Cols_MLP <- tibble(k = 1:ncol(matSim_Cx_MLP),
+                          wcss = computeWCSS(x = matSim_Cx_MLP, clusteredHeatmap_MLP$tree_col),
                           data = "MLP",
                           axis = "Mouse")
-dfWCSS_Cols_AllGenes <- tibble(k = 1:ncol(matSim_Cx_AllGenes_norm),
-                               wcss = computeWCSS(x = matSim_Cx_AllGenes_norm, clusteredHeatmap_AllGenes$tree_col),
+dfWCSS_Cols_AllGenes <- tibble(k = 1:ncol(matSim_Cx_AllGenes),
+                               wcss = computeWCSS(x = matSim_Cx_AllGenes, clusteredHeatmap_AllGenes$tree_col),
                                data = "AllGenes",
                                axis = "Mouse")
 
-dfWCSS_Rows_MLP <- tibble(k = 1:nrow(matSim_Cx_MLP_norm),
-                          wcss = computeWCSS(x = t(matSim_Cx_MLP_norm), clusteredHeatmap_MLP$tree_row),
+dfWCSS_Rows_MLP <- tibble(k = 1:nrow(matSim_Cx_MLP),
+                          wcss = computeWCSS(x = t(matSim_Cx_MLP), clusteredHeatmap_MLP$tree_row),
                           data = "MLP",
                           axis = "Human")
-dfWCSS_Rows_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes_norm),
-                               wcss = computeWCSS(x = t(matSim_Cx_AllGenes_norm), clusteredHeatmap_AllGenes$tree_row),
+dfWCSS_Rows_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes),
+                               wcss = computeWCSS(x = t(matSim_Cx_AllGenes), clusteredHeatmap_AllGenes$tree_row),
                                data = "AllGenes",
                                axis = "Human")
 
@@ -692,16 +692,41 @@ ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) +
   geom_point() + 
   # facet_grid(data~axis, scales = "free_y") + 
   facet_wrap(~axis, nrow = 2, scales = "free_y") +
-  coord_cartesian(xlim = c(0, 14)) + 
-  scale_x_continuous(breaks = seq(0, 40, 2)) + 
+  coord_cartesian(xlim = c(1, 10),
+                  ylim = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
   scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
-  labs(y = "Within-cluster sum of squares",
+  labs(y = "Within-cluster sum of squared distances",
        col = "Data",
        title = "Hierarchical clustering of cerebral correlation values",
        caption = "Human: 40 clusters total; Mouse: 19 clusters total") + 
   theme_bw() + 
   theme(legend.position = "bottom")
 ```
+
+```{r}
+dfWCSS %>% 
+  group_by(data, axis) %>% 
+  mutate(wcss = wcss/max(wcss)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = k, y = wcss, col = data)) + 
+  geom_line() + 
+  geom_point() + 
+  # facet_grid(data~axis, scales = "free_y") + 
+  facet_wrap(~axis, nrow = 2) +
+  coord_cartesian(xlim = c(1, 14),
+                  ylim = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
+  scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
+  labs(y = "Within-cluster sum of squared distances (normalized)",
+       col = "Data",
+       title = "Hierarchical clustering of cerebral correlation values",
+       caption = "Human: 40 clusters total; Mouse: 19 clusters total") + 
+  theme_bw() + 
+  theme(legend.position = "bottom",
+        panel.grid.minor.x = element_blank())
+```
+
 
 ```{r}
 getClusterLabels <- function(x, hc_tree){
@@ -714,8 +739,107 @@ getClusterLabels <- function(x, hc_tree){
   return(labels)
 }
 
-dfClustLabels_MLP <- getClusterLabels(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col) %>% 
-  as_tibble(rownames = "Region")
+dfClustLabels_Cols_MLP <- getClusterLabels(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col) 
+dfClustLabels_Cols_AllGenes <- getClusterLabels(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_col) 
+dfClustLabels_Rows_MLP <- getClusterLabels(x = t(matSim_Cx_MLP), hc_tree = clusteredHeatmap_MLP$tree_row) 
+dfClustLabels_Rows_AllGenes <- getClusterLabels(x = t(matSim_Cx_AllGenes), hc_tree = clusteredHeatmap_AllGenes$tree_row) 
+```
+
+```{r}
+library(mclustcomp)
+for(nk in 1:ncol(dfClustLabels_Cols_MLP)){
+  if (nk == 1){
+    metrics <- as.character(mclustcomp(x = dfClustLabels_Cols_MLP[,nk], y = dfClustLabels_Cols_AllGenes[,nk])$types)
+    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Cols_AllGenes),
+                           dimnames = list(metrics, colnames(dfClustLabels_Cols_AllGenes)))
+  }
+  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Cols_MLP[,nk], y = dfClustLabels_Cols_AllGenes[,nk])$scores
+}
+```
+
+```{r fig.width = 10, fig.height = 5}
+dfClustComp <- matClustComp %>% 
+  as_tibble(rownames = "metric") %>% 
+  pivot_longer(cols = -metric, names_to = "nk", values_to = "score") %>% 
+  mutate(nk = as.numeric(str_remove(nk, "k")))
+
+dfClustComp %>% 
+  filter(metric %in% c("sdc", "jaccard")) %>% 
+  mutate(metric = ifelse(metric == "sdc", "dice", metric)) %>% 
+  ggplot(aes(x = nk, y = score, col = metric)) +
+  geom_line() + 
+  geom_point() + 
+  coord_cartesian(xlim = c(1, 19)) + 
+  scale_x_continuous(breaks = seq(1, 30, 1)) + 
+  labs(x = "Number of clusters",
+       y = "Metric score",
+       col = "Metric",
+       title = "Mouse cortical cluster overlap between homologous genes and average latent space") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
+```
+
+```{r fig.width = 10, fig.height = 5}
+for(nk in 1:ncol(dfClustLabels_Rows_MLP)){
+  if (nk == 1){
+    metrics <- as.character(mclustcomp(x = dfClustLabels_Rows_MLP[,nk], y = dfClustLabels_Rows_AllGenes[,nk])$types)
+    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Rows_AllGenes),
+                           dimnames = list(metrics, colnames(dfClustLabels_Rows_AllGenes)))
+  }
+  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Rows_MLP[,nk], y = dfClustLabels_Rows_AllGenes[,nk])$scores
+}
+
+dfClustComp <- matClustComp %>% 
+  as_tibble(rownames = "metric") %>% 
+  pivot_longer(cols = -metric, names_to = "nk", values_to = "score") %>% 
+  mutate(nk = as.numeric(str_remove(nk, "k")))
+
+dfClustComp %>% 
+  filter(metric %in% c("sdc", "jaccard")) %>% 
+  mutate(metric = ifelse(metric == "sdc", "dice", metric)) %>% 
+  ggplot(aes(x = nk, y = score, col = metric)) +
+  geom_line() + 
+  geom_point() + 
+  coord_cartesian(xlim = c(1, 40),
+                  ylim = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(0, 50, 1),
+                     expand = expansion(add = 1)) + 
+  labs(x = "Number of clusters",
+       y = "Metric score",
+       col = "Metric",
+       title = "Human cortical cluster overlap between homologous genes and average latent space") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
+```
+
+```{r fig.width = 10, fig.height = 8}
+clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k3"]))
+clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k3"]))
+
+matSim_Cx_MLP_ordered <- matSim_Cx_MLP[match(clusterOrder_rows, rownames(matSim_Cx_MLP)),
+                                       match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
+
+dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k3"],
+                                         name = "MouseRegion",
+                                         value = "Cluster_MLP"),
+                                 enframe(dfClustLabels_Cols_AllGenes[,"k3"],
+                                         name = "MouseRegion",
+                                         value = "Cluster_AllGenes"),
+                                 by = "MouseRegion") %>% 
+  column_to_rownames("MouseRegion")
+dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k3"],
+                                         name = "HumanRegion",
+                                         value = "Cluster_MLP"),
+                                 enframe(dfClustLabels_Rows_AllGenes[,"k3"],
+                                         name = "HumanRegion",
+                                         value = "Cluster_AllGenes"),
+                                 by = "HumanRegion") %>% 
+  column_to_rownames("HumanRegion")
+
+pheatmap(matSim_Cx_MLP_ordered,
+         cluster_cols = F, cluster_rows = F,
+         annotation_col = dfAnnotationsMouse,
+         annotation_row = dfAnnotationsHuman)
 ```
 
 
