@@ -813,51 +813,127 @@ dfClustComp %>%
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k4"]))
-clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k4"]))
+clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k3"]))
+clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k3"]))
 
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[match(clusterOrder_rows, rownames(matSim_Cx_MLP)),
                                        match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 
-dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k4"],
+dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k3"],
                                          name = "MouseRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Cols_AllGenes[,"k4"],
+                                 enframe(dfClustLabels_Cols_AllGenes[,"k3"],
                                          name = "MouseRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "MouseRegion") %>% 
   column_to_rownames("MouseRegion")
-dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k4"],
+dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k3"],
                                          name = "HumanRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Rows_AllGenes[,"k4"],
+                                 enframe(dfClustLabels_Rows_AllGenes[,"k3"],
                                          name = "HumanRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "HumanRegion") %>% 
   column_to_rownames("HumanRegion")
 
 pheatmap(matSim_Cx_MLP_ordered,
-         cluster_cols = F, cluster_rows = F,
+         cluster_cols = T, cluster_rows = F,
          annotation_col = dfAnnotationsMouse,
          annotation_row = dfAnnotationsHuman)
 ```
 
+```{r fig.width = 10, fig.height = 8}
+pheatmap(matSim_Cx_MLP_ordered,
+         cluster_cols = T, cluster_rows = F,
+         annotation_col = select(dfAnnotationsMouse, -Cluster_AllGenes),
+         annotation_row = select(dfAnnotationsHuman, -Cluster_AllGenes),
+         annotation_legend = F, annotation_names_col = F, annotation_names_row = F,
+         legend = F)
+```
+
+
+
+What are the distances between the centroids of different clusters? 
 
 ```{r}
-library(Rtsne)
-tsne_out <- Rtsne(t(matSim_Cx_MLP), perplexity = 4)
+computeClusterCentroids <- function(x, hc_tree, nk = 1){
+  centroids <- matrix(0, nrow = nrow(x), ncol = nk,
+                      dimnames = list(rownames(x), str_c("k", 1:nk)))
+  for(k in 1:nk){
+    ind <- cutree(hc_tree, k = nk) == k
+    centroids[,k] <- rowMeans(as.matrix(x[,ind]))
+  }
+  return(centroids)
+}
 
-df_tsne <- bind_cols(as_tibble(tsne_out$Y),
-                     dfClustLabels_MLP)
+clusterCentroids_Mouse_MLP <- computeClusterCentroids(x = matSim_Cx_MLP, 
+                                                      hc_tree = clusteredHeatmap_MLP$tree_col,
+                                                      nk = 3)
+clusterCentroids_Mouse_AllGenes <- computeClusterCentroids(x = matSim_Cx_AllGenes,
+                                                           hc_tree = clusteredHeatmap_AllGenes$tree_col,
+                                                           nk = 3)
+clusterCentroids_Human_MLP <- computeClusterCentroids(x = t(matSim_Cx_MLP), 
+                                                      hc_tree = clusteredHeatmap_MLP$tree_row,
+                                                      nk = 3)
+clusterCentroids_Human_AllGenes <- computeClusterCentroids(x = t(matSim_Cx_AllGenes), 
+                                                      hc_tree = clusteredHeatmap_AllGenes$tree_row,
+                                                      nk = 3)
+
+
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/MetricTools.R")
+centroidDist_Mouse_MLP <- buildSimilarityMatrix(x1 = clusterCentroids_Mouse_MLP, x2 = clusterCentroids_Mouse_MLP, method = "euclidean")
+centroidDist_Mouse_AllGenes <- buildSimilarityMatrix(x1 = clusterCentroids_Mouse_AllGenes, x2 = clusterCentroids_Mouse_AllGenes, method = "euclidean")
+centroidDist_Human_MLP <- buildSimilarityMatrix(x1 = clusterCentroids_Human_MLP, x2 = clusterCentroids_Human_MLP, method = "euclidean")
+centroidDist_Human_AllGenes <- buildSimilarityMatrix(x1 = clusterCentroids_Human_AllGenes, x2 = clusterCentroids_Human_AllGenes, method = "euclidean")
 ```
 
-```{r fig.width = 10, fig.asp 1}
-library(ggrepel)
-ggplot(df_tsne, aes(x = V1, y = V2, col = factor(k4))) + 
-  geom_point() + 
-  geom_text_repel(aes(label = Region), size = 2) + 
-  # geom(aes(label = Region), size = 2, alpha = 0.5) + 
-  theme_bw()
+```{r}
+computeCentroidDistances <- function(x, hc_tree){
+  df_centroids_dist <- tibble()
+  for(nk in 2:ncol(x)){
+    centroids <- computeClusterCentroids(x = x, 
+                                         hc_tree = hc_tree,
+                                         nk = nk)
+    centroids_dist <- buildSimilarityMatrix(x1 = centroids, x2 = centroids, method = "euclidean")
+    centroids_dist[lower.tri(centroids_dist)] <- NA
+    df_centroids_dist <- bind_rows(df_centroids_dist,
+                                   centroids_dist %>% 
+                                     as_tibble(rownames = "ID1") %>% 
+                                     mutate(nk = nk) %>% 
+                                     pivot_longer(cols = c(-ID1, -nk), names_to = "ID2", values_to = "dist") %>% 
+                                     filter(ID1 != ID2,
+                                            !is.na(dist)))  
+  }
+  return(df_centroids_dist)
+}
+
+dfCentroidDist_Mouse_MLP <- computeCentroidDistances(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col)
+dfCentroidDist_Mouse_AllGenes <- computeCentroidDistances(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_col)
+
+dfCentroidDist_Mouse <- bind_rows(dfCentroidDist_Mouse_MLP %>% 
+                                    mutate(Data = "MLP"),
+                                  dfCentroidDist_Mouse_AllGenes %>% 
+                                    mutate(Data = "AllGenes"))
 ```
+
+```{r fig.width = 10, fig.height = 5}
+ggplot(dfCentroidDist_Mouse, aes(x = nk, y = dist, col = Data)) + 
+  geom_jitter(width = 0.2,
+              size = 1,
+              alpha = 0.6) + 
+  coord_cartesian(xlim = c(2, 19)) + 
+  scale_x_continuous(breaks = seq(2, 20, 1),
+                     expand = expansion(add = 0.5)) + 
+  scale_color_viridis_d(option = "plasma",
+                        begin = 0.8, end = 0.4,
+                        labels = c("Homologous genes", "Average latent space")) + 
+  # scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
+  labs(x = "Number of clusters",
+       y = "Euclidean distance",
+       title = "Pairwise distances between mouse cluster centroids") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
+```
+
 
 
