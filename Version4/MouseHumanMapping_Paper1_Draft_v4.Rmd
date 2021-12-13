@@ -387,11 +387,6 @@ load("Figure5.RData")
 ```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=8, fig.height=5.2}
 grid.newpage()
 grid.draw(fig5_grob)
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B."),
-          x = unit(c(0.29, 5.02), 'inch'),
-          y = unit(rep(0.88, 2), 'npc'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results3-fig5-caption}
@@ -404,8 +399,6 @@ fig5_cap <- str_c("Conservation of mouse cortical areas. The gene expression lat
 ```
 
 ```{r results3-fig5-options}
-fig5_width <- 8
-fig5_height <- 5.2
 knitr::opts_chunk$set(include = TRUE,
                       echo = FALSE,
                       fig.width = fig5_width,
@@ -416,11 +409,6 @@ knitr::opts_chunk$set(include = TRUE,
 ```{r results3-fig5-print}
 grid.newpage()
 grid.draw(fig5_grob)
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B."),
-          x = unit(c(0.29, 5.02), 'inch'),
-          y = unit(rep(0.88, 2), 'npc'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results3-fig5-clean}
