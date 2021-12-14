@@ -26,6 +26,7 @@ library(RMINC)
 library(MRIcrotome)
 library(data.tree)
 library(RColorBrewer)
+library(viridis)
 ```
 
 ```{r functions}
@@ -297,6 +298,9 @@ inner_join(dfSimStriatum_MaxSim_Proportions,
 ```{r fig6-panelA-histogram}
 #Specify mouse targets to examine
 mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
+lvlsHuman <- striatumHuman %>% 
+  str_replace("caudate nucleus", "caudate") %>% 
+  str_to_sentence()
 
 #For every pair of human striatum regions and mouse targets, get the similarity value for the maximum voxel in every latent space
 dfSimStriatum_Distributions <- dfSimStriatum %>% 
@@ -305,7 +309,8 @@ dfSimStriatum_Distributions <- dfSimStriatum %>%
   summarise(MaxPerPair = max(Similarity),
             MeanPerPair = mean(Similarity)) %>% 
   ungroup() %>% 
-  mutate(HumanRegion = factor(str_to_sentence(HumanRegion), levels = str_to_sentence(striatumHuman)),
+  mutate(HumanRegion = ifelse(HumanRegion == "caudate nucleus", "caudate", HumanRegion),
+         HumanRegion = factor(str_to_sentence(HumanRegion), levels = lvlsHuman),
          MouseRegion = factor(MouseRegion, levels = mouseTargets))
 
 fig6_histogram <- ggplot(dfSimStriatum_Distributions, aes(x = MeanPerPair, y = ..count../nMLPSamples, fill = MouseRegion)) + 
@@ -316,11 +321,13 @@ fig6_histogram <- ggplot(dfSimStriatum_Distributions, aes(x = MeanPerPair, y = .
   coord_cartesian(xlim = c(0.6, 1),
                   ylim = c(0,1)) + 
   scale_fill_manual(values = brewer.pal(n = 9, name = "PuBu")[seq(9, 3, by = -2)]) + 
-  labs(x = "Average similarity over human samples",
+  labs(x = "Average correlation over human samples",
        y = "Proportion of latent spaces",
        fill = "Mouse targets") + 
   theme_bw() + 
-  theme(legend.position = "bottom",
+  theme(axis.title = element_text(size = 10),
+        axis.text = element_text(size = 8),
+        legend.position = "bottom",
         plot.margin = margin(b = 0, l = 0, r = 0, t = 0, unit = 'inch'))
 
 #Convert ggplot to grob
@@ -337,8 +344,8 @@ fig6_histogram_grob <- ggplotGrob(fig6_histogram) %>% grid.force()
 #Title grob
 fig6_histogram_title_grob <- textGrob("Similarity of human striatal regions to targets in the mouse striatum",
                                       x = unit(0.5, 'inch'),
-                                      y = 0.25,
-                                      just = c("left", "bottom"))
+                                      y = 0.5,
+                                      just = c("left", "centre"))
 ```
 
 ```{r import-mousevoxel-sim}
@@ -431,7 +438,6 @@ if(runSimMat){
 }
 ```
 
-
 ```{r compute-max-similarity}
 #For every latent space, compute the max similarity of every mouse striatal voxel
 #Done using a for loop because purrr functions overload memory
@@ -483,7 +489,7 @@ dfSimStriatum_MaxSim_Proportions_TopHits %>%
   arrange(MouseRegion, desc(MeanProp))
 ```
 
-```{r make-slice-series}
+```{r make-minc-arrays}
 #Specify human targets
 humanTargets <- c("caudate nucleus", 
                   "putamen",
@@ -491,58 +497,102 @@ humanTargets <- c("caudate nucleus",
                   "septal nuclei",
                   "amygdala")
 
+dfSimStriatumMean <- rowMeans(arraySimStriatum, dims = 2) %>% 
+  as_tibble(rownames = "HumanRegion") %>% 
+  pivot_longer(cols = -HumanRegion,
+               names_to = "VoxelID",
+               values_to = "Similarity") %>% 
+  inner_join(dfLabelsMouse %>% select(VoxelID, Region134),
+             by = "VoxelID") %>% 
+  rename(MouseRegion = Region134)
+
+dfSimStriatumMean_HumanTargets <- dfSimStriatumMean %>% 
+  filter(HumanRegion %in% humanTargets) %>% 
+  select(-MouseRegion) %>% 
+  pivot_wider(id_cols = VoxelID, names_from = HumanRegion, values_from = Similarity) %>% 
+  arrange(VoxelID) %>% 
+  column_to_rownames("VoxelID")
+
 #Extract the proportions to the selected human targets
 dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
   select(-MouseRegion) %>% 
   filter(HumanRegion %in% humanTargets) %>% 
   pivot_wider(id_cols = "VoxelID", names_from = HumanRegion, values_from = Prop) %>% 
+  arrange(VoxelID) %>% 
   column_to_rownames("VoxelID")
 
 #Initialize the MINC arrays for visualization at 200um
-listArrayHumanTargets_200um <- vector(mode = "list", length = ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets))
-names(listArrayHumanTargets_200um) <- colnames(dfSimStriatum_MaxSim_Proportions_HumanTargets)
-listArrayHumanTargets_200um <- map(listArrayHumanTargets_200um, function(x){return(emptyArray)})
+listArrayHumanTargets_Mean_200um <- vector(mode = "list", length = ncol(dfSimStriatumMean_HumanTargets))
+names(listArrayHumanTargets_Mean_200um) <- colnames(dfSimStriatumMean_HumanTargets)
+listArrayHumanTargets_Mean_200um <- map(listArrayHumanTargets_Mean_200um, function(x){return(emptyArray)})
+
+listArrayHumanTargets_Prop_200um <- vector(mode = "list", length = ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets))
+names(listArrayHumanTargets_Prop_200um) <- colnames(dfSimStriatum_MaxSim_Proportions_HumanTargets)
+listArrayHumanTargets_Prop_200um <- map(listArrayHumanTargets_Prop_200um, function(x){return(emptyArray)})
 
 #For each of the human targets, map the proportions to voxels in a MINC array
-for(j in 1:ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets)){
-  indVoxelMatch <- match(rownames(dfSimStriatum_MaxSim_Proportions_HumanTargets), names(emptyArray))
-  listArrayHumanTargets_200um[[j]][indVoxelMatch] <- dfSimStriatum_MaxSim_Proportions_HumanTargets[,j]
-  attributes(listArrayHumanTargets_200um[[j]]) <- attributes(dsurqeLabels_200um)
+for(j in 1:ncol(dfSimStriatumMean_HumanTargets)){
+  indVoxelMatch <- match(rownames(dfSimStriatumMean_HumanTargets), names(emptyArray))
+  listArrayHumanTargets_Mean_200um[[j]][indVoxelMatch] <- dfSimStriatumMean_HumanTargets[,j]
+  listArrayHumanTargets_Prop_200um[[j]][indVoxelMatch] <- dfSimStriatum_MaxSim_Proportions_HumanTargets[,j]
+  attributes(listArrayHumanTargets_Mean_200um[[j]]) <- attributes(dsurqeLabels_200um)
+  attributes(listArrayHumanTargets_Prop_200um[[j]]) <- attributes(dsurqeLabels_200um)
 }
 
 #Paths and commands to resample to 50um
-outfiles <- str_c("Figure6_ss_", str_remove(names(listArrayHumanTargets_200um), " "), "_200um.mnc")
-outpaths <- str_c(pathHome, "Draft/", "Version4/", outfiles)
+outfiles_mean <- str_c("Figure6_ss_mean_", str_remove(names(listArrayHumanTargets_Mean_200um), " "), "_200um.mnc")
+outfiles_prop <- str_c("Figure6_ss_prop_", str_remove(names(listArrayHumanTargets_Prop_200um), " "), "_200um.mnc")
+outpaths_mean <- str_c(pathHome, "Draft/", "Version4/", outfiles_mean)
+outpaths_prop <- str_c(pathHome, "Draft/", "Version4/", outfiles_prop)
 anatomy50um <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um.mnc"
-newpaths <- str_replace(outpaths, "200um", "50um")
-resampleCommands <- str_c("mincresample",
-                          "-like",
-                          anatomy50um,
-                          outpaths,
-                          newpaths,
-                          "-clobber",
-                          "-nearest_neighbour",
-                          sep = " ")
+newpaths_mean <- str_replace(outpaths_mean, "200um", "50um")
+newpaths_prop <- str_replace(outpaths_prop, "200um", "50um")
+resampleCommands_mean <- str_c("mincresample",
+                               "-like",
+                               anatomy50um,
+                               outpaths_mean,
+                               newpaths_mean,
+                               "-clobber",
+                               "-nearest_neighbour",
+                               sep = " ")
+resampleCommands_prop <- str_c("mincresample",
+                               "-like",
+                               anatomy50um,
+                               outpaths_prop,
+                               newpaths_prop,
+                               "-clobber",
+                               "-nearest_neighbour",
+                               sep = " ")
 
 #Resample the images to 50um
-listArrayHumanTargets_50um <- vector(mode = "list", length(listArrayHumanTargets_200um))
-names(listArrayHumanTargets_50um) <- names(listArrayHumanTargets_200um)
-for(i in 1:length(listArrayHumanTargets_200um)){
-  
-  mincWriteVolume(listArrayHumanTargets_200um[[i]],
-                  output.filename = outpaths[i],
-                  like.filename = attributes(listArrayHumanTargets_200um[[i]])$likeVolume,
-                  clobber = TRUE)
-  
-  system(resampleCommands[i])
-  
-  listArrayHumanTargets_50um[[i]] <- mincGetVolume(newpaths[i])
-}
-
 dsurqeMask_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um_mask.mnc")
 dsurqeAverage_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average_50um.mnc")
-
 dsurqeAverage_50um[dsurqeMask_50um == 0] <- 0
+
+listArrayHumanTargets_Mean_50um <- vector(mode = "list", length(listArrayHumanTargets_Mean_200um))
+listArrayHumanTargets_Prop_50um <- vector(mode = "list", length(listArrayHumanTargets_Prop_200um))
+names(listArrayHumanTargets_Mean_50um) <- names(listArrayHumanTargets_Mean_200um)
+names(listArrayHumanTargets_Prop_50um) <- names(listArrayHumanTargets_Prop_200um)
+for(i in 1:length(listArrayHumanTargets_Mean_200um)){
+  
+  mincWriteVolume(listArrayHumanTargets_Mean_200um[[i]],
+                  output.filename = outpaths_mean[i],
+                  like.filename = attributes(listArrayHumanTargets_Mean_200um[[i]])$likeVolume,
+                  clobber = TRUE)
+  mincWriteVolume(listArrayHumanTargets_Prop_200um[[i]],
+                  output.filename = outpaths_prop[i],
+                  like.filename = attributes(listArrayHumanTargets_Prop_200um[[i]])$likeVolume,
+                  clobber = TRUE)
+  
+  system(resampleCommands_mean[i])
+  system(resampleCommands_prop[i])
+  
+  listArrayHumanTargets_Mean_50um[[i]] <- mincGetVolume(newpaths_mean[i])
+  listArrayHumanTargets_Prop_50um[[i]] <- mincGetVolume(newpaths_prop[i])
+  
+  attributes(listArrayHumanTargets_Mean_50um[[i]]) <- attributes(dsurqeAverage_50um)
+  attributes(listArrayHumanTargets_Prop_50um[[i]]) <- attributes(dsurqeAverage_50um)
+}
 ```
 
 ```{r fig6-panelB-sliceseries}
@@ -552,87 +602,241 @@ humanTargets_labels <- c("Caudate",
                          "Nucleus\naccumbens",
                          "Septal\nnuclei")
 
-#Overlay range
-propLow = 0.1
-propHigh = 1
+avgRange <- c(0.8, 1)
+propRange <- c(0.1, 1)
 
-#Create the base of the slice series, 50um
-fig6_ss_base <- sliceSeries(nrow = 1, ncol = 8, begin = 144, end = 192) %>%
-  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>%
-  overlay(mincArray(listArrayHumanTargets_50um[["caudate nucleus"]]), low = propLow, high = propHigh) %>%
-  sliceSeries() %>% anatomy() %>%
-  overlay(mincArray(listArrayHumanTargets_50um[["putamen"]]), low = propLow, high = propHigh) %>%
-  sliceSeries() %>% anatomy() %>%
-  overlay(mincArray(listArrayHumanTargets_50um[["nucleus accumbens"]]), low = propLow, high = propHigh) %>%
-  sliceSeries() %>% anatomy() %>%
-  overlay(mincArray(listArrayHumanTargets_50um[["septal nuclei"]]), low = propLow, high = propHigh)
+avgPalette <- magma(n = 255)
+# avgPalette <- rocket(n = 255)
+# avgPalette <- colorRampPalette(colors = brewer.pal(n = 9, name = "YlOrRd")[9:3])(255)
 
-#Convert the base slice series to grob
-fig6_ss_grob <- grobify(fig6_ss_base, layout = "row")
+propPalette <- viridis(n = 255)
+# propPalette <- mako(n = 255)
+# propPalette <- colorRampPalette(colors = brewer.pal(n = 9, name = "YlGnBu")[9:3])(255)
 
-#Add the legend to the slice series and extract
-fig6_ss_legend_grob <- fig6_ss_base %>%
-  legend("Proportion of gene\nexpression latent spaces") %>%
-  grobify() %>%
-  getGrob("legend")
+fig6_ss_avgcorrelation_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["caudate nucleus"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["putamen"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["nucleus accumbens"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["septal nuclei"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) 
 
-#Modify some of the legend text parameters
-fig6_ss_legend_grob$children[[2]]$x <- unit(0.25, 'npc')
-fig6_ss_legend_grob$children[[3]]$x <- unit(0.25, 'npc')
-fig6_ss_legend_grob$children[[4]]$x <- unit(0.8, 'npc')
-fig6_ss_legend_grob$children[[4]]$gp <- gpar(lineheight = 1)
+fig6_ss_prop_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["caudate nucleus"]]), low = propRange[1], high = propRange[2], col = propPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["putamen"]]), low = propRange[1], high = propRange[2], col = propPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["nucleus accumbens"]]), low = propRange[1], high = propRange[2], col = propPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["septal nuclei"]]), low = propRange[1], high = propRange[2], col = propPalette)
+  
+fig6_ss_caudate_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["caudate nucleus"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["caudate nucleus"]]), low = propRange[1], high = propRange[2], col = propPalette)
 
-#Create a set of labels for human targets
-fig6_ss_labels_grob <- textGrob(rev(humanTargets_labels),
-                                x = 0.75,
-                                just = "right",
-                                y = unit(0.12 + 0.25*(0:3), 'npc'),
-                                gp = gpar(lineheight = 1,
-                                          fontsize = 8))
+fig6_ss_putamen_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["putamen"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["putamen"]]), low = propRange[1], high = propRange[2], col = propPalette)
+
+fig6_ss_accumbens_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["nucleus accumbens"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["nucleus accumbens"]]), low = propRange[1], high = propRange[2], col = propPalette)
+
+fig6_ss_septal_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
+  anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["septal nuclei"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["septal nuclei"]]), low = propRange[1], high = propRange[2], col = propPalette)
+
+fig6_ss_avgcorrelation_base_grob <- grobify(fig6_ss_avgcorrelation_base)
+fig6_ss_prop_base_grob <- grobify(fig6_ss_prop_base)
+fig6_ss_caudate_base_grob <- grobify(fig6_ss_caudate_base)
+fig6_ss_putamen_base_grob <- grobify(fig6_ss_putamen_base)
+fig6_ss_accumbens_base_grob <- grobify(fig6_ss_accumbens_base)
+fig6_ss_septal_base_grob <- grobify(fig6_ss_septal_base)
+
+fig6_ss_legend_mean_palette <- avgPalette %>% 
+  matrix(nrow = 1, ncol = 255)
+fig6_ss_legend_scale_width <- 1
+fig6_ss_legend_scale_height <- 0.2
+fig6_ss_legend_scale_x <- 0
+fig6_ss_legend_scale_y <- 0.95
+
+fig6_ss_legend_mean_scale_grob <- rasterGrob(fig6_ss_legend_mean_palette,
+                                             x = fig6_ss_legend_scale_x,
+                                             y = fig6_ss_legend_scale_y,
+                                             width = fig6_ss_legend_scale_width,
+                                             height = fig6_ss_legend_scale_height,
+                                             just = c("left", "top"))
+
+fig6_ss_legend_text_x <- c(0, 1)
+fig6_ss_legend_text_y <- fig6_ss_legend_scale_y - fig6_ss_legend_scale_height - 0.05
+fig6_ss_legend_mean_text_grob <- textGrob(as.character(avgRange),
+                                          x = fig6_ss_legend_text_x,
+                                          y = fig6_ss_legend_text_y,
+                                          just = c("center", "top"),
+                                          gp = gpar(fontsize = 8))
+
+fig6_ss_legend_title_x <- (fig6_ss_legend_scale_x + fig6_ss_legend_scale_width)/2
+fig6_ss_legend_title_y <- fig6_ss_legend_text_y - 0.2
+
+fig6_ss_legend_mean_title_grob <- textGrob("Average correlation",
+                                           x = fig6_ss_legend_title_x,
+                                           y = fig6_ss_legend_title_y,
+                                           just = c("center", "top"),
+                                           gp = gpar(fontsize = 10))
+
+
+
+fig6_ss_legend_mean_grob <- gTree(children = gList(fig6_ss_legend_mean_scale_grob,
+                                                   fig6_ss_legend_mean_text_grob,
+                                                   fig6_ss_legend_mean_title_grob))
+
+fig6_ss_legend_prop_palette <- propPalette %>% 
+  matrix(nrow = 1, ncol = 255)
+
+fig6_ss_legend_prop_scale_grob <- rasterGrob(fig6_ss_legend_prop_palette,
+                                             x = fig6_ss_legend_scale_x,
+                                             y = fig6_ss_legend_scale_y,
+                                             width = fig6_ss_legend_scale_width,
+                                             height = fig6_ss_legend_scale_height,
+                                             just = c("left", "top"))
+
+fig6_ss_legend_prop_text_grob <- textGrob(as.character(propRange),
+                                          x = fig6_ss_legend_text_x,
+                                          y = fig6_ss_legend_text_y,
+                                          just = c("center", "top"),
+                                          gp = gpar(fontsize = 8))
+
+fig6_ss_legend_prop_title_grob <- textGrob("Proportion of gene expression latent spaces",
+                                           x = fig6_ss_legend_title_x,
+                                           y = fig6_ss_legend_title_y,
+                                           just = c("center", "top"),
+                                           gp = gpar(fontsize = 10))
+
+fig6_ss_legend_prop_grob <- gTree(children = gList(fig6_ss_legend_prop_scale_grob,
+                                                   fig6_ss_legend_prop_text_grob,
+                                                   fig6_ss_legend_prop_title_grob))
+
+
+humanTargets_labels <- c("Caudate",
+                         "Putamen",
+                         "Nucleus accumbens",
+                         "Septal nuclei")
+fig6_ss_labels_list <- vector(mode = "list", length = length(humanTargets_labels))
+names(fig6_ss_labels_list) <- humanTargets_labels
+for(i in 1:length(humanTargets_labels)){
+  fig6_ss_labels_list[[i]] <- textGrob(humanTargets_labels[i],
+                                       x = 0.5,
+                                       y = 0.2,
+                                       just = c("center", "bottom"),
+                                       gp = gpar(lineheight = 1, fontsize = 8))  
+}
+
+humanTargets_labels <- c("Caudate",
+                         "Putamen",
+                         "Nucleus\naccumbens",
+                         "Septal\nnuclei")
+fig6_ss_labels_mean_grob <- textGrob(humanTargets_labels,
+                                     x = 0.125 + 0.25*(0:3),
+                                     y = 0.2,
+                                     just = c("center", "bottom"),
+                                     gp = gpar(lineheight = 1, fontsize = 8))
+fig6_ss_labels_prop_grob <- fig6_ss_labels_mean_grob
 
 #Create title for panel B
 fig6_ss_title_grob <- textGrob("Mouse striatal voxels maximally similar to human striatal regions",
                                x = 0,
                                y = 0.25,
                                just = c("left", "bottom"))
+
+fig6_ss_title_mean_grob <- textGrob("Average similarity to human targets",
+                                    x = 0,
+                                    y = 0.5,
+                                    just = c("left", "centre"))
+
+fig6_ss_title_prop_grob <- textGrob("Voxels maximally similar to human targets",
+                                    x = 0,
+                                    y = 0.5,
+                                    just = c("left", "centre"))
 ```
 
-```{r fig6-grob, fig.width = 9, fig.height = 6.25}
+
+```{r fig6-grob, fig.width = 8, fig.height = 6.8}
 #Figure 6 main grob
+# fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
+#                                fig6_histogram_grob, #2
+#                                fig6_histogram_legend_grob, #3
+#                                fig6_ss_title_grob, #4
+#                                fig6_ss_labels_list[[1]], #5
+#                                fig6_ss_labels_list[[2]], #6
+#                                fig6_ss_labels_list[[3]], #7
+#                                fig6_ss_labels_list[[4]], #8
+#                                fig6_ss_caudate_base_grob, #9
+#                                fig6_ss_putamen_base_grob, #10
+#                                fig6_ss_accumbens_base_grob, #11
+#                                fig6_ss_septal_base_grob, #12
+#                                fig6_ss_legend_mean_grob, #13
+#                                fig6_ss_legend_prop_grob, #14
+#                                layout_matrix = rbind(c(NA,  1,  1,  1,  1,  1,  1,  1,  1, NA),
+#                                                      c(NA,  2,  2,  2,  2,  2,  2,  2,  2, NA),
+#                                                      c(NA,  3,  3,  3,  3,  3,  3,  3,  3, NA),
+#                                                      c(NA, NA,  4,  4,  4,  4,  4,  4,  4, NA),
+#                                                      c(NA, NA,  5, NA,  6, NA,  7, NA,  8, NA),
+#                                                      c(NA, NA,  9, NA, 10, NA, 11, NA, 12, NA),
+#                                                      c(NA, NA, 13, 13, 13, NA, 14, 14, 14, NA),
+#                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
+#                                widths = unit(c(0.25, 0.5, 1.5, 0.25, 1.5, 0.25, 1.5, 0.25, 1.5, 0.25), 'inch'),
+#                                heights = unit(c(0.5, 2, 0.5, 0.5, 0.2, 2.5, 0.5, 0.1), 'inch'))
 fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
                                fig6_histogram_grob, #2
                                fig6_histogram_legend_grob, #3
-                               fig6_ss_title_grob, #4
-                               # rectGrob(),
-                               fig6_ss_labels_grob, #5
-                               fig6_ss_grob, #6
-                               fig6_ss_legend_grob, #7
-                               layout_matrix = rbind(c(NA, 1, 1, NA),
-                                                     c(NA, 2, 2, NA),
-                                                     c(NA, 3, 3, NA),
-                                                     c(NA, NA, 4, NA),
-                                                     c(NA, 5, 6, 7),
-                                                     c(NA, NA, NA, NA)),
-                               widths = unit(c(0.25, 0.5, 7.25, 1), 'inch'),
-                               heights = unit(c(0.5, 2, 0.5, 0.5, 2.5, 0.25), 'inch'))
+                               fig6_ss_title_mean_grob, #4
+                               fig6_ss_title_prop_grob, #5
+                               fig6_ss_labels_mean_grob, #6
+                               fig6_ss_labels_prop_grob, #7
+                               fig6_ss_avgcorrelation_base_grob, #8
+                               fig6_ss_prop_base_grob, #9
+                               fig6_ss_legend_mean_grob, #10
+                               fig6_ss_legend_prop_grob, #11
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA),
+                                                     c(NA,  1,  1,  1,  1, NA),
+                                                     c(NA,  2,  2,  2,  2, NA),
+                                                     c(NA,  3,  3,  3,  3, NA),
+                                                     c(NA, NA, NA, NA, NA, NA),
+                                                     c(NA, NA,  4, NA,  5, NA),
+                                                     c(NA, NA,  6, NA,  7, NA),
+                                                     c(NA, NA,  8, NA,  9, NA),
+                                                     c(NA, NA, 10, NA, 11, NA),
+                                                     c(NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.25, 0.5, 3.25, 0.5, 3.25, 0.25), 'inch'),
+                               heights = unit(c(0.1, 0.4, 2, 0.4, 0.2, 0.2, 0.4, 2.5, 0.5, 0.1), 'inch'))
 
-#Grob for panel labels
-fig6_panelid_grob <- textGrob(c("A.", "B."),
-                              x = unit(c(0.34, 0.34), 'inch'),
-                              y = unit(c(5.94, 2.94), 'inch'),
+# #Grob for panel labels
+fig6_panelid_grob <- textGrob(c("A.", "B.", "C."),
+                              x = unit(c(0.34, 0.34, 4.25), 'inch'),
+                              y = unit(c(6.5, 3.60, 3.60), 'inch'),
                               gp = gpar(fontsize = 14, fontface = "bold"))
-
-#Grob for figure border
+# 
+# #Grob for figure border
 fig6_border_grob <- rectGrob(gp = gpar(fill = NA))
-
-#Complete grob for Figure 6
+# 
+# #Complete grob for Figure 6
 fig6_grob <- gTree(children = gList(fig6_plots_grob,
                                     fig6_panelid_grob,
                                     fig6_border_grob))
 
-
-fig6_width <- 9
-fig6_height <- 6.25
+fig6_width <- 8
+fig6_height <- 6.8
 
 grid.newpage()
 grid.draw(fig6_grob)
