@@ -435,7 +435,7 @@ Given the high correlation of the human caudate and putamen to the mouse caudopu
 load("Figure6.RData")
 ```
 
-```{r results4-fig6-interactive, include=FALSE, echo=FALSE, fig.width = 9, fig.height = 6.5}
+```{r results4-fig6-interactive, include=FALSE, echo=FALSE, fig.width = 8, fig.height = 6.8}
 grid.newpage()
 grid.draw(fig6_grob)
 ```
@@ -443,9 +443,11 @@ grid.draw(fig6_grob)
 ```{r results4-fig6-caption}
 fig6_cap_A <- "(A) Distributions over gene expression latent spaces of region-wise average correlation values for mouse and human striatal pairs."
 fig6_cap_B <- "(B) Proportions of latent spaces in which mouse striatal voxels are maximally similar to human target regions."
+fig6_cap_C <- "(C)"
 fig6_cap <- str_c("Patterns of similarity between mouse and human striatal regions.",
                   fig6_cap_A,
                   fig6_cap_B,
+                  fig6_cap_C,
                   sep = " ")
 ```
 
