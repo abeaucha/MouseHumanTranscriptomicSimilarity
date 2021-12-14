@@ -223,6 +223,7 @@ matSim_Cx_MLP <- dfSimilarityProfiles_Cx %>%
   pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
   column_to_rownames("Target") %>% 
   as.matrix()
+rownames(matSim_Cx_MLP) <- str_to_sentence(rownames(matSim_Cx_MLP))
 
 hc_out <- hclust(dist(t(matSim_Cx_MLP)))
 
@@ -238,19 +239,35 @@ clusterOrder_cols <- names(sort(clusterLabels_4))
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[,match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 ```
 
-```{r}
-fig5_heatmap_ggplot <- pheatmap(t(matSim_Cx_MLP_ordered), 
-         cluster_cols = T, cluster_rows = T,
-         annotation_row = dfAnnotations,
-         legend = F, 
-         annotation_legend = T,
-         annotation_names_row = F, 
-         cutree_rows = 4, cutree_cols = 4,
-         treeheight_col = 30,
-         treeheight_row = 30,
-         fontsize_row = 6, fontsize_col = 6) %>% 
-  as.ggplot()
+```{r heatmap}
+library(rcartocolor)
+library(viridis)
+library(RColorBrewer)
 
+# heatmapPalette <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
+# heatmapPalette <- colorRampPalette(brewer.pal(n = 9, name = "BuPu"))(100)
+heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
+# heatmapPalette <- rocket(n = 100, direction = 1, begin = 0.2) #Not bad
+# heatmapPalette <- colorRampPalette(colors = carto_pal(n = 7, name = "Geyser"))(100) #Not bad
+heatmapAnnotationColours_CxType <- c("#00325C", "#B27700")
+# heatmapAnnotationColours_CxType <- carto_pal(n = 11, name = "Safe")[c(1,8)]
+names(heatmapAnnotationColours_CxType) <- c("Association", "Sensorimotor")
+heatmapAnnotationColours <- list(CortexType = heatmapAnnotationColours_CxType)
+fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_Cx_MLP_ordered), 
+                                cluster_cols = T, cluster_rows = T,
+                                cutree_rows = 4, cutree_cols = 4,
+                                treeheight_col = 30, treeheight_row = 30,
+                                color = heatmapPalette,
+                                legend = T, 
+                                annotation_row = dfAnnotations,
+                                annotation_legend = T,
+                                annotation_names_row = F, 
+                                annotation_colors = heatmapAnnotationColours,
+                                fontsize_row = 6, fontsize_col = 6) %>% 
+  as.ggplot()
+```
+
+```{r}
 fig5_heatmap_main_grob <- ggplotGrob(fig5_heatmap_ggplot) %>% grid.force()
 
 fig5_heatmap_matrix_grob <- getGrob(fig5_heatmap_main_grob, "matrix.4-3-4-3")
@@ -271,8 +288,7 @@ fig5_heatmap_coltitle_grob <- textGrob("Human cerebral regions")
 ```{r}
 #1. Legend scale
 #Generate the legend palette
-fig5_heatmap_legend_palette <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100) %>%
-  matrix(nrow = 1, ncol = 100)
+fig5_heatmap_legend_palette <- matrix(heatmapPalette, nrow = 1, ncol = 100)
 
 #Properties for the legend scale
 fig5_heatmap_legend_scale_width <- 1  #Width
@@ -354,7 +370,8 @@ fig5_regionaldist <- ggplot(dfSimilarityProfiles_Cx_MaxSim_Summary,
   geom_pointrange(size = 0.3) + 
   coord_flip() +
   scale_y_continuous(breaks = seq(0.5, 1, by = 0.05)) + 
-  scale_colour_manual(values = c("#B27700", "#00325C")) +
+  # scale_colour_manual(values = c("#B27700", "#00325C")) +
+  scale_colour_manual(values = heatmapAnnotationColours_CxType) +
   labs(x = "Mouse isocortical regions",
        y = "Maximal correlation",
        col = "Type of cortex") + 
@@ -413,9 +430,11 @@ fig5_cortexdist_xaxis_grob <- getGrob(fig5_cortexdist_grob, "axis-b.8-5-8-5")
 fig5_cortexdist_xtitle_grob <- getGrob(fig5_cortexdist_grob, "xlab-b.9-5-9-5")
 ```
   
-```{r fig.width=8.5, fig.height=7.5}
+```{r fig5_grob, fig.width=8.5, fig.height=7.5}
+temp <- textGrob("")
+
 #Generate figure 5 grob
-fig5_plots_grob <- arrangeGrob(fig5_heatmap_coltree_grob, #1
+fig5_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(),fig5_heatmap_coltree_grob)), #1
                                fig5_heatmap_rowtree_grob, #2
                                fig5_heatmap_rowannotations_grob, #3
                                fig5_heatmap_matrix_grob, #4
