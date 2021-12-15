@@ -489,11 +489,30 @@ dfSimStriatum_MaxSim_Proportions_TopHits %>%
   arrange(MouseRegion, desc(MeanProp))
 ```
 
+```{r}
+dfSimStriatumMean <- rowMeans(arraySimStriatum, dims = 2) %>% 
+  as_tibble(rownames = "HumanRegion") %>% 
+  pivot_longer(cols = -HumanRegion,
+               names_to = "VoxelID",
+               values_to = "Similarity") %>% 
+  inner_join(dfLabelsMouse %>% select(VoxelID, Region134),
+             by = "VoxelID") %>% 
+  rename(MouseRegion = Region134)
+
+dfSimStriatumMean %>% 
+  group_by(HumanRegion) %>% 
+  summarise(MeanSim = mean(Similarity)) %>% 
+  ungroup() %>% 
+  arrange(desc(MeanSim))
+```
+
+
 ```{r make-minc-arrays}
 #Specify human targets
 humanTargets <- c("caudate nucleus", 
                   "putamen",
                   "nucleus accumbens",
+                  "substantia innominata",
                   "septal nuclei",
                   "amygdala")
 
@@ -600,9 +619,9 @@ for(i in 1:length(listArrayHumanTargets_Mean_200um)){
 humanTargets_labels <- c("Caudate",
                          "Putamen",
                          "Nucleus\naccumbens",
-                         "Septal\nnuclei")
+                         "Substantia\ninnominata")
 
-avgRange <- c(0.8, 1)
+avgRange <- c(0.7, 1)
 propRange <- c(0.1, 1)
 
 avgPalette <- magma(n = 255)
@@ -621,7 +640,7 @@ fig6_ss_avgcorrelation_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end 
   sliceSeries() %>% anatomy() %>% 
   overlay(mincArray(listArrayHumanTargets_Mean_50um[["nucleus accumbens"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) %>% 
   sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(listArrayHumanTargets_Mean_50um[["septal nuclei"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) 
+  overlay(mincArray(listArrayHumanTargets_Mean_50um[["substantia innominata"]]), low = avgRange[1], high = avgRange[2], col = avgPalette) 
 
 fig6_ss_prop_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
   anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
@@ -631,7 +650,7 @@ fig6_ss_prop_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>%
   sliceSeries() %>% anatomy() %>% 
   overlay(mincArray(listArrayHumanTargets_Prop_50um[["nucleus accumbens"]]), low = propRange[1], high = propRange[2], col = propPalette) %>% 
   sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(listArrayHumanTargets_Prop_50um[["septal nuclei"]]), low = propRange[1], high = propRange[2], col = propPalette)
+  overlay(mincArray(listArrayHumanTargets_Prop_50um[["substantia innominata"]]), low = propRange[1], high = propRange[2], col = propPalette)
   
 fig6_ss_caudate_base <- sliceSeries(nrow = 5, ncol = 1, begin = 144, end = 192) %>% 
   anatomy(mincArray(dsurqeAverage_50um), low = 700, high = 1400) %>% 
@@ -745,7 +764,7 @@ for(i in 1:length(humanTargets_labels)){
 humanTargets_labels <- c("Caudate",
                          "Putamen",
                          "Nucleus\naccumbens",
-                         "Septal\nnuclei")
+                         "Substantia\ninnominata")
 fig6_ss_labels_mean_grob <- textGrob(humanTargets_labels,
                                      x = 0.125 + 0.25*(0:3),
                                      y = 0.2,
@@ -929,6 +948,71 @@ humanTargets <- c("caudate nucleus",
                   "septal nuclei",
                   "amygdala")
 
+dfSimStriatumMean %>% 
+  # filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  group_by(HumanRegion) %>% 
+  summarise(SimMean = mean(Similarity),
+            SimSd = sd(Similarity)) %>% 
+  arrange(desc(SimMean))
+```
+
+```{r}
+dfSimStriatumMean %>% 
+  filter(HumanRegion %in% humanTargets) %>%
+  filter(MouseRegion == "Caudoputamen") %>% 
+  group_by(HumanRegion) %>% 
+  summarise(nFilter = sum(Similarity >= 0.7),
+            nCP = n(),
+            nFilter/nCP) %>% 
+  arrange(desc(nFilter))
+```
+
+```{r}
+dfSimStriatumMean %>% 
+  # filter(HumanRegion %in% humanTargets) %>% 
+  filter(MouseRegion == "Nucleus accumbens") %>% 
+  group_by(HumanRegion) %>% 
+  summarise(SimMean = mean(Similarity),
+            SimSd = sd(Similarity)) %>% 
+  arrange(desc(SimMean))
+```
+
+```{r fig.width = 10, fig.height = 5}
+dfSimStriatumMean %>% 
+  filter(HumanRegion %in% humanTargets) %>%
+  filter(MouseRegion == "Nucleus accumbens") %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = humanTargets)) %>% 
+  ggplot(aes(x = Similarity, fill = HumanRegion)) + 
+  geom_histogram(col = "black", position = "dodge") + 
+  theme_bw()+
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+dfSimStriatumMean %>% 
+  filter(HumanRegion %in% humanTargets) %>%
+  filter(MouseRegion == "Nucleus accumbens") %>% 
+  group_by(HumanRegion) %>% 
+  summarise(nFilter = sum(Similarity >= 0.7),
+            nCP = n(),
+            nFilter/nCP) %>% 
+  arrange(desc(nFilter))
+```
+
+```{r}
+dfSimStriatumMean %>% 
+  filter(MouseRegion == "Olfactory tubercle") %>% 
+  group_by(HumanRegion) %>% 
+  summarise(SimMean = mean(Similarity),
+            SimSd = sd(Similarity)) %>% 
+  ungroup() %>% 
+  arrange(desc(SimMean))
+```
+
+
+
+```{r}
 #Extract the proportions to the selected human targets
 dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
   select(-MouseRegion) %>% 
@@ -960,6 +1044,18 @@ dfSimStriatum_MaxSim_Proportions %>%
   summarise(sum(PropSum >= 0.95)/n(),
             sum(PropSum == 1)/n())
 ```
+
+```{r}
+dfSimStriatumMean %>% 
+  filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
+  filter(MouseRegion == "Caudoputamen") %>% 
+  select(VoxelID, HumanRegion, Similarity) %>% 
+  pivot_wider(id_cols = VoxelID, names_from = HumanRegion, values_from = Similarity) %>% 
+  mutate(diff = `caudate nucleus` - `putamen`) %>% 
+  pull(diff) %>% 
+  mean()
+```
+
 
 ```{r}
 voxelSelection <- dfSimStriatum_MaxSim_Proportions %>% 
