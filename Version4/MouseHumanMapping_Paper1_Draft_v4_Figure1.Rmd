@@ -112,6 +112,12 @@ pruneAnatTree(treeMouse_11,
               method = "BelowNode")
 atlasMouse_11 <- hanatToAtlas(treeMouse_11, mincArray(dsurqeLabels))
 dfAtlasMouse_11 <- hanatToAtlasDefs(treeMouse_11)
+dfAtlasMouse_11 <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
+  enframe(name = "Structure",
+          value = "Colour") %>% 
+  inner_join(dfAtlasMouse_11,
+             by = "Structure")
+rm(treeMouse_11)
 
 dsurqeAnat_3d <- mincArray(dsurqeAnat)
 dsurqeMask_3d <- mincArray(dsurqeMask)
@@ -150,11 +156,7 @@ dfSliceSelection <- inner_join(dfSliceSelectionAnat,
                                dfSliceSelectionLabels,
                                by = c("x", "y"))
 
-dfMouseColours <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
-  enframe(name = "Structure",
-          value = "Colour") %>% 
-  inner_join(dfAtlasMouse_11,
-             by = "Structure") %>% 
+dfMouseColours <- dfAtlasMouse_11 %>% 
   semi_join(dfSliceSelection,
             by = "Label") %>% 
   arrange(Label)
@@ -184,8 +186,7 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
 sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
 sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
 
-rm(treeMouse_11,
-   atlasMouse_11,
+rm(atlasMouse_11,
    dfAtlasMouse_11,
    dsurqeAnat_3d,
    dsurqeMask_3d,
@@ -300,14 +301,21 @@ annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
 ```{r results1-fig1-panelA-heatmap}
 # Figure 1: Heatmap base ggplot -----------------------------------------------
 
-heatmapColours <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdBu")))(100)
+# library(viridis)
+# library(rcartocolor)
+heatmapColours <- colorRampPalette(rev(brewer.pal(n = 11, name = "RdYlBu")))(255)
+heatmapBreaks <- seq(-0.4, 0.4, length.out = 255)
+# heatmapColours <- colorRampPalette(c(mako(n = 5, direction = 1, begin = 0.35), "white", rocket(n = 5, direction = -1, begin = 0.35)))(100)
+# heatmapColours <- colorRampPalette(carto_pal(n = 7, name = "TealRose"))(100)
+
 
 #Generate similarity matrix heatmap and convert to ggplot object
 fig1_heatmap_ggplot <- pheatmap(matSim_H88M67_AllGenes,
                                 color = heatmapColours,
                                 cluster_cols = F, cluster_rows = F,
-                                border_color = "grey80",
+                                border_color = "white",
                                 # border_color = NA,
+                                breaks = heatmapBreaks,
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
@@ -411,7 +419,7 @@ fig1_heatmap_labsmouse_text_grob <- textGrob(fig1_heatmap_labsmouse_text,
                                                        fontface = "bold"))
 
 #2. Mouse label lines
-#Positions of the lines are dependent on text positions
+#Positions of the lines are dependent on text positionsU
 fig1_heatmap_labsmouse_line_x0 <- fig1_heatmap_labsmouse_text_x + c(-0.1, #Cortical subplate
                                                                     NA, #Olfactory areas
                                                                     0, #Hippocampal formation
@@ -561,14 +569,22 @@ listSeedSim_AllGenes <- map(.x = select(dfSeedSim_AllGenes, -Target),
 #Apply mask to the background anatomy
 dsurqeAnat[dsurqeMask == 0] <- 0
 
+corRange <- c(0.1, 0.4)
+
+arrayFrac <- (c(-1, 1)*corRange[1] + corRange[2])/(2*corRange[2])
+arrayInd <- floor(arrayFrac*length(heatmapColours))
+
+ssPalettePositive <- colorRampPalette(heatmapColours[arrayInd[2]:length(heatmapColours)])(255)
+ssPaletteNegative <- colorRampPalette(heatmapColours[1:arrayInd[1]])(255)
+
 #Create the base slice series
 fig1_sliceseries_base <- sliceSeries(nrow = 8, ncol = 1, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>%
-  overlay(mincArray(listSeedSim_AllGenes[[seeds[1]]]), low = 0.1, high = 0.4, symmetric = TRUE) %>% 
+  overlay(mincArray(listSeedSim_AllGenes[[seeds[1]]]), low = corRange[1], high = corRange[2], symmetric = TRUE, col = ssPalettePositive, rCol = ssPaletteNegative) %>% 
   sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(listSeedSim_AllGenes[[seeds[2]]]), low = 0.1, high = 0.4, symmetric = TRUE) %>%
+  overlay(mincArray(listSeedSim_AllGenes[[seeds[2]]]), low = corRange[1], high = corRange[2], symmetric = TRUE, col = ssPalettePositive, rCol = ssPaletteNegative) %>%
   sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(listSeedSim_AllGenes[[seeds[3]]]), low = 0.1, high = 0.4, symmetric = TRUE)
+  overlay(mincArray(listSeedSim_AllGenes[[seeds[3]]]), low = corRange[1], high = corRange[2], symmetric = TRUE, col = ssPalettePositive, rCol = ssPaletteNegative)
 
 #Convert the slice series to grob
 fig1_sliceseries_grob <- grobify(fig1_sliceseries_base)
@@ -661,7 +677,7 @@ fig1_linechart_xtitle_grob <- getGrob(fig1_linechart_grob, "xlab-b.9-5-9-5")
 fig1_linechart_legend_grob <- getGrob(fig1_linechart_grob, "guides.3-3-3-3")
 ```
 
-```{r results1-fig1-grob}
+```{r results1-fig1-grob, fig.width=10, fig.height=8.6}
 #Heatmap aspect ratio, figure height and width
 matAsp = ncol(matSim_H88M67_AllGenes)/nrow(matSim_H88M67_AllGenes)
 matHeight <- 5
@@ -671,7 +687,28 @@ matWidth <- matAsp*matHeight
 ssWidth <- matWidth*0.722
 
 #Grob for figure 1
-fig1_grob <- arrangeGrob(fig1_heatmap_main_grob, #1
+# fig1_grob <- arrangeGrob(fig1_heatmap_main_grob, #1
+#                          fig1_heatmap_legend_grob, #2
+#                          fig1_heatmap_labsmouse_grob, #3
+#                          fig1_heatmap_labshuman_grob, #4,
+#                          fig1_sliceseries_grob, #5
+#                          fig1_sliceseries_text_grob, #6
+#                          fig1_sliceseries_legend_grob, #7
+#                          fig1_linechart_panel_grob,#8
+#                          fig1_linechart_ytext_grob,#9
+#                          fig1_linechart_ytitle_grob,#10
+#                          fig1_linechart_xtext_grob, #11
+#                          fig1_linechart_xtitle_grob,#12
+#                          fig1_linechart_legend_grob,#13
+#                          layout_matrix = rbind(c(NA, NA, NA,  3, NA, NA,  6, NA),
+#                                                c( 4,  4,  4,  1, NA,  2,  5,  7),
+#                                                c(NA, NA, NA, NA, NA, NA, NA, NA),
+#                                                c(NA, 10,  9,  8,  8,  8,  8, 13),
+#                                                c(NA, NA, NA, 11, 11, 11, 11, NA),
+#                                                c(NA, NA, NA, 12, 12, 12, 12, NA)),
+#                          widths = unit(c(0.4, 0.3, 0.3, matWidth, 0.08, 0.78, ssWidth, 1.73), 'inch'),
+#                          heights = unit(c(0.7, matHeight, 0.3, 1.1, 1.1, 0.2), 'inch'))
+fig1_plots_grob <- arrangeGrob(fig1_heatmap_main_grob, #1
                          fig1_heatmap_legend_grob, #2
                          fig1_heatmap_labsmouse_grob, #3
                          fig1_heatmap_labshuman_grob, #4,
@@ -692,6 +729,31 @@ fig1_grob <- arrangeGrob(fig1_heatmap_main_grob, #1
                                                c(NA, NA, NA, 12, 12, 12, 12, NA)),
                          widths = unit(c(0.4, 0.3, 0.3, matWidth, 0.08, 0.78, ssWidth, 1.73), 'inch'),
                          heights = unit(c(0.7, matHeight, 0.3, 1.1, 1.1, 0.2), 'inch'))
+
+fig1_panelid_grob <- textGrob(c("A.", "B.", "C."),
+                              x = unit(c(0.25, 5.25, 0.25), 'inch'), 
+                              y = unit(c(8.299, 8.299, 2.55), 'inch'),
+                              gp = gpar(fontsize = 14, fontface = "bold"))
+
+fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+sliceAMBAWidth <- 1.1
+sliceAMBAHeight <- sliceAMBAWidth/asp
+sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.15, 'inch'),
+                                          y = unit(0.8, 'inch'),
+                                          width = unit(sliceAMBAWidth, 'inch'),
+                                          height = unit(sliceAMBAHeight, 'inch'))
+
+fig1_grob <- gTree(children = gList(fig1_plots_grob,
+                                    fig1_panelid_grob,
+                                    fig1_border_grob,
+                                    sliceAMBALegend_panel_grob))
+
+fig1_width <- 10
+fig1_height <- 8.6
+
+grid.newpage()
+grid.draw(fig1_grob)
 ```
 
 ```{r results1-fig1-interactive, include=TRUE, echo = FALSE, fig.width=10, fig.height = 8.6}

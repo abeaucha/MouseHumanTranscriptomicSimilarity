@@ -384,7 +384,7 @@ Having validated our ability to resolve finer scale matches using the gene expre
 load("Figure5.RData")
 ```
 
-```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=8.5, fig.height=7.5}
+```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=7.5}
 grid.newpage()
 grid.draw(fig5_grob)
 ```
