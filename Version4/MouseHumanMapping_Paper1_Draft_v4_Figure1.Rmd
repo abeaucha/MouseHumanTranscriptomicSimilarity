@@ -294,8 +294,10 @@ annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
 annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
+```
 
 
+```{r results1-fig1-panelA-heatmap}
 # Figure 1: Heatmap base ggplot -----------------------------------------------
 
 heatmapColours <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdBu")))(100)
@@ -304,8 +306,8 @@ heatmapColours <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdBu")))(100)
 fig1_heatmap_ggplot <- pheatmap(matSim_H88M67_AllGenes,
                                 color = heatmapColours,
                                 cluster_cols = F, cluster_rows = F,
-                                # border_color = "grey80",
-                                border_color = NA,
+                                border_color = "grey80",
+                                # border_color = NA,
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
@@ -314,8 +316,10 @@ fig1_heatmap_ggplot <- pheatmap(matSim_H88M67_AllGenes,
                                 annotation_legend = F,
                                 annotation_names_col = F, annotation_names_row = F) %>% 
   as.ggplot()
+```
 
 
+```{r results1-fig1-panelA-heatmap}
 # Figure 1: Heatmap matrix ----------------------------------------------------
 
 #Convert the pheatmap plot to grob and force the gTree

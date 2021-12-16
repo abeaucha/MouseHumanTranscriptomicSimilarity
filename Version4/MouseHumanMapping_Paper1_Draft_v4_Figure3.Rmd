@@ -446,13 +446,17 @@ fig3_ss_array <- mincBuildArray(values = dfRankDifferencesSummary$PropNonPos,
                                 defs = dfAtlasMouse_67)
 
 #Generate base slice series
+library(viridis)
+# fig3_ss_palette <- MRIcrotome:::defaultCol()
+# fig3_ss_palette <- magma(n = 255)
+fig3_ss_palette <- viridis(n = 255)
 fig3_ss_grob <- sliceSeries(nrow = 3, ncol = 4, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
-  overlay(mincArray(fig3_ss_array), low = 0, high = 1) %>% 
+  overlay(mincArray(fig3_ss_array), low = 0, high = 1, col = fig3_ss_palette) %>% 
   grobify()
 
 #Create slice series legend
-fig3_ss_legend_palette <- MRIcrotome:::defaultCol()
+fig3_ss_legend_palette <- fig3_ss_palette
 fig3_ss_legend_palette <- fig3_ss_legend_palette[length(fig3_ss_legend_palette):1]
 fig3_ss_legend_scale_width <- 0.3
 fig3_ss_legend_scale_height <- 1
@@ -489,6 +493,12 @@ fig3_ss_legend_grob <- gTree(children = gList(fig3_ss_legend_scale_grob,
                                               fig3_ss_legend_text_grob,
                                               fig3_ss_legend_title_grob))
 ```
+
+```{r}
+grid.newpage()
+grid.draw(fig3_ss_grob)
+```
+
 
 ```{r results2-fig3-grob}
 #Generate the figure grob

@@ -245,7 +245,7 @@ library(viridis)
 library(RColorBrewer)
 
 # heatmapPalette <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100)
-# heatmapPalette <- colorRampPalette(brewer.pal(n = 9, name = "BuPu"))(100)
+# heatmapPalette <- colorRampPalette(brewer.pal(n = 9, name = "PuRd"))(100)
 heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
 # heatmapPalette <- rocket(n = 100, direction = 1, begin = 0.2) #Not bad
 # heatmapPalette <- colorRampPalette(colors = carto_pal(n = 7, name = "Geyser"))(100) #Not bad
@@ -408,16 +408,15 @@ set.seed(123)
 
 #Plot
 fig5_cortexdist <- ggplot(dfSimilarityProfiles_Cx_MaxSim_Compare,
-       aes(x = CortexType, y = SimilarityMean)) + 
+       aes(x = CortexType, y = SimilarityMean, col = CortexType)) + 
   geom_line(aes(group = Data),
-            col = "grey50",
-            size = 0.05) + 
-  # geom_jitter(width = 0.2,
-  #             col = "grey80",
-  #             size = 0.5) + 
+            col = "grey70",
+            size = 0.5,
+            alpha = 0.05) + 
   geom_boxplot(outlier.size = 0.5,           
                # outlier.shape = NA,
                alpha = 0.6) + 
+  scale_color_manual(values = heatmapAnnotationColours_CxType) + 
   labs(x = "Type of cortex",
        y = "Average maximal correlation") + 
   theme_bw() + 
@@ -431,10 +430,8 @@ fig5_cortexdist_xtitle_grob <- getGrob(fig5_cortexdist_grob, "xlab-b.9-5-9-5")
 ```
   
 ```{r fig5_grob, fig.width=8.5, fig.height=7.5}
-temp <- textGrob("")
-
 #Generate figure 5 grob
-fig5_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(),fig5_heatmap_coltree_grob)), #1
+fig5_plots_grob <- arrangeGrob(fig5_heatmap_coltree_grob, #1
                                fig5_heatmap_rowtree_grob, #2
                                fig5_heatmap_rowannotations_grob, #3
                                fig5_heatmap_matrix_grob, #4
