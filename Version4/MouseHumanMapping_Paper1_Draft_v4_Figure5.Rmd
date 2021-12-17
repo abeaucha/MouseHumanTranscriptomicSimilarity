@@ -231,12 +231,12 @@ hcHuman_MLP <- hclust(dist(matSim_Cx_MLP))
 clusterLabels_Mouse_4 <- cutree(hcMouse_MLP, k = 4)
 
 dfAnnotations <- dfSimilarityProfiles_Cx %>% 
-  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Association")) %>% 
+  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal")) %>% 
   select(Seed, CortexType) %>% 
   distinct() %>% 
   column_to_rownames("Seed")
 
-clusterOrder_cols <- names(sort(clusterLabels_mouse_4))
+clusterOrder_cols <- names(sort(clusterLabels_Mouse_4))
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[,match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 ```
 
@@ -247,9 +247,9 @@ library(RColorBrewer)
 
 heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
 # heatmapAnnotationColours_CxType <- c("#00325C", "#B27700")
-heatmapAnnotationColours_CxType <- c(carto_pal(n = 7, name = "Prism")[4], 
-                                     brewer.pal(n = 9, name = "Blues")[4])
-names(heatmapAnnotationColours_CxType) <- c("Association", "Sensorimotor")
+heatmapAnnotationColours_CxType <- c(brewer.pal(n = 9, name = "Blues")[4],
+                                     carto_pal(n = 7, name = "Prism")[4])
+names(heatmapAnnotationColours_CxType) <- c("Sensorimotor", "Supramodal")
 heatmapAnnotationColours <- list(CortexType = heatmapAnnotationColours_CxType)
 fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_Cx_MLP_ordered), 
                                 cluster_cols = T, cluster_rows = T,
@@ -454,7 +454,7 @@ dfSimilarityProfiles_Cx_MaxSim_Summary <- dfSimilarityProfiles_Cx_MaxSim %>%
             SimilaritySdUpper = SimilarityMean + 2*sd(Similarity)) %>% 
   ungroup() %>% 
   mutate(Seed = factor(Seed, levels = Seed[order(SimilarityMean)]),
-         CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Association"))
+         CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal"))
 
 fig5_regionaldist <- ggplot(dfSimilarityProfiles_Cx_MaxSim_Summary, 
        aes(x = Seed, 
@@ -489,10 +489,11 @@ fig5_regionaldist_xaxis_grob <- getGrob(fig5_regionaldist_grob, "axis-b.8-5-8-5"
 fig5_regionaldist_xtitle_grob <- getGrob(fig5_regionaldist_grob, "xlab-b.9-5-9-5")
 ```
 
+
 ```{r results3-fig5-panelB-cortextype}
 #Compute mean maximal similarity per cortex type and data set
 dfSimilarityProfiles_Cx_MaxSim_Compare <- dfSimilarityProfiles_Cx_MaxSim %>% 
-  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Association")) %>% 
+  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal")) %>% 
   group_by(Data, CortexType) %>% 
   summarise(SimilarityMean = mean(Similarity)) %>%
   ungroup()
@@ -592,6 +593,45 @@ save(fig5_grob,
      fig5_height,
      file = fileout)
 ```
+
+#Numeric
+
+```{r}
+dfSimilarityProfiles_Cx_Avg <- matSim_Cx_MLP %>% 
+  as_tibble(rownames = "HumanRegion") %>% 
+  pivot_longer(cols = -HumanRegion, names_to = "MouseRegion", values_to = "Correlation")
+
+dfClustLabels_Human_MLP_4 <- cutree(hcHuman_MLP, k = 4) %>% 
+  enframe(name = "HumanRegion",
+          value = "k4")
+
+dfSimilarityProfiles_Cx_Avg %>% 
+  inner_join(dfClustLabels_Human_MLP_4, by = "HumanRegion") %>% 
+  filter(k4 == 2) %>% 
+  filter(MouseRegion == "Primary somatosensory area") %>% 
+  pull(Correlation) %>% 
+  mean()
+
+```
+
+```{r}
+dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
+  group_by(CortexType) %>% 
+  summarise(avg = mean(SimilarityMean),
+            sd2 = 2*sd(SimilarityMean)) %>% 
+  ungroup() 
+```
+
+```{r}
+dfSimilarityProfiles_Cx_MaxSim %>% 
+  filter(Seed %in% c("Primary somatosensory area", "Primary motor area")) %>% 
+  group_by(Seed) %>% 
+  summarise(avg = mean(Similarity), 
+            sd2 = 2*sd(Similarity)) %>% 
+  ungroup() %>% 
+  arrange(desc(avg))
+```
+
 
 # Supplementary
 
