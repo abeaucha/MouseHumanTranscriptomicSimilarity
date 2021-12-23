@@ -2,7 +2,7 @@
 title: "Mouse Human Mapping Paper 1"
 subtitle: "Results 1"
 author: "Antoine Beauchamp"
-date: 'November 3rd, 2021'
+date: 'December 23rd, 2021'
 output: html_document
 ---
 
@@ -173,12 +173,12 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
   scale_fill_gradient(low = gray.colors(255)[1],
                       high = gray.colors(255)[255],
                       na.value = 'transparent',
-                      guide = F) + 
+                      guide = "none") + 
   new_scale_fill() + 
   geom_tile(aes(fill = Label)) + 
   scale_fill_manual(na.value = 'transparent',
                       values = dfMouseColours$Colour,
-                    guide = F) +
+                    guide = "none") +
   coord_fixed() +
   theme_void() +
   # theme_minimal() +
@@ -206,7 +206,7 @@ rm(atlasMouse_11,
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -217,7 +217,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
 #Compute average gene expression for 88 human brain regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
   select(Region = Region88,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -575,7 +575,7 @@ arrayFrac <- (c(-1, 1)*corRange[1] + corRange[2])/(2*corRange[2])
 arrayInd <- floor(arrayFrac*length(heatmapColours))
 
 ssPalettePositive <- colorRampPalette(heatmapColours[arrayInd[2]:length(heatmapColours)])(255)
-ssPaletteNegative <- colorRampPalette(heatmapColours[1:arrayInd[1]])(255)
+ssPaletteNegative <- colorRampPalette(heatmapColours[arrayInd[1]:1])(255)
 
 #Create the base slice series
 fig1_sliceseries_base <- sliceSeries(nrow = 8, ncol = 1, begin = 70, end = 330) %>% 
