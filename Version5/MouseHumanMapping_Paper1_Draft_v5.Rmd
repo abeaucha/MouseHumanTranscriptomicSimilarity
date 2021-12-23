@@ -53,25 +53,9 @@ We find that the similarity matrix exhibits broad patterns of positive correlati
 load("Figure1.RData")
 ```
 
-```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 8.6}
+```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 9}
 grid.newpage()
 grid.draw(fig1_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.25, 5.25, 0.25), 'inch'), 
-          y = unit(c(8.299, 8.299, 2.55), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
-sliceAMBAWidth <- 1.1
-#FIX THIS --------
-asp <- 1
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.15, 'inch'),
-              y = unit(0.8, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results1-fig1-caption}
@@ -88,8 +72,6 @@ fig1_cap <- str_c("Transcriptomic similarity in the mouse and human brains.",
 ```
 
 ```{r results1-fig1-options}
-fig1_width <- 10
-fig1_height <- 8.6
 knitr::opts_chunk$set(include = TRUE,
                       echo = FALSE,
                       fig.width = fig1_width,
@@ -100,20 +82,6 @@ knitr::opts_chunk$set(include = TRUE,
 ```{r results1-fig1-print}
 grid.newpage()
 grid.draw(fig1_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.25, 5.25, 0.25), 'inch'), 
-          y = unit(c(8.299, 8.299, 2.55), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
-sliceAMBAWidth <- 1.1
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.15, 'inch'),
-              y = unit(0.8, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results1-fig1-clean}

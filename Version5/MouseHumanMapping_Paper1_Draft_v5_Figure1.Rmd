@@ -559,7 +559,7 @@ dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
 dfSeedSim_AllGenes <- matSim_H88M67_AllGenes %>% 
   t() %>% 
   as_tibble(rownames = "Target") %>% 
-  select(Target, seeds)
+  select(Target, all_of(seeds))
 
 #Convert seed similarities to MINC array
 listSeedSim_AllGenes <- map(.x = select(dfSeedSim_AllGenes, -Target),
@@ -609,6 +609,7 @@ fig1_ss_labels_text_grob <- textGrob(fig1_ss_labels_text,
                                      y = 0.1,
                                      just = "bottom",
                                      gp = gpar(fontsize = 10,
+                                               fontface = "bold",
                                                col = seedColours))
 # fig1_ss_labels_title_grob <- textGrob("Human seed regions",
 #                                       x = 0.5, y = 0.5,
@@ -620,6 +621,41 @@ fig1_ss_labels_grob <- fig1_ss_labels_text_grob
 fig1_ss_title_grob <- textGrob("Correlation maps of human seed regions",
                                x = 0, y = 0.5,
                                just = "left")
+```
+
+```{r}
+#Create slice series legend
+fig1_ss_legend_palette <- rev(heatmapColours)
+fig1_ss_legend_scale_width <- 0.2
+fig1_ss_legend_scale_height <- 1
+fig1_ss_legend_scale_x <- 0.05
+fig1_ss_legend_scale_y <- 0.5
+fig1_ss_legend_scale_grob <- rasterGrob(fig1_ss_legend_palette,
+                                        x = fig1_ss_legend_scale_x,
+                                        y = fig1_ss_legend_scale_y,
+                                        width = fig1_ss_legend_scale_width,
+                                        height = fig1_ss_legend_scale_height,
+                                        just = c("left", "centre"))
+
+fig1_ss_legend_text <- seq(min(heatmapBreaks), max(heatmapBreaks), by = 0.2)
+fig1_ss_legend_text_x <- fig1_ss_legend_scale_x + fig1_ss_legend_scale_width + 0.1
+fig1_ss_legend_text_y <- (fig1_ss_legend_text + max(fig1_ss_legend_text))/(2*max(fig1_ss_legend_text))
+fig1_ss_legend_text_grob <- textGrob(fig1_ss_legend_text,
+                                     x = fig1_ss_legend_text_x,
+                                     y = fig1_ss_legend_text_y,
+                                     just = "left")
+
+fig1_ss_legend_title_x <- fig1_ss_legend_text_x + 0.3
+fig1_ss_legend_title_y <- fig1_ss_legend_scale_y
+fig1_ss_legend_title_grob <- textGrob("Correlation",
+                                      x = fig1_ss_legend_title_x,
+                                      y = fig1_ss_legend_title_y,
+                                      rot = 90,
+                                      gp = gpar(fontsize = 12))
+
+fig1_ss_legend_grob <- gTree(children = gList(fig1_ss_legend_scale_grob,
+                                              fig1_ss_legend_text_grob,
+                                              fig1_ss_legend_title_grob))
 ```
 
 
@@ -661,13 +697,21 @@ fig1_linechart <- ggplot(dfSeedSim_AllGenes_plot,
                    y = -Inf,
                    yend = Correlation,
                    col = Seed),
-               linetype = "dashed",
-               size = 0.8) +
-  geom_point(data = dfSeedSim_Annotations) + 
+               linetype = "dotted",
+               size = 1) +
+  geom_point(data = dfSeedSim_Annotations,
+             aes(fill = Seed),
+             col = "black",
+             shape = 21,
+             size = 3) + 
   coord_cartesian(ylim = ylims) + 
   scale_y_continuous(breaks = ybreaks) +
   scale_color_manual(labels = seedLabels,
-                     values = seedColours) + 
+                     values = seedColours,
+                     name = NULL) + 
+  scale_fill_manual(labels = seedLabels,
+                    values = seedColours,
+                    guide = "none") + 
   labs(x = "Mouse region",
        col = "Human seeds") + 
   theme_bw() +  
@@ -702,28 +746,28 @@ matWidth <- matAsp*matHeight
 ssWidth <- matWidth*0.722
 
 #Grob for figure 1
-fig1_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")))), #1
-                               gTree(children = gList(rectGrob(), fig1_heatmap_title_grob)), #2
-                               gTree(children = gList(rectGrob(), textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")))), #3
-                               gTree(children = gList(rectGrob(), fig1_ss_title_grob)), #4
-                               gTree(children = gList(rectGrob(), fig1_heatmap_labsmouse_title_grob)), #5
-                               gTree(children = gList(rectGrob(), fig1_heatmap_labsmouse_grob)), #6
+fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig1_heatmap_title_grob, #2
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               fig1_ss_title_grob, #4
+                               fig1_heatmap_labsmouse_title_grob, #5
+                               fig1_heatmap_labsmouse_grob, #6
                                fig1_ss_labels_grob, #7
-                               gTree(children = gList(rectGrob(), fig1_heatmap_labshuman_title_grob)), #8
-                               gTree(children = gList(rectGrob(), fig1_heatmap_labshuman_grob)), #9
+                               fig1_heatmap_labshuman_title_grob, #8
+                               fig1_heatmap_labshuman_grob, #9
                                fig1_heatmap_main_grob, #10
                                fig1_ss_grob, #11
                                fig1_ss_legend_grob, #12
-                               gTree(children = gList(rectGrob(), textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")))), #13
-                               gTree(children = gList(rectGrob(), fig1_linechart_title_grob)), #14
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #13
+                               fig1_linechart_title_grob, #14
                                fig1_linechart_ytitle_grob, #15
                                fig1_linechart_ytext_grob, #16
                                fig1_linechart_panel_grob, #17
-                               gTree(children = gList(rectGrob(), fig1_linechart_legend_grob)), #18
+                               fig1_linechart_legend_grob, #18
                                fig1_linechart_xtext_grob, #19
                                fig1_linechart_xtitle_grob,#20
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  2,  2,  3,  4, NA, NA),
+                                                     c(NA,  1,  2,  2,  3,  4,  4, NA),
                                                      c(NA, NA, NA,  5, NA,  7, NA, NA),
                                                      c(NA, NA, NA,  6, NA,  7, NA, NA),
                                                      c(NA,  8,  9, 10, NA, 11, 12, NA),
@@ -732,8 +776,7 @@ fig1_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), textGrob("A.",
                                                      c(NA, 15, 16, 17, 17, 17, 18, NA),
                                                      c(NA, NA, NA, 19, 19, 19, NA, NA),
                                                      c(NA, NA, NA, 20, 20, 20, NA, NA)),
-                               widths = unit(c(0.1, 0.3, 0.45, 5, 0.5, ssWidth, 0.7, 0.1), 'inch'),
-                               # widths = unit(c(0.1, 0.3, 0.45, matWidth, 0.5, ssWidth, 1.73), 'inch'),
+                               widths = unit(c(0.1, 0.3, 0.45, 4.6, 0.4, ssWidth, 1.2, 0.1), 'inch'),
                                heights = unit(c(0.1, 0.3, 0.3, 0.4, matHeight, 0.1, 0.2, 1.1, 1.1, 0.2), 'inch'))
 
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
@@ -750,39 +793,18 @@ fig1_grob <- gTree(children = gList(fig1_plots_grob,
                                     sliceAMBALegend_panel_grob))
 
 fig1_width <- 10
-fig1_height <- 8.6
-```
+fig1_height <- 9
 
-
-```{r results1-fig1-grob, fig.width=10, fig.height=9}
 grid.newpage()
 grid.draw(fig1_grob)
 ```
 
-
-```{r results1-fig1-interactive, include=TRUE, echo = FALSE, fig.width=10, fig.height = 8.6}
-grid.newpage()
-grid.draw(fig1_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.25, 5.25, 0.25), 'inch'), 
-          y = unit(c(8.299, 8.299, 2.55), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
-sliceAMBAWidth <- 1.1
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.15, 'inch'),
-              y = unit(0.8, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-```
 
 ```{r results1-fig1-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure1.RData")
 save(fig1_grob,
-     sliceAMBALegend_panel_grob,
+     fig1_width,
+     fig1_height,
      file = fileout)
 ```
 
