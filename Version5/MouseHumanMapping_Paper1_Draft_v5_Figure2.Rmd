@@ -1008,7 +1008,7 @@ grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results2-fig2-write}
-fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure2.RData")
+fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure2.RData")
 save(fig2_grob,
      file = fileout)
 ```

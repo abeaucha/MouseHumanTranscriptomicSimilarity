@@ -776,7 +776,7 @@ grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results1-fig1-write}
-fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure1.RData")
+fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure1.RData")
 save(fig1_grob,
      sliceAMBALegend_panel_grob,
      file = fileout)

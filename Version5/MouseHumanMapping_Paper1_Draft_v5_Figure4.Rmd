@@ -987,7 +987,7 @@ grid.text(c("A.", "B."),
 ```
 
 ```{r results2-fig4-write}
-fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure4.RData")
+fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure4.RData")
 save(fig4_grob,
      sliceAMBALegend_panel_grob,
      file = fileout)
