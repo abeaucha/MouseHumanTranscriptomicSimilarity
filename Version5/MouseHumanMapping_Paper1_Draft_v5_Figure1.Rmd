@@ -1,10 +1,12 @@
 ---
 title: "Mouse Human Mapping Paper 1"
-subtitle: "Results 1"
+subtitle: "Results 1, Figure 1"
 author: "Antoine Beauchamp"
 date: 'December 23rd, 2021'
 output: html_document
 ---
+
+# Initialization
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
@@ -105,7 +107,7 @@ genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), 
 rm(dfExprMouse, dfExprHuman)
 ```
 
-```{r}
+```{r results1-fig1-slicelegend}
 treeMouse_11 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_11,
               nodes = listLabelsMouseReordered$Region11_reordered,
@@ -200,9 +202,11 @@ rm(atlasMouse_11,
    dfMouseColours)
 ```
 
-```{r results1-fig1-panelA-heatmap}
-# Figure 1: Heatmap processing ------------------------------------------------
+# Figure 1
 
+## Panel A: Heatmap
+
+```{r results1-fig1-panelA-heatmap-processing}
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
@@ -298,38 +302,28 @@ annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
 ```
 
 
-```{r results1-fig1-panelA-heatmap}
-# Figure 1: Heatmap base ggplot -----------------------------------------------
-
-# library(viridis)
-# library(rcartocolor)
+```{r results1-fig1-panelA-heatmap-base}
+#Heatmap palette and legend breaks
 heatmapColours <- colorRampPalette(rev(brewer.pal(n = 11, name = "RdYlBu")))(255)
 heatmapBreaks <- seq(-0.4, 0.4, length.out = 255)
-# heatmapColours <- colorRampPalette(c(mako(n = 5, direction = 1, begin = 0.35), "white", rocket(n = 5, direction = -1, begin = 0.35)))(100)
-# heatmapColours <- colorRampPalette(carto_pal(n = 7, name = "TealRose"))(100)
-
 
 #Generate similarity matrix heatmap and convert to ggplot object
 fig1_heatmap_ggplot <- pheatmap(matSim_H88M67_AllGenes,
                                 color = heatmapColours,
                                 cluster_cols = F, cluster_rows = F,
                                 border_color = "white",
-                                # border_color = NA,
                                 breaks = heatmapBreaks,
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
                                 annotation_colors = annotation_colours,
-                                legend = T,
+                                legend = F,
                                 annotation_legend = F,
                                 annotation_names_col = F, annotation_names_row = F) %>% 
   as.ggplot()
 ```
 
-
-```{r results1-fig1-panelA-heatmap}
-# Figure 1: Heatmap matrix ----------------------------------------------------
-
+```{r results1-fig1-panelA-heatmap-matrix}
 #Convert the pheatmap plot to grob and force the gTree
 fig1_heatmap_main_grob <- ggplotGrob(fig1_heatmap_ggplot) %>% grid.force()
 
@@ -364,22 +358,9 @@ fig1_heatmap_main_grob <- arrangeGrob(fig1_heatmap_main_colannotations_grob,
                                                             c( 2, 3)),
                                       widths = unit(c(0.1, 0.9), c('inch', 'null')),
                                       heights = unit(c(0.1, 0.9), c('inch', 'null')))
+```
 
-
-
-# Figure 1: Heatmap legend ----------------------------------------------------
-
-fig1_heatmap_legend_title <- textGrob("Correlation",
-                                      x = unit(0.5, 'inch'),
-                                      y = 0.8,
-                                      rot = 90)
-fig1_heatmap_legend_grob <- gTree(children = gList(fig1_heatmap_main_legend_grob,
-                                                   fig1_heatmap_legend_title))
-
-
-
-# Figure 1: Heatmap mouse labels ----------------------------------------------
-
+```{r results1-fig1-panelA-heatmap-mouselabs}
 #1. Mouse label text
 #The mouse labels are acronyms for 11 coarse regions
 fig1_heatmap_labsmouse_text <- treeMouse_11$Get("acronym", filterFun = isLeaf) %>% 
@@ -391,78 +372,96 @@ fig1_heatmap_labsmouse_text <- treeMouse_11$Get("acronym", filterFun = isLeaf) %
   as.character()
 
 #Mouse label x positions
-fig1_heatmap_labsmouse_text_x <- c(0.305, #Cortical subplate
-                                   0.533, #Olfactory areas
-                                   0.952, #Hippocampal formation
-                                   1.637, #Isocortex
-                                   2.284, #Cerebral nuclei
-                                   2.474, #Interbrain
-                                   2.665, #Midbrain
-                                   2.855, #Pons
-                                   3.045, #Medulla
-                                   3.312, #Cerebellar cortex
-                                   3.655) #Cerebellar nuclei
+#Extract label positions based on percentages of column order
+fig1_heatmap_labsmouse_text_x <- dfLabelsMouse %>% 
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  mutate(Region11 = factor(Region11, levels = listLabelsMouseReordered$Region11_reordered),
+         Region67 = factor(Region67, levels = listLabelsMouseReordered$Region67_reordered)) %>% 
+  arrange(Region67) %>% 
+  mutate(x_i = 1:nrow(.) - 0.5) %>% 
+  group_by(Region11) %>% 
+  summarise(x_i_med = median(x_i)) %>% 
+  ungroup() %>% 
+  mutate(x_i_med_perc = x_i_med/67) %>% 
+  pull(x_i_med_perc)
+
+#Some adjustments to get the label positions correctly
+matWidth <- 4.5
+fig1_heatmap_labsmouse_text_x <- (fig1_heatmap_labsmouse_text_x*matWidth + 0.1)/4.6
+fig1_heatmap_labsmouse_text_x <- fig1_heatmap_labsmouse_text_x + c(0,  #Cortical subplate
+                                                                   0, #Olfactory areas
+                                                                   0,  #Hippocampal formation
+                                                                   0, #Isocortex
+                                                                   0,  #Cerebral nuclei
+                                                                   0, #Interbrain
+                                                                   0,  #Midbrain
+                                                                   0, #Pons
+                                                                   0.02, #Medulla
+                                                                   0, #Cerebellar cortex
+                                                                   0)  #Cerebellar nuclei
 
 #Mouse label y positions are organized in two rows
-fig1_heatmap_labsmouse_text_y <- rep(c(0.3,0.125), length.out = length(fig1_heatmap_labsmouse_text))
+fig1_heatmap_labsmouse_text_y <- rep(c(0.75, 0.3125), length.out = length(fig1_heatmap_labsmouse_text))
 
 #Colours for the mouse labels
 fig1_heatmap_labsmouse_text_col <- annotation_colours_mod$MouseRegion
 
 #Create the text grob for the mouse labels
 fig1_heatmap_labsmouse_text_grob <- textGrob(fig1_heatmap_labsmouse_text,
-                                             x = unit(fig1_heatmap_labsmouse_text_x, 'inch'),
-                                             y = unit(fig1_heatmap_labsmouse_text_y, 'inch'),
+                                             x = fig1_heatmap_labsmouse_text_x,
+                                             y = fig1_heatmap_labsmouse_text_y,
                                              just = "centre",
                                              gp = gpar(fontsize = 10, 
                                                        col = fig1_heatmap_labsmouse_text_col,
                                                        fontface = "bold"))
 
 #2. Mouse label lines
-#Positions of the lines are dependent on text positionsU
-fig1_heatmap_labsmouse_line_x0 <- fig1_heatmap_labsmouse_text_x + c(-0.1, #Cortical subplate
-                                                                    NA, #Olfactory areas
-                                                                    0, #Hippocampal formation
-                                                                    NA, #Isocortex
-                                                                    0, #Cerebral nuclei
-                                                                    NA, #Interbrain
-                                                                    0, #Midbrain
-                                                                    NA, #Pons
-                                                                    -0.148, #Medulla
-                                                                    NA, #Cerebellar cortex
-                                                                    0.13) #Cerebellar nuclei
-fig1_heatmap_labsmouse_line_x1 <- fig1_heatmap_labsmouse_line_x0 + c(0, #Cortical subplate
-                                                                     0, #Olfactory areas
-                                                                     0, #Hippocampal formation
-                                                                     0, #Isocortex
-                                                                     0, #Cerebral nuclei
-                                                                     0, #Interbrain
-                                                                     0, #Midbrain
-                                                                     0, #Pons
-                                                                     0.148, #Medulla
-                                                                     0, #Cerebellar cortex
-                                                                     0) #Cerebellar nuclei
+#Positions of the lines are dependent on text positions
+fig1_heatmap_labsmouse_line_x0 <- fig1_heatmap_labsmouse_text_x + c(0,      #Cortical subplate
+                                                                    NA,     #Olfactory areas
+                                                                    0,      #Hippocampal formation
+                                                                    NA,     #Isocortex
+                                                                    0,      #Cerebral nuclei
+                                                                    NA,     #Interbrain
+                                                                    0,      #Midbrain
+                                                                    NA,     #Pons
+                                                                    -0.02,  #Medulla
+                                                                    NA,     #Cerebellar cortex
+                                                                    0)      #Cerebellar nuclei
+fig1_heatmap_labsmouse_line_x1 <- fig1_heatmap_labsmouse_line_x0 + c(0,    #Cortical subplate
+                                                                     0,    #Olfactory areas
+                                                                     0,    #Hippocampal formation
+                                                                     0,    #Isocortex
+                                                                     0,    #Cerebral nuclei
+                                                                     0,    #Interbrain
+                                                                     0,    #Midbrain
+                                                                     0,    #Pons
+                                                                     0.02, #Medulla
+                                                                     0,    #Cerebellar cortex
+                                                                     0)    #Cerebellar nuclei
 fig1_heatmap_labsmouse_line_y0 <- rep(0, length.out = length(fig1_heatmap_labsmouse_text))
-fig1_heatmap_labsmouse_line_y1 <- fig1_heatmap_labsmouse_text_y - 0.08
+fig1_heatmap_labsmouse_line_y1 <- fig1_heatmap_labsmouse_text_y - 0.2
 
 #Create the mouse label line grob
-fig1_heatmap_labsmouse_line_grob <- segmentsGrob(x0 = unit(fig1_heatmap_labsmouse_line_x0, 'inch'),
-                                                 x1 = unit(fig1_heatmap_labsmouse_line_x1, 'inch'),
-                                                 y0 = unit(fig1_heatmap_labsmouse_line_y0, 'inch'),
-                                                 y1 = unit(fig1_heatmap_labsmouse_line_y1, 'inch'),
+fig1_heatmap_labsmouse_line_grob <- segmentsGrob(x0 = fig1_heatmap_labsmouse_line_x0,
+                                                 x1 = fig1_heatmap_labsmouse_line_x1,
+                                                 y0 = fig1_heatmap_labsmouse_line_y0,
+                                                 y1 = fig1_heatmap_labsmouse_line_y1,
                                                  gp = gpar(col = annotation_colours$MouseRegion,
                                                            lwd = 1))
 
-#3. Mouse label title
+#Combine the mouse labels and lines into one grob
+fig1_heatmap_labsmouse_grob <- gTree(children = gList(fig1_heatmap_labsmouse_text_grob,
+                                                      fig1_heatmap_labsmouse_line_grob))
+
+#Mouse label title
 fig1_heatmap_labsmouse_title_grob <- textGrob("Mouse regions",
                                               x = 0.5, y = 0.5,
                                               gp = gpar(fontsize = 11))
+```
 
-#Combine the mouse label grobs into one
-fig1_heatmap_labsmouse_grob <- gTree(children = gList(fig1_heatmap_labsmouse_text_grob,
-                                                      fig1_heatmap_labsmouse_line_grob))
-# Figure 1: Heatmap human labels ----------------------------------------------
-
+```{r results1-fig1-panelA-heatmap-humanlabs}
 #1. Human label text
 fig1_heatmap_labshuman_text <- treeHuman_16$Get("acronym", filterFun = isLeaf) %>% 
   enframe(name = "Region",
@@ -533,11 +532,16 @@ fig1_heatmap_labshuman_title_grob <- textGrob("Human regions",
 #Combine the human label grobs into one
 fig1_heatmap_labshuman_grob <- gTree(children = gList(fig1_heatmap_labshuman_text_grob,
                                                       fig1_heatmap_labshuman_line_grob))
+```
 
+```{r results1-fig1-panelA-heatmap-title}
+#Panel A title
 fig1_heatmap_title_grob <- textGrob("Transcriptomic similarity of mouse and human grey matter",
                                     x = 0, y = 0.5,
                                     just = "left")
 ```
+
+## Panel B: Correlation map slice series
 
 ```{r results1-fig1-panelB-sliceseries}
 #Set human seed regions
@@ -571,12 +575,14 @@ listSeedSim_AllGenes <- map(.x = select(dfSeedSim_AllGenes, -Target),
 #Apply mask to the background anatomy
 dsurqeAnat[dsurqeMask == 0] <- 0
 
-# corRange <- c(0.1, 0.4)
-corRange <- c(0, 0.4)
+#Specify range of correlation values
+corRange <- c(min(abs(heatmapBreaks)), max(heatmapBreaks))
 
+#Obtain the heatmap colour indices corresponding to the correlation bounds
 arrayFrac <- (c(-1, 1)*corRange[1] + corRange[2])/(2*corRange[2])
 arrayInd <- floor(arrayFrac*length(heatmapColours))
 
+#Extract colour palettes for positive and negative correlation ranges
 ssPalettePositive <- colorRampPalette(heatmapColours[arrayInd[2]:length(heatmapColours)])(255)
 ssPaletteNegative <- colorRampPalette(heatmapColours[arrayInd[1]:1])(255)
 
@@ -591,40 +597,11 @@ fig1_ss_base <- sliceSeries(nrow = 8, ncol = 1, begin = 70, end = 330) %>%
 
 #Convert the slice series to grob
 fig1_ss_grob <- grobify(fig1_ss_base)
-
-#Generate and extract the legend from the slice series
-fig1_ss_legend_grob <- fig1_ss_base %>% 
-  legend("Correlation") %>% 
-  grobify() %>% 
-  getGrob("legend")
-
-#Create text grob for slice series titles
-seedColours <- character(length(seeds))
-for(i in 1:length(seeds)){
-  seedColours[i] <- FindNode(treeHuman, seeds[i])[["color_hex_triplet"]]
-}
-fig1_ss_labels_text <- str_to_title(seeds) %>% str_replace("Gyrus", "gyr.")
-fig1_ss_labels_text_grob <- textGrob(fig1_ss_labels_text,
-                                     x = c(0.18, 0.5, 0.845),
-                                     y = 0.1,
-                                     just = "bottom",
-                                     gp = gpar(fontsize = 10,
-                                               fontface = "bold",
-                                               col = seedColours))
-# fig1_ss_labels_title_grob <- textGrob("Human seed regions",
-#                                       x = 0.5, y = 0.5,
-#                                       gp = gpar(fontsize = 11))
-# fig1_ss_labels_grob <- gTree(children = gList(fig1_ss_labels_text_grob,
-#                                               fig1_ss_labels_title_grob))
-fig1_ss_labels_grob <- fig1_ss_labels_text_grob
-
-fig1_ss_title_grob <- textGrob("Correlation maps of human seed regions",
-                               x = 0, y = 0.5,
-                               just = "left")
 ```
 
-```{r}
+```{r results1-fig1-panelB-sliceseries-legend}
 #Create slice series legend
+#The legend is the same as that for the heatmap. Generate it using a raster
 fig1_ss_legend_palette <- rev(heatmapColours)
 fig1_ss_legend_scale_width <- 0.2
 fig1_ss_legend_scale_height <- 1
@@ -637,6 +614,7 @@ fig1_ss_legend_scale_grob <- rasterGrob(fig1_ss_legend_palette,
                                         height = fig1_ss_legend_scale_height,
                                         just = c("left", "centre"))
 
+#Legend text labels
 fig1_ss_legend_text <- seq(min(heatmapBreaks), max(heatmapBreaks), by = 0.2)
 fig1_ss_legend_text_x <- fig1_ss_legend_scale_x + fig1_ss_legend_scale_width + 0.1
 fig1_ss_legend_text_y <- (fig1_ss_legend_text + max(fig1_ss_legend_text))/(2*max(fig1_ss_legend_text))
@@ -645,6 +623,7 @@ fig1_ss_legend_text_grob <- textGrob(fig1_ss_legend_text,
                                      y = fig1_ss_legend_text_y,
                                      just = "left")
 
+#Legend title
 fig1_ss_legend_title_x <- fig1_ss_legend_text_x + 0.3
 fig1_ss_legend_title_y <- fig1_ss_legend_scale_y
 fig1_ss_legend_title_grob <- textGrob("Correlation",
@@ -653,11 +632,36 @@ fig1_ss_legend_title_grob <- textGrob("Correlation",
                                       rot = 90,
                                       gp = gpar(fontsize = 12))
 
+#Combine legend grob elements into one
 fig1_ss_legend_grob <- gTree(children = gList(fig1_ss_legend_scale_grob,
                                               fig1_ss_legend_text_grob,
                                               fig1_ss_legend_title_grob))
 ```
 
+```{r results1-fig1-panelB-sliceseries-labels}
+#Create text grob for slice series titles
+seedColours <- character(length(seeds))
+for(i in 1:length(seeds)){
+  seedColours[i] <- FindNode(treeHuman, seeds[i])[["color_hex_triplet"]]
+}
+fig1_ss_labels_text <- str_to_title(seeds) %>% str_replace("Gyrus", "gyr.")
+fig1_ss_labels_grob <- textGrob(fig1_ss_labels_text,
+                                     x = c(0.18, 0.5, 0.845),
+                                     y = 0.1,
+                                     just = "bottom",
+                                     gp = gpar(fontsize = 10,
+                                               fontface = "bold",
+                                               col = seedColours))
+```
+
+```{r results1-fig1-panelB-sliceseries-title}
+#Panel B title
+fig1_ss_title_grob <- textGrob("Correlation maps of human seed regions",
+                               x = 0, y = 0.5,
+                               just = "left")
+```
+
+## Panel C: Similarity profiles line chart
 
 ```{r results1-fig1-panelC-linechart}
 #Convert seed similarity data frame to long form
@@ -736,16 +740,15 @@ fig1_linechart_title_grob <- textGrob("Similarity profiles of human seed regions
                                       just = "left")
 ```
 
-```{r results1-fig1-grob, fig.width=10, fig.height=9}
+## Figure 1 grob
+
+```{r results1-fig1-grob, fig.width=10, fig.height=9.5}
 #Heatmap aspect ratio, figure height and width
 matAsp = ncol(matSim_H88M67_AllGenes)/nrow(matSim_H88M67_AllGenes)
 matHeight <- 5
-matWidth <- matAsp*matHeight
+ssWidth <- matHeight*matAsp*0.722
 
-#Slice series width
-ssWidth <- matWidth*0.722
-
-#Grob for figure 1
+#Grob for main plots in figure 1
 fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
                                fig1_heatmap_title_grob, #2
                                textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
@@ -767,7 +770,7 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                fig1_linechart_xtext_grob, #19
                                fig1_linechart_xtitle_grob,#20
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  2,  2,  3,  4,  4, NA),
+                                                     c(NA,  1, NA,  2,  3,  4,  4, NA),
                                                      c(NA, NA, NA,  5, NA,  7, NA, NA),
                                                      c(NA, NA, NA,  6, NA,  7, NA, NA),
                                                      c(NA,  8,  9, 10, NA, 11, 12, NA),
@@ -775,25 +778,32 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                                      c(NA, 13, NA, 14, 14, 14, NA, NA),
                                                      c(NA, 15, 16, 17, 17, 17, 18, NA),
                                                      c(NA, NA, NA, 19, 19, 19, NA, NA),
-                                                     c(NA, NA, NA, 20, 20, 20, NA, NA)),
+                                                     c(NA, NA, NA, 20, 20, 20, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA)),
                                widths = unit(c(0.1, 0.3, 0.45, 4.6, 0.4, ssWidth, 1.2, 0.1), 'inch'),
-                               heights = unit(c(0.1, 0.3, 0.3, 0.4, matHeight, 0.1, 0.2, 1.1, 1.1, 0.2), 'inch'))
+                               heights = unit(c(0.2, 0.3, 0.3, 0.4, matHeight, 0.25, 0.4, 1.1, 1.1, 0.2, 0.2), 'inch'))
 
+#Empty rectangle grob to form the border
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
 
+#Width and height for the atlas legend slice
 sliceAMBAWidth <- 1.1
 sliceAMBAHeight <- sliceAMBAWidth/asp
+
+#New viewport for the atlas legend slice
 sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.15, 'inch'),
                                           y = unit(0.8, 'inch'),
                                           width = unit(sliceAMBAWidth, 'inch'),
                                           height = unit(sliceAMBAHeight, 'inch'))
 
+#Grob for figure 1
 fig1_grob <- gTree(children = gList(fig1_plots_grob,
                                     fig1_border_grob,
                                     sliceAMBALegend_panel_grob))
 
+#Figure 1 width and height
 fig1_width <- 10
-fig1_height <- 9
+fig1_height <- 9.5
 
 grid.newpage()
 grid.draw(fig1_grob)
@@ -801,6 +811,7 @@ grid.draw(fig1_grob)
 
 
 ```{r results1-fig1-write}
+#Save figure 1 grob
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure1.RData")
 save(fig1_grob,
      fig1_width,
@@ -809,7 +820,7 @@ save(fig1_grob,
 ```
 
 
-# Numeric values
+# Quantification
 
 
 ```{r}

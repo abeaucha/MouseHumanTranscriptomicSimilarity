@@ -53,13 +53,13 @@ We find that the similarity matrix exhibits broad patterns of positive correlati
 load("Figure1.RData")
 ```
 
-```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 9}
+```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 9.5}
 grid.newpage()
 grid.draw(fig1_grob)
 ```
 
 ```{r results1-fig1-caption}
-fig1_cap_A <- str_c("(A) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions.", sep = " ")
+fig1_cap_A <- "(A) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
 fig1_cap_B <- "(B) Mouse brain slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
 fig1_cap_C <- "(C) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
 
