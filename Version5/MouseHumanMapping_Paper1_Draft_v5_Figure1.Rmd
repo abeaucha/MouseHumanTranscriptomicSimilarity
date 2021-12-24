@@ -172,8 +172,8 @@ asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
 sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
   geom_tile(aes(fill = Intensity),
             alpha = 0.5) + 
-  scale_fill_gradient(low = gray.colors(paletteLength)[1],
-                      high = gray.colors(paletteLength)[paletteLength],
+  scale_fill_gradient(low = gray.colors(255)[1],
+                      high = gray.colors(255)[255],
                       na.value = 'transparent',
                       guide = "none") + 
   new_scale_fill() + 
@@ -415,7 +415,7 @@ fig1_heatmap_labsmouse_text_grob <- textGrob(fig1_heatmap_labsmouse_text,
                                              x = fig1_heatmap_labsmouse_text_x,
                                              y = fig1_heatmap_labsmouse_text_y,
                                              just = "centre",
-                                             gp = gpar(fontsize = 10, 
+                                             gp = gpar(fontsize = 8, 
                                                        col = fig1_heatmap_labsmouse_text_col,
                                                        fontface = "bold"))
 
@@ -514,7 +514,7 @@ fig1_heatmap_labshuman_text_grob <- textGrob(fig1_heatmap_labshuman_text,
                                              x = unit(fig1_heatmap_labshuman_text_x, 'npc'),
                                              y = unit(fig1_heatmap_labshuman_text_y, 'inch'),
                                              just = c("right", "centre"),
-                                             gp = gpar(fontsize = 10,
+                                             gp = gpar(fontsize = 8,
                                                        fontface = "bold",
                                                        col = fig1_heatmap_labshuman_text_col))
 
@@ -667,11 +667,15 @@ fig1_ss_title_grob <- textGrob("Correlation maps of human seed regions",
 ## Panel C: Similarity profiles line chart
 
 ```{r results1-fig1-panelC-linechart}
+mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
+  str_replace("Superior colliculus, sensory related", "Superior colliculus")
+
 #Convert seed similarity data frame to long form
 dfSeedSim_AllGenes_plot <- dfSeedSim_AllGenes %>% 
   gather(key = "Seed", value = "Correlation", -Target) %>% 
   mutate(Seed = factor(Seed, levels = listLabelsHumanReordered$Region88_reordered),
-         Target = factor(Target, levels = listLabelsMouseReordered$Region67_reordered)) 
+         Target = str_replace(Target, "Superior colliculus, sensory related", "Superior colliculus"),
+         Target = factor(Target, levels = mouseLabels_67)) 
 
 dfSeedSim_Annotations <- dfSeedSim_AllGenes_plot %>% 
   filter(Target %in% c("Primary motor area", "Visual areas", "Crus 1")) %>% 
@@ -784,7 +788,7 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                                      c(NA, NA, NA, 20, 20, 20, NA, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA)),
                                widths = unit(c(0.1, 0.3, 0.45, 4.6, 0.4, ssWidth, 1.2, 0.1), 'inch'),
-                               heights = unit(c(0.2, 0.3, 0.3, 0.4, matHeight, 0.25, 0.4, 1.1, 1.1, 0.2, 0.2), 'inch'))
+                               heights = unit(c(0.2, 0.3, 0.3, 0.4, matHeight, 0.2, 0.4, 1.1, 1.1, 0.2, 0.2), 'inch'))
 
 #Empty rectangle grob to form the border
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
