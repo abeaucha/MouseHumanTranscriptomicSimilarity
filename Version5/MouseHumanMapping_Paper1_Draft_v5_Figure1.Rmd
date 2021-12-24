@@ -742,7 +742,7 @@ fig1_linechart_xtext_grob <- getGrob(fig1_linechart_grob, "axis-b.8-5-8-5")
 fig1_linechart_xtitle_grob <- getGrob(fig1_linechart_grob, "xlab-b.9-5-9-5")
 fig1_linechart_legend_grob <- getGrob(fig1_linechart_grob, "guides.3-3-3-3")
 
-fig1_linechart_title_grob <- textGrob("Similarity profiles of human seed regions",
+fig1_linechart_title_grob <- textGrob("Anatomically-ordered similarity profiles of human seed regions",
                                       x = 0, y = 0.5,
                                       just = "left")
 ```
