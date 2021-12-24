@@ -1,10 +1,12 @@
 ---
 title: "Mouse Human Mapping Paper 1"
-subtitle: "Figure 4"
+subtitle: "Results 2, Figure 4"
 author: "Antoine Beauchamp"
-date: 'November 3rd, 2021'
+date: 'December 24th, 2021'
 output: html_document
 ---
+
+# Initialization
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
@@ -218,12 +220,16 @@ dfSimilarityProfiles <- map_df(.x = listSimMats,
 #Import the data frame containing mouse-human canonical pairs
 dfCanonicalPairs_H88M67 <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseHumanMatches_H88M67.csv")))
 
+mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
+  str_replace("Superior colliculus, sensory related", "Superior colliculus")
+
 #Extract the ranks for canonical pairs in all data sets
 dfCanonicalPairs_H88M67_Ranks <- dfSimilarityProfiles %>% 
   inner_join(dfCanonicalPairs_H88M67,
              by = c("Seed" = "Mouse")) %>% 
   filter(Target == Human) %>% 
-  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered))) %>% 
+  mutate(Seed = str_replace(Seed, "Superior colliculus, sensory related", "Superior colliculus"),
+         Seed = fct_rev(factor(Seed, levels = mouseLabels_67))) %>% 
   select(Data, Seed, Target, Similarity, TargetRank)
 
 #Convert data frame to wide format to compute rank differences
@@ -237,8 +243,12 @@ dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_RankDiffs %>%
   map_dfc(function(x){x - dfCanonicalPairs_H88M67_RankDiffs$AllGenes}) %>% 
   mutate(Seed = dfCanonicalPairs_H88M67_RankDiffs$Seed) %>% 
   gather(key = "Data", value = "RankDiff", -Seed) %>% 
-  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)))
+  mutate(Seed = fct_rev(factor(Seed, levels = mouseLabels_67)))
 ```
+
+# Figure 4
+
+## Panel A: Rank distributions of canonical pairs
 
 ```{r}
 #Prune mouse tree to 11 regions for cluster annotations
@@ -302,8 +312,11 @@ dfMouseColours <- annotation_colours_mod$MouseRegion %>%
              by = "Region11") %>% 
   semi_join(dfCanonicalPairs_H88M67,
             by = c("Region67" = "Mouse")) %>% 
-  mutate(Region67 = fct_rev(factor(Region67, levels = listLabelsMouseReordered$Region67_reordered))) %>% 
+  mutate(Region67 = str_replace(Region67, "Superior colliculus, sensory related", "Superior colliculus"),
+         Region67 = fct_rev(factor(Region67, levels = mouseLabels_67))) %>% 
   arrange(Region67)
+
+colPalette <- c("#B27700", "#00325C")
 
 #Create rank distributions plot
 fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
@@ -311,14 +324,13 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
   geom_pointrange(mapping = aes(y = RankMean,
                                 ymin = RankSdLower,
                                 ymax = RankSdUpper),
-                  # col = "grey70",
-                  col = "#719DC0",
-                  size = 0.25) + 
+                  col = colPalette[2],
+                  size = 0.6,
+                  fatten = 2) + 
   geom_point(data = dfCanonicalPairs_H88M67_Ranks_AllGenes, 
              mapping = aes(y = TargetRank),
-             # col = "black",
-             col = "#B27700",
-             size = 1.5) +  
+             col = colPalette[1],
+             size = 2) +  
   coord_flip(ylim = c(0,35)) + 
   scale_y_continuous(breaks = c(1, seq(10, 40, by = 10)),
                      limits = c(0, 35),
@@ -327,6 +339,7 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
        y = "Rank") + 
   theme_bw() +
   theme(axis.text.y = element_text(colour = dfMouseColours$Colour,
+                                   size = 6,
                                    face = "bold"),
         plot.margin = margin(t = 0, r = 0, l = 0, b = 0, unit = 'inch'))
 fig4_distributions_grob <- ggplotGrob(fig4_distributions) %>% grid.force()
@@ -342,8 +355,7 @@ fig4_distributions_legend <- ggplot(dfCanonicalPairs_H88M67_Ranks,
                                     aes(x = TargetRank, y = Seed, col = Data2)) + 
   geom_point() + 
   scale_colour_manual(name = "Data",
-                      # values = c("grey70", "black"),
-                      values = c("#719DC0", "#B27700"),
+                      values = colPalette,
                       labels = c("Gene expression latent space", "Gene expression initial space")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
@@ -357,11 +369,67 @@ fig4_distributions_legend_grob <- ggplotGrob(fig4_distributions_legend) %>%
 
 #Create plot title
 fig4_distributions_title_grob <- textGrob("Rank of canonical human homologue",
-                                          x = unit(1, 'npc'), 
-                                          y = unit(0.3, 'npc'),
-                                          just = c("right", "bottom"))
+                                          x = unit(0, 'npc'), 
+                                          y = unit(0.5, 'npc'),
+                                          just = c("left", "centre"))
 ```
 
+```{r results2-fig4-grob, fig.width = 10, fig.height = 7}
+#Generate the main figure grob
+fig4_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig4_distributions_title_grob, #2
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               gTree(children = gList(rectGrob(), textGrob("Title B"))), #4
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #5
+                               gTree(children = gList(rectGrob(), textGrob("Title C"))), #3
+                               gTree(children = gList(rectGrob(), fig4_distributions_ytitle_grob)),#4
+                               gTree(children = gList(rectGrob(), fig4_distributions_ytext_grob)), #5
+                               fig4_distributions_panel_grob, #6
+                               fig4_ss_grob, #7
+                               ptemp_grob, #8
+                               gTree(children = gList(rectGrob(), fig4_distributions_xtext_grob)),#9
+                               gTree(children = gList(rectGrob(), fig4_ss_legend_scale_grob)), #10
+                               gTree(children = gList(rectGrob(), fig4_distributions_xtitle_grob)),#11
+                               gTree(children = gList(rectGrob(), fig4_distributions_legend_grob)), #12
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                     c(NA,  1,  2,  2,  3,  4,  5,  6, NA),
+                                                     c(NA,  7,  8,  9, NA, 10, NA, 11, NA),
+                                                     c(NA, NA, NA, 12, NA, 13, NA, 11, NA),
+                                                     c(NA, NA, NA, 12, NA, 13, NA, NA, NA),
+                                                     c(NA, NA, NA, 14, NA, 13, NA, NA, NA),
+                                                     c(NA, NA, NA, 15, NA, NA, NA, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.1, 0.3, 1.2, 2.2, 0.45, 1.8, 0.45, 3, 0.1), 'inch'),
+                               heights = unit(c(0.25, 0.4, 4.55, 0.09, 0.09, 0.3, 0.7, 0.25), 'inch'))
+
+#Empty rectangle grob to form the border
+fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Width and height 
+sliceAMBA_width <- 0.9
+sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
+
+#New vieport for the atlas legend slice
+sliceAMBALegend_panel_grob$vp <- viewport(x = unit(2.1, 'inch'),
+                                          y = unit(0.55, 'inch'),
+                                          width = unit(sliceAMBA_width, 'inch'),
+                                          height = unit(sliceAMBA_height,'inch'))
+
+#Figure 4 grob
+# fig4_grob <- gTree(children = gList(fig4_plots_grob,
+#                                     fig4_border_grob,
+#                                     sliceAMBALegend_panel_grob))
+fig4_grob <- gTree(children = gList(fig4_plots_grob,
+                                    fig4_border_grob))
+
+fig4_width <- 10
+fig4_height <- 7
+
+grid.newpage()
+grid.draw(fig4_grob)
+```
+
+## Panel B: Slice series
 
 ```{r}
 #Generate a mouse tree with 67 leaf nodes
@@ -393,12 +461,12 @@ fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$P
 fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
   overlay(mincArray(fig4_ss_array), low = 0, high = 1) %>% 
-  legend("Proportion of non-positive rank differences") %>%
+  # legend("Proportion of non-positive rank differences") %>%
   grobify()
 ```
 
 ```{r}
-fig4_ss_legend_palette <- matrix(colorRampPalette(c("red", "yellow"))(255), nrow = 1, ncol = 100)
+fig4_ss_legend_palette <- matrix(colorRampPalette(c("red", "yellow"))(255), nrow = 1, ncol = 255)
 
 fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
                                         x = 0, y = 0.95,
@@ -407,6 +475,7 @@ fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
                                         just = c("left", "top"))
 ```
 
+## Panel C: Cerebellum top matches
 
 ```{r}
 treeHuman_88 <- Clone(treeHuman)
@@ -744,6 +813,7 @@ p1
 # fig4_treedist_legend_grob <- getGrob(fig4_treedist_grob, "guides.3-3-3-3")
 ```
 
+
 ```{r}
 treeMouse_11 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_11,
@@ -802,7 +872,7 @@ dfSliceSelection <- dfSliceSelection %>%
   filter(y <= 400) %>% 
   mutate(Label = factor(Label))
 
-asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
+sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
 
 sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
   geom_tile(aes(fill = Intensity),
@@ -810,12 +880,12 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
   scale_fill_gradient(low = gray.colors(255)[1],
                       high = gray.colors(255)[255],
                       na.value = 'transparent',
-                      guide = F) + 
+                      guide = 'none') + 
   new_scale_fill() + 
   geom_tile(aes(fill = Label)) + 
   scale_fill_manual(na.value = 'transparent',
                       values = dfMouseColours$Colour,
-                    guide = F) +
+                    guide = 'none') +
   coord_fixed() +
   theme_void() +
   # theme_minimal() +
@@ -874,6 +944,8 @@ treegrob <- ggplotGrob(ptree) %>% grid.force()
 ```
 
 ```{r}
+nMLPsamples <- 500
+
 temp <- dfSimilarityProfiles %>% 
   inner_join(dfCanonicalPairs_H88M67,
              by = c("Seed" = "Mouse")) %>% 
@@ -944,56 +1016,68 @@ ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
 grid.ls(ptemp_grob)
 ```
 
+## Figure 4 grob
 
-```{r results2-fig4-grob}
-#Generate figure 4 grob
-fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
-                         fig4_distributions_ytext_grob,#2
-                         fig4_distributions_ytitle_grob,#3
-                         fig4_distributions_xtext_grob,#4
-                         fig4_distributions_xtitle_grob,#5
-                         fig4_distributions_legend_grob, #6
-                         fig4_distributions_title_grob, #7
-                         fig4_ss_grob, #8
-                         ptemp_grob,
-                         layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA),
-                                               c( 3,  2, 1, NA,  8,  9),
-                                               c(NA, NA, 4, NA, NA,  9),
-                                               c(NA, NA, 4, NA, NA, NA),
-                                               c(NA, NA, 5, NA, NA, NA),
-                                               c(NA, NA, 6, NA, NA, NA),
-                                               c(NA, NA, 6, NA, NA, NA)),
-                         widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.5, 2.45), 'inch'),
-                         heights = unit(c(0.4, 4.55, 0.09, 0.09, 0.175, 0.1, 0.6), 'inch'))
-```
+```{r results2-fig4-grob, fig.width = 10, fig.height = 7}
+#Generate the main figure grob
+fig4_plots_grob <- arrangeGrob(fig4_distributions_title_grob, #1
+                               gTree(children = gList(rectGrob(), textGrob("Title B"))), #2
+                               gTree(children = gList(rectGrob(), textGrob("Title C"))), #3
+                               gTree(children = gList(rectGrob(), fig4_distributions_ytitle_grob)),#4
+                               gTree(children = gList(rectGrob(), fig4_distributions_ytext_grob)), #5
+                               fig4_distributions_panel_grob, #6
+                               fig4_ss_grob, #7
+                               ptemp_grob, #8
+                               gTree(children = gList(rectGrob(), fig4_distributions_xtext_grob)),#9
+                               gTree(children = gList(rectGrob(), fig4_ss_legend_scale_grob)), #10
+                               gTree(children = gList(rectGrob(), fig4_distributions_xtitle_grob)),#11
+                               gTree(children = gList(rectGrob(), fig4_distributions_legend_grob)), #12
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                     c(NA, NA, NA,  1, NA,  2, NA,  3, NA),
+                                                     c(NA,  4,  5,  6, NA,  7, NA,  8, NA),
+                                                     c(NA, NA, NA,  9, NA, 10, NA,  8, NA),
+                                                     c(NA, NA, NA,  9, NA, 10, NA, NA, NA),
+                                                     c(NA, NA, NA, 11, NA, 10, NA, NA, NA),
+                                                     c(NA, NA, NA, 12, NA, NA, NA, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.1, 0.3, 1.2, 2.2, 0.45, 1.8, 0.45, 3, 0.1), 'inch'),
+                               heights = unit(c(0.25, 0.4, 4.55, 0.09, 0.09, 0.3, 0.7, 0.25), 'inch'))
 
-```{r results2-fig4-interactive, include=TRUE, echo=FALSE, fig.width=10, fig.height=6.2}
+#Empty rectangle grob to form the border
+fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Width and height 
+sliceAMBA_width <- 0.9
+sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
+
+#New vieport for the atlas legend slice
+sliceAMBALegend_panel_grob$vp <- viewport(x = unit(2.1, 'inch'),
+                                          y = unit(0.55, 'inch'),
+                                          width = unit(sliceAMBA_width, 'inch'),
+                                          height = unit(sliceAMBA_height,'inch'))
+
+#Figure 4 grob
+fig4_grob <- gTree(children = gList(fig4_plots_grob,
+                                    fig4_border_grob,
+                                    sliceAMBALegend_panel_grob))
+
+fig4_width <- 10
+fig4_height <- 7
+
 grid.newpage()
 grid.draw(fig4_grob)
-sliceAMBAWidth <- 0.9
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(2.1, 'inch'),
-              y = unit(0.55, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B."),
-          x = unit(c(0.2, 4.975), 'inch'),
-          y = unit(c(0.95, 0.95), 'npc'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
+
 
 ```{r results2-fig4-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure4.RData")
 save(fig4_grob,
-     sliceAMBALegend_panel_grob,
+     fig4_width,
+     fig4_height,
      file = fileout)
 ```
 
-#Numeric
+# Quantitative
 
 ```{r}
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 

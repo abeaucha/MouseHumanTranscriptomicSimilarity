@@ -670,7 +670,7 @@ rm(treeMouse_11,
 ## Figure 3 grob
 
 ```{r results2-fig3-grob, fig.width = 10, fig.height = 7.4}
-#Generate the figure grob
+#Generate the main figure grob
 fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
                                fig3_seedsim_title_grob, #2
                                textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
@@ -718,6 +718,7 @@ sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.5, 'inch'),
                                           width = unit(sliceAMBA_width, 'inch'),
                                           height = unit(sliceAMBA_height,'inch'))
 
+#Figure 3 grob
 fig3_grob <- gTree(children = gList(fig3_plots_grob,
                                     fig3_border_grob,
                                     sliceAMBALegend_panel_grob))
