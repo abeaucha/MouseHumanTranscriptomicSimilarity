@@ -182,22 +182,6 @@ load("Figure3.RData")
 ```{r results2-fig3-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=6.7}
 grid.newpage()
 grid.draw(fig3_grob)
-sliceAMBAWidth <- 0.9
-#FIX THIS ------
-asp <- 1
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.5, 'inch'),
-              y = unit(0.9, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.23, 5.90, 0.23), 'inch'),
-          y = unit(c(6.35, 6.35, 3.15), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results2-fig3-caption}
@@ -212,8 +196,6 @@ fig3_cap <- str_c("Quantifying improvement in locality in gene expression latent
 ```
 
 ```{r results2-fig3-options}
-fig3_width <- 10
-fig3_height <- 6.7
 knitr::opts_chunk$set(include = TRUE,
                       echo = FALSE,
                       fig.width = fig3_width,
@@ -224,20 +206,6 @@ knitr::opts_chunk$set(include = TRUE,
 ```{r results2-fig3-print}
 grid.newpage()
 grid.draw(fig3_grob)
-sliceAMBAWidth <- 0.9
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.5, 'inch'),
-              y = unit(0.9, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.23, 5.90, 0.23), 'inch'),
-          y = unit(c(6.35, 6.35, 3.15), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results2-fig3-clean}

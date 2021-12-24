@@ -167,7 +167,7 @@ dfSliceSelection <- dfSliceSelection %>%
   filter(y <= 400) %>% 
   mutate(Label = factor(Label))
 
-asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
+sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
 
 sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
   geom_tile(aes(fill = Intensity),
@@ -794,14 +794,14 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
 
 #Width and height for the atlas legend slice
-sliceAMBAWidth <- 1.1
-sliceAMBAHeight <- sliceAMBAWidth/asp
+sliceAMBA_width <- 1.1
+sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
 
 #New viewport for the atlas legend slice
 sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.15, 'inch'),
                                           y = unit(0.8, 'inch'),
-                                          width = unit(sliceAMBAWidth, 'inch'),
-                                          height = unit(sliceAMBAHeight, 'inch'))
+                                          width = unit(sliceAMBA_width, 'inch'),
+                                          height = unit(sliceAMBA_height, 'inch'))
 
 #Grob for figure 1
 fig1_grob <- gTree(children = gList(fig1_plots_grob,

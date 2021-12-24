@@ -1,10 +1,12 @@
 ---
 title: "Mouse Human Mapping Paper 1"
-subtitle: "Figure 3"
+subtitle: "Results 2, Figure 3"
 author: "Antoine Beauchamp"
-date: 'November 3rd, 2021'
+date: 'December 23rd, 2021'
 output: html_document
 ---
+
+# Initialization
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
@@ -24,6 +26,7 @@ library(RMINC)
 library(MRIcrotome)
 library(data.tree)
 library(RColorBrewer)
+library(viridis)
 ```
 
 ```{r functions}
@@ -174,6 +177,10 @@ names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
 ```
 
+# Figure 3
+
+## Processing
+
 ```{r results2-fig3-processing}
 #' Compute scaled similarity profiles for every column in a similarity matrix
 #'
@@ -230,6 +237,8 @@ dfRankDifferences <- dfRankThresholds %>%
   gather(key = "Data", value = "RankDiff", -Seed) %>% 
   mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)))
 ```
+
+## Panel A: Rank-ordered similarity profile for mouse primary motor area
 
 ```{r results2-fig3-panelA-seedsim}
 #Extract the chosen mouse seed
@@ -320,10 +329,12 @@ fig3_seedsim_xtext_grob <- getGrob(fig3_seedsim_grob, "axis-b.8-5-8-5")
 fig3_seedsim_xtitle_grob <- getGrob(fig3_seedsim_grob, "xlab-b.9-5-9-5")
 fig3_seedsim_legend_grob <- getGrob(fig3_seedsim_grob, "guides.3-3-3-3")
 # fig3_seedsim_title_grob <- getGrob(fig3_seedsim_grob, "title.3-5-3-5")
-fig3_seedsim_title_grob <- textGrob("Similarity profiles of the mouse primary motor area",
+fig3_seedsim_title_grob <- textGrob("Rank-ordered similarity profiles of the mouse M1",
                                     x = 0, y = 0.5,
                                     just = c("left", "centre"))
 ```
+
+## Panel B: Distributions of rank differences
 
 ```{r}
 #Prune mouse tree to 11 regions for cluster annotations
@@ -398,7 +409,8 @@ fig3_distributions <- ggplot(dfRankDifferencesSummary, aes(x = Seed, y = RankDif
              linetype = "dashed") + 
   geom_pointrange(aes(ymin = RankDiffLower,
                       ymax = RankDiffUpper),
-                  size = 0.25) + 
+                  size = 0.4,
+                  fatten = 2) + 
   coord_flip() + 
   scale_x_discrete(position = "top") + 
   scale_y_continuous(breaks = ybreaks) + 
@@ -419,11 +431,13 @@ fig3_distributions_ytext_grob <- getGrob(fig3_distributions_grob, "axis-r.7-6-7-
 fig3_distributions_ytitle_grob <- getGrob(fig3_distributions_grob, "ylab-r.7-7-7-7")
 fig3_distributions_xtext_grob <- getGrob(fig3_distributions_grob, "axis-b.8-5-8-5")
 fig3_distributions_xtitle_grob <- getGrob(fig3_distributions_grob, "xlab-b.9-5-9-5")
-fig3_distributions_title_grob <- textGrob("Difference in rank at s = 0.75 between gene\nspace and latent spaces",
-                                          x = 0.05, y = 0.5,
+fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled similarity of 0.75",
+                                          x = 0, y = 0.5,
                                           just = c("left", "centre"),
                                           gp = gpar(lineheight = 0.8))
 ```
+
+## Panel C: Slice series
 
 ```{r}
 #Generate a mouse tree with 67 leaf nodes
@@ -446,9 +460,8 @@ fig3_ss_array <- mincBuildArray(values = dfRankDifferencesSummary$PropNonPos,
                                 defs = dfAtlasMouse_67)
 
 #Generate base slice series
-library(viridis)
-# fig3_ss_palette <- MRIcrotome:::defaultCol()
-# fig3_ss_palette <- magma(n = 255)
+# fig3_ss_palette <- magma(n = 255, begin = 0.5)
+# fig3_ss_palette <- mako(n = 255, begin = 0.2)
 fig3_ss_palette <- viridis(n = 255)
 fig3_ss_grob <- sliceSeries(nrow = 3, ncol = 4, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
@@ -490,44 +503,15 @@ fig3_ss_legend_title_grob <- textGrob("Proportion of non-positive\nrank differen
 
 #Combine slice series legend grobs
 fig3_ss_legend_grob <- gTree(children = gList(fig3_ss_legend_scale_grob,
-                                              fig3_ss_legend_text_grob,
-                                              fig3_ss_legend_title_grob))
-```
+                                              fig3_ss_legend_text_grob))
 
-```{r}
-grid.newpage()
-grid.draw(fig3_ss_grob)
+fig3_ss_title_grob <- textGrob("Proportion of latent spaces with non-positive rank differences",
+                               x = 0, y = 0.5,
+                               just = "left")
 ```
 
 
-```{r results2-fig3-grob}
-#Generate the figure grob
-fig3_grob <- arrangeGrob(fig3_seedsim_panel_grob, #1
-                         fig3_seedsim_ytext_grob, #2
-                         fig3_seedsim_ytitle_grob, #3
-                         fig3_seedsim_xtext_grob, #4
-                         fig3_seedsim_xtitle_grob, #5
-                         fig3_seedsim_legend_grob, #6
-                         fig3_seedsim_title_grob, #7
-                         fig3_ss_grob, #8
-                         fig3_ss_legend_grob, #9
-                         fig3_distributions_panel_grob,#10
-                         fig3_distributions_ytext_grob, #11
-                         fig3_distributions_ytitle_grob, #12
-                         fig3_distributions_xtext_grob, #13
-                         fig3_distributions_xtitle_grob, #14
-                         fig3_distributions_title_grob, #15
-                         layout_matrix = rbind(c(NA, NA,  7, NA, 15, 15, 15),
-                                               c( 3,  2,  1, NA, 10, 11, 12),
-                                               c(NA, NA,  4, NA, 10, 11, 12),
-                                               c(NA, NA,  5, NA, 10, 11, 12),
-                                               c(NA, NA,  6, NA, 10, 11, 12),
-                                               c( 9,  9,  8, NA, 10, 11, 12),
-                                               c(NA, NA, NA, NA, 13, NA, NA),
-                                               c(NA, NA, NA, NA, 14, NA, NA)),
-                         widths = unit(c(0.5, 0.4, 4.8, 0.25, 2.2, 1.2, 0.5), 'inch'),
-                         heights = unit(c(0.5, 2, 0.25, 0.25, 0.4, 2.7, 0.2, 0.3), 'inch'))
-```
+## AMBA legend slice
 
 ```{r}
 treeMouse_11 <- Clone(treeMouse)
@@ -587,7 +571,7 @@ dfSliceSelection <- dfSliceSelection %>%
   filter(y <= 400) %>% 
   mutate(Label = factor(Label))
 
-asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
+sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
 
 sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
   geom_tile(aes(fill = Intensity),
@@ -595,12 +579,12 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
   scale_fill_gradient(low = gray.colors(255)[1],
                       high = gray.colors(255)[255],
                       na.value = 'transparent',
-                      guide = F) + 
+                      guide = 'none') + 
   new_scale_fill() + 
   geom_tile(aes(fill = Label)) + 
   scale_fill_manual(na.value = 'transparent',
                       values = dfMouseColours$Colour,
-                    guide = F) +
+                    guide = 'none') +
   coord_fixed() +
   theme_void() +
   # theme_minimal() +
@@ -623,29 +607,73 @@ rm(treeMouse_11,
    dfMouseColours)
 ```
 
-```{r results2-fig3-interactive, include=TRUE, echo=FALSE, fig.width=10, fig.height=6.7}
+## Figure 3 grob
+
+```{r results2-fig3-grob, fig.width = 10, fig.height = 7.4}
+#Generate the figure grob
+fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig3_seedsim_title_grob, #2
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               fig3_distributions_title_grob, #4
+                               fig3_seedsim_ytitle_grob, #5
+                               fig3_seedsim_ytext_grob, #6
+                               fig3_seedsim_panel_grob, #7
+                               fig3_distributions_panel_grob,#8
+                               fig3_distributions_ytext_grob, #9
+                               fig3_distributions_ytitle_grob, #10
+                               fig3_seedsim_xtext_grob, #11
+                               fig3_seedsim_xtitle_grob, #12
+                               fig3_seedsim_legend_grob, #13
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #14
+                               fig3_ss_title_grob, #15
+                               fig3_ss_legend_grob, #16
+                               fig3_ss_grob, #17
+                               fig3_distributions_xtext_grob, #18
+                               fig3_distributions_xtitle_grob, #19
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                     c(NA,  1, NA,  2,  3,  4,  4,  4, NA),
+                                                     c(NA,  5,  6,  7, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, 11, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, 12, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, 13, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, NA, NA,  8,  9, 10, NA),
+                                                     c(NA, 14, NA, 15, NA,  8,  9, 10, NA),
+                                                     c(NA, 16, 16, 17, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, NA, NA, 18, NA, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, 19, NA, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.1, 0.3, 0.4, 4.5, 0.45, 2.2, 1.5, 0.4, 0.1), 'inch'),
+                               heights = unit(c(0.25, 0.3, 2, 0.25, 0.25, 0.4, 0.1, 0.4, 2.7, 0.2, 0.3, 0.25), 'inch'))
+
+#Empty rectangle grob to form the border
+fig3_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Width and height for the atlas legend slice
+sliceAMBA_width <- 0.9
+sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
+
+#New vieport for the atlas legend slice
+sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.5, 'inch'),
+                                          y = unit(1.4, 'inch'),
+                                          width = unit(sliceAMBA_width, 'inch'),
+                                          height = unit(sliceAMBA_height,'inch'))
+
+fig3_grob <- gTree(children = gList(fig3_plots_grob,
+                                    fig3_border_grob,
+                                    sliceAMBALegend_panel_grob))
+
+fig3_width <- 10
+fig3_height <- 7.4
+
 grid.newpage()
 grid.draw(fig3_grob)
-sliceAMBAWidth <- 0.9
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(9.5, 'inch'),
-              y = unit(0.9, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.23, 5.90, 0.23), 'inch'),
-          y = unit(c(6.35, 6.35, 3.15), 'inch'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results2-fig3-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure3.RData")
 save(fig3_grob,
-     sliceAMBALegend_panel_grob,
+     fig3_width,
+     fig3_height,
      file = fileout)
 ```
 
