@@ -6,6 +6,8 @@ date: 'December 23rd, 2021'
 output: html_document
 ---
 
+# Initialization 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE,
@@ -69,11 +71,6 @@ treeHuman$Do(function(node){
 pruneAnatTree(treeHuman,
               nodes = c("white matter", "sulci & spaces"),
               method = "AtNode")
-
-#Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r}
@@ -120,9 +117,11 @@ names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
 ```
 
-```{r results2-fig2-panelC-heatmap}
-# Figure 2: Heatmap processing ------------------------------------------------
+# Figure 2
 
+## Panel C: Similarity matrix heatmap
+
+```{r results2-fig2-panelC-heatmap-processing}
 #To create an average similarity matrix, first concat the matrices into a 3D array
 arraySimLatentSpace <- array(unlist(listSimLatentSpace),
                              dim = c(length(listLabelsHumanReordered$Region88_reordered),
@@ -196,14 +195,34 @@ annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
 annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
+```
 
 
-# Figure 2: Heatmap base ggplot -----------------------------------------------
+```{r results2-fig2-panelC-heatmap-base}
+#Some values to set up the palette
+paletteLength <- 255 #Palette length
+heatmapRange <- c(-0.3, 1) #Heatmap range
+heatmapRangeDist <- heatmapRange[2] - heatmapRange[1] #Range distance
+distNegative <- abs(heatmapRange[1] - 0) #Negative distance
+percNegative <- distNegative/heatmapRangeDist #Percent of range negative
+lengthNegative <- floor(percNegative*paletteLength) #Number of negative elements
+lengthPositive <- paletteLength - lengthNegative #Number of positive elements
+
+#Create the palette
+heatmapColours <- rev(brewer.pal(n = 11, name = "RdYlBu")) #Palette colours
+heatmapPaletteNegative <- colorRampPalette(heatmapColours[1:6])(lengthNegative) #Negative palette
+heatmapPalettePositive <- colorRampPalette(heatmapColours[6:11])(lengthPositive) #Positive palette
+heatmapPalette <- c(heatmapPaletteNegative, heatmapPalettePositive) #Full palette
+
+#Heatmap breaks
+heatmapBreaks <- seq(heatmapRange[1], heatmapRange[2], length.out = paletteLength)
 
 #Generate similarity matrix heatmap and convert to ggplot object
 fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
+                                color = heatmapPalette,
+                                breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
-                                border_color = NA,
+                                border_color = "white",
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
@@ -212,11 +231,10 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
                                 annotation_legend = F,
                                 annotation_names_col = F, annotation_names_row = F) %>% 
   as.ggplot()
+```
 
 
-
-# Figure 2: Heatmap matrix ----------------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-matrix}
 #Convert the pheatmap plot to grob and force the gTree
 fig2_heatmap_main_grob <- ggplotGrob(fig2_heatmap_ggplot) %>% grid.force()
 
@@ -225,11 +243,6 @@ fig2_heatmap_main_matrix_grob <- fig2_heatmap_main_grob %>%
   getGrob("matrix.4-3-4-3") 
 
 #Extract the row annotations and reposition them
-# fig2_heatmap_main_rowannotations_grob <- fig2_heatmap_main_grob %>% 
-#   getGrob("row_annotation.4-2-4-2") %>%
-#   editGrob(x = unit(0.1,'npc'),
-#            width = unit(0.9, 'npc'),
-#            just = "left")
 fig2_heatmap_main_rowannotations_grob <- fig2_heatmap_main_grob %>% 
   getGrob("row_annotation.4-2-4-2") %>%
   editGrob(x = unit(0,'npc'),
@@ -245,13 +258,6 @@ fig2_heatmap_main_colannotations_grob <- fig2_heatmap_main_grob %>%
 
 #Recombine the plot into a single grob layout
 #Annotation sizes are fixed in inches. Matrix fills the remaining space
-# fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob, 
-#                                       fig2_heatmap_main_rowannotations_grob,
-#                                       fig2_heatmap_main_matrix_grob,
-#                                       layout_matrix = rbind(c(1, NA),
-#                                                             c(3,  2)),
-#                                       widths = unit(c(0.9, 0.1), c('null', 'inch')),
-#                                       heights = unit(c(0.1, 0.9), c('inch', 'null')))
 fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob, 
                                       fig2_heatmap_main_rowannotations_grob,
                                       fig2_heatmap_main_matrix_grob,
@@ -259,15 +265,13 @@ fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob,
                                                             c( 2, 3)),
                                       widths = unit(c(0.1, 0.9), c('inch', 'null')),
                                       heights = unit(c(0.1, 0.9), c('inch', 'null')))
+```
 
 
-
-# Figure 2: Heatmap legend ----------------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-legend}
 #1. Legend scale
-#Generate the legend palette
-fig2_heatmap_legend_palette <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100) %>%
-  matrix(nrow = 1, ncol = 100)
+#Convert the heatmap palette to a matrix
+fig2_heatmap_legend_palette <- matrix(heatmapPalette, nrow = 1, ncol = paletteLength)
 
 #Properties for the legend scale
 fig2_heatmap_legend_scale_width <- 1  #Width
@@ -284,26 +288,12 @@ fig2_heatmap_legend_scale_grob <- rasterGrob(fig2_heatmap_legend_palette,
                                              just = c("left", "top"))
 
 #2. Legend text
-#Properties for legend text
-fig2_heatmap_legend_text_min <- min(matSim_H88M67_MLP_mean)
-fig2_heatmap_legend_text_max <- max(matSim_H88M67_MLP_mean)
-fig2_heatmap_legend_text_nlabels <- 5
-
-#Legend text is defined as a sequence from min to max
-fig2_heatmap_legend_text_seq <- seq(fig2_heatmap_legend_text_min,
-                                    fig2_heatmap_legend_text_max,
-                                    length.out = fig2_heatmap_legend_text_nlabels) %>%
-  round(2) %>%
-  as.character()
-
-#Legend text x and y positions are based on the raster's positions and dimensions
-fig2_heatmap_legend_text_x <- seq(fig2_heatmap_legend_scale_x,
-                                  fig2_heatmap_legend_scale_width,
-                                  length.out = fig2_heatmap_legend_text_nlabels)
+fig2_heatmap_legend_text <- seq(-0.2, heatmapRange[2], by = 0.2)
+fig2_heatmap_legend_text_x <- (fig2_heatmap_legend_text - heatmapRange[1])/heatmapRangeDist
 fig2_heatmap_legend_text_y <- fig2_heatmap_legend_scale_y - fig2_heatmap_legend_scale_height - 0.05
 
 #Create the text grob for the legend text
-fig2_heatmap_legend_text_grob <- textGrob(fig2_heatmap_legend_text_seq,
+fig2_heatmap_legend_text_grob <- textGrob(fig2_heatmap_legend_text,
                                           x = fig2_heatmap_legend_text_x,
                                           y = fig2_heatmap_legend_text_y,
                                           just = c("center", "top"),
@@ -326,11 +316,9 @@ fig2_heatmap_legend_title_grob <- textGrob(fig2_heatmap_legend_title,
 fig2_heatmap_legend_grob <- gTree(children = gList(fig2_heatmap_legend_scale_grob,
                                                    fig2_heatmap_legend_text_grob,
                                                    fig2_heatmap_legend_title_grob))
+```
 
-
-
-# Figure 2: Heatmap mouse labels ----------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-mouselabs}
 #1. Mouse label text
 #The mouse labels are acronyms for 11 coarse regions
 fig2_heatmap_labsmouse_text <- treeMouse_11$Get("acronym", filterFun = isLeaf) %>% 
@@ -413,10 +401,9 @@ fig2_heatmap_labsmouse_title_grob <- textGrob("Mouse regions",
 #Combine the mouse label grobs into one
 fig2_heatmap_labsmouse_grob <- gTree(children = gList(fig2_heatmap_labsmouse_text_grob,
                                                       fig2_heatmap_labsmouse_line_grob))
+```
 
-
-
-# Figure 2: Heatmap human labels ----------------------------------------------
+```{r results2-fig2-panelC-heatmap-humanlabs}
 #1. Human label text
 fig2_heatmap_labshuman_text <- treeHuman_16$Get("acronym", filterFun = isLeaf) %>% 
   enframe(name = "Region",
@@ -483,6 +470,9 @@ fig2_heatmap_labshuman_title_grob <- textGrob("Human regions",
 fig2_heatmap_labshuman_grob <- gTree(children = gList(fig2_heatmap_labshuman_text_grob,
                                                       fig2_heatmap_labshuman_line_grob))
 ```
+
+
+## Panel A: Training the neural network
 
 ```{r results2-fig2-panelA-illustration1}
 # Figure 2: Illustration 1 network architecture -------------------------------
@@ -750,6 +740,8 @@ fig2_illustration1_grob <- gTree(children = gList(fig2_illustration1_input_data_
                                                   fig2_illustration1_arrows_grob))
 ```
 
+## Panel B: Transforming the common space
+
 ```{r results2-fig2-panelB-illustration2}
 # Figure 2: Illustration 2 network architecture -------------------------------
 
@@ -952,28 +944,15 @@ fig2_illustration2_grob <- gTree(children = gList(fig2_illustration2_neuralnet_g
                                                   fig2_illustration2_arrows_grob))
 ```
 
-```{r results2-fig2-grob}
+## Figure 2 grob
+
+```{r results2-fig2-grob, fig.width=10, fig.height=5.8}
 #Heatmap aspect ratio, figure height and width
 matAsp <- ncol(matSim_H88M67_MLP_mean)/nrow(matSim_H88M67_MLP_mean)
 matHeight <- 3.9
 matWidth <- matAsp*matHeight
 
 #Grob for figure 2
-# fig2_grob <- arrangeGrob(fig2_heatmap_main_grob, #1
-#                          fig2_heatmap_labsmouse_grob, #2
-#                          fig2_heatmap_labsmouse_title_grob, #3
-#                          fig2_heatmap_labshuman_grob, #4
-#                          fig2_heatmap_labshuman_title_grob, #5
-#                          fig2_heatmap_legend_grob, #6
-#                          fig2_illustration1_grob, #7
-#                          fig2_illustration2_grob, #8
-#                          layout_matrix = rbind(c(NA, NA,  3, NA, NA),
-#                                                c( 7, NA,  2, NA, NA),
-#                                                c( 7, NA,  1,  4,  5),
-#                                                c( 8, NA,  1,  4,  5),
-#                                                c( 8, NA,  6, NA, NA)),
-#                          widths = unit(c(5.3, 0.7, matWidth, 0.5, 0.3), 'inch'),
-#                          heights = unit(c(0.3, 0.5, matHeight/2, matHeight/2, 1), 'inch'))
 fig2_grob <- arrangeGrob(fig2_heatmap_main_grob, #1
                          fig2_heatmap_labsmouse_grob, #2
                          fig2_heatmap_labsmouse_title_grob, #3
@@ -989,9 +968,7 @@ fig2_grob <- arrangeGrob(fig2_heatmap_main_grob, #1
                                                c( 8, NA, NA, NA,  6, NA)),
                          widths = unit(c(5.3, 0.5, 0.3, 0.45, matWidth, 0.2), 'inch'),
                          heights = unit(c(0.3, 0.5, matHeight/2, matHeight/2, 1), 'inch'))
-```
 
-```{r results2-fig2-interactive, include=TRUE, echo = FALSE, fig.width=10, fig.height=5.8}
 grid.newpage()
 grid.draw(fig2_grob)
 grid.text(c("A.", "B.", "C."),
@@ -1006,6 +983,7 @@ grid.text(c("Training the MLP classifier", "Transforming the gene expression blu
           gp = gpar(fontsize = 14))
 grid.rect(gp = gpar(fill = NA))
 ```
+
 
 ```{r results2-fig2-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure2.RData")

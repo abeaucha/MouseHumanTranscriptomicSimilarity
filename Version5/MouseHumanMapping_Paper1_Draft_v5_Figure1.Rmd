@@ -172,8 +172,8 @@ asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
 sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
   geom_tile(aes(fill = Intensity),
             alpha = 0.5) + 
-  scale_fill_gradient(low = gray.colors(255)[1],
-                      high = gray.colors(255)[255],
+  scale_fill_gradient(low = gray.colors(paletteLength)[1],
+                      high = gray.colors(paletteLength)[paletteLength],
                       na.value = 'transparent',
                       guide = "none") + 
   new_scale_fill() + 
@@ -204,7 +204,7 @@ rm(atlasMouse_11,
 
 # Figure 1
 
-## Panel A: Heatmap
+## Panel A: Similarity matrix heatmap
 
 ```{r results1-fig1-panelA-heatmap-processing}
 #Compute average gene expression for 67 mouse brain regions
@@ -304,15 +304,18 @@ annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
 
 ```{r results1-fig1-panelA-heatmap-base}
 #Heatmap palette and legend breaks
-heatmapColours <- colorRampPalette(rev(brewer.pal(n = 11, name = "RdYlBu")))(255)
-heatmapBreaks <- seq(-0.4, 0.4, length.out = 255)
+paletteLength <- 255
+heatmapColours <- rev(brewer.pal(n = 11, name = "RdYlBu")) #Palette colours
+heatmapPalette <- colorRampPalette(heatmapColours)(paletteLength)
+heatmapRange <- c(-0.4, 0.4)
+heatmapBreaks <- seq(heatmapRange[1], heatmapRange[2], length.out = paletteLength)
 
 #Generate similarity matrix heatmap and convert to ggplot object
 fig1_heatmap_ggplot <- pheatmap(matSim_H88M67_AllGenes,
-                                color = heatmapColours,
+                                color = heatmapPalette,
+                                breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
                                 border_color = "white",
-                                breaks = heatmapBreaks,
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
@@ -580,11 +583,11 @@ corRange <- c(min(abs(heatmapBreaks)), max(heatmapBreaks))
 
 #Obtain the heatmap colour indices corresponding to the correlation bounds
 arrayFrac <- (c(-1, 1)*corRange[1] + corRange[2])/(2*corRange[2])
-arrayInd <- floor(arrayFrac*length(heatmapColours))
+arrayInd <- floor(arrayFrac*length(heatmapPalette))
 
 #Extract colour palettes for positive and negative correlation ranges
-ssPalettePositive <- colorRampPalette(heatmapColours[arrayInd[2]:length(heatmapColours)])(255)
-ssPaletteNegative <- colorRampPalette(heatmapColours[arrayInd[1]:1])(255)
+ssPalettePositive <- colorRampPalette(heatmapPalette[arrayInd[2]:length(heatmapPalette)])(paletteLength)
+ssPaletteNegative <- colorRampPalette(heatmapPalette[arrayInd[1]:1])(paletteLength)
 
 #Create the base slice series
 fig1_ss_base <- sliceSeries(nrow = 8, ncol = 1, begin = 70, end = 330) %>% 
@@ -602,7 +605,7 @@ fig1_ss_grob <- grobify(fig1_ss_base)
 ```{r results1-fig1-panelB-sliceseries-legend}
 #Create slice series legend
 #The legend is the same as that for the heatmap. Generate it using a raster
-fig1_ss_legend_palette <- rev(heatmapColours)
+fig1_ss_legend_palette <- rev(heatmapPalette)
 fig1_ss_legend_scale_width <- 0.2
 fig1_ss_legend_scale_height <- 1
 fig1_ss_legend_scale_x <- 0.05
