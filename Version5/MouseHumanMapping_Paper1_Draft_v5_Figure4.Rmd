@@ -374,6 +374,54 @@ fig4_distributions_title_grob <- textGrob("Rank of canonical human homologue",
                                           just = c("left", "centre"))
 ```
 
+
+## Panel B: Slice series
+
+```{r}
+#Generate a mouse tree with 67 leaf nodes
+treeMouse_67 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_67,
+              nodes = listLabelsMouseReordered$Region67_reordered,
+              method = "BelowNode")
+
+#Create a mouse atlas with 67 regions
+atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
+dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
+```
+
+```{r results2-fig4-panelB-proportions}
+#Compute the proportion of rank differences non-positive
+dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
+  group_by(Seed) %>% 
+  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
+  ungroup()
+
+#Create MINC array for proportions non-positive
+fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$PropNonPos,
+                                values.names = dfCanonicalPairs_H88M67_RankDiffsProp$Seed,
+                                labels = atlasMouse_67,
+                                defs = dfAtlasMouse_67)
+
+fig4_ss_palette <- viridis(n = 255)
+# fig4_ss_palette <- plasma(n = 255)
+# fig4_ss_palette <- magma(n = 255)
+
+#Generate base slice series
+fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
+  anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
+  overlay(mincArray(fig4_ss_array), low = 0, high = 1, col = fig4_ss_palette) %>% 
+  grobify()
+
+fig4_ss_legend_palette <- matrix(fig4_ss_palette, nrow = 1, ncol = 255)
+
+fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
+                                        x = 0, y = 0.95,
+                                        width = 1,
+                                        height = 0.2,
+                                        just = c("left", "top"))
+```
+
 ```{r results2-fig4-grob, fig.width = 10, fig.height = 7}
 #Generate the main figure grob
 fig4_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
@@ -427,52 +475,6 @@ fig4_height <- 7
 
 grid.newpage()
 grid.draw(fig4_grob)
-```
-
-## Panel B: Slice series
-
-```{r}
-#Generate a mouse tree with 67 leaf nodes
-treeMouse_67 <- Clone(treeMouse)
-pruneAnatTree(treeMouse_67,
-              nodes = listLabelsMouseReordered$Region67_reordered,
-              method = "BelowNode")
-
-#Create a mouse atlas with 67 regions
-atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
-dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
-```
-
-```{r results2-fig4-panelB-proportions}
-#Compute the proportion of rank differences non-positive
-dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
-  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
-  group_by(Seed) %>% 
-  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
-  ungroup()
-
-#Create MINC array for proportions non-positive
-fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$PropNonPos,
-                                values.names = dfCanonicalPairs_H88M67_RankDiffsProp$Seed,
-                                labels = atlasMouse_67,
-                                defs = dfAtlasMouse_67)
-
-#Generate base slice series
-fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
-  anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
-  overlay(mincArray(fig4_ss_array), low = 0, high = 1) %>% 
-  # legend("Proportion of non-positive rank differences") %>%
-  grobify()
-```
-
-```{r}
-fig4_ss_legend_palette <- matrix(colorRampPalette(c("red", "yellow"))(255), nrow = 1, ncol = 255)
-
-fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
-                                        x = 0, y = 0.95,
-                                        width = 1,
-                                        height = 0.2,
-                                        just = c("left", "top"))
 ```
 
 ## Panel C: Cerebellum top matches
@@ -983,22 +985,35 @@ temp3 <- temp2 %>%
              by = c("Seed", "Target", "TargetRank")) %>% 
   mutate(prop = ifelse(is.na(prop), 0, prop)) %>% 
   filter(Target %in% structsCb) %>% 
-  mutate(Target = factor(Target, listLabelsHumanReordered$Region88_reordered),
+  mutate(Target = str_to_sentence(Target),
+         Target = factor(Target, str_to_sentence(listLabelsHumanReordered$Region88_reordered)),
          TargetRank = factor(TargetRank)) 
 ```
 
+
 ```{r}
+myPalette <- colorRampPalette(c("white", brewer.pal(n = 3, name = "BuPu")))(255)
+
 ptemp <- ggplot(temp3, aes(x = Target, y = TargetRank, fill = prop)) + 
   geom_tile(col = "grey50") +
   facet_wrap(~Seed, nrow = 2) + 
-  scale_fill_gradient(low = "white", high = "black") + 
+  # scale_fill_gradientn(colours = c("white", brewer.pal(n = 9, name = "BuPu")[3:9])) +
+  # scale_fill_distiller(palette = "BuPu", direction = 1) +
+  # scale_fill_carto_c(palette = "BurgYl") + 
+  scale_fill_viridis(option = "mako", direction = -1) +
+  # scale_fill_gradient(low = "white", high = "black") + 
   scale_y_discrete(position = "right") + 
   theme_bw() + 
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 90),
+        axis.text.x = element_text(angle = 90,
+                                   size = 6,
+                                   hjust = 1,
+                                   vjust = 0.5),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 6),
         axis.title.y = element_blank(),
-        legend.position = "none",
+        # legend.position = "none",
         plot.margin = margin(t = 0, b = 0, l = 0, unit = 'in'))
 
 ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
@@ -1010,63 +1025,13 @@ ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
 #         axis.title.x = element_blank(),
 #         axis.ticks.x = element_blank())
 # ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
+
+ptemp
 ```
 
-```{r}
-grid.ls(ptemp_grob)
-```
 
 ## Figure 4 grob
 
-```{r results2-fig4-grob, fig.width = 10, fig.height = 7}
-#Generate the main figure grob
-fig4_plots_grob <- arrangeGrob(fig4_distributions_title_grob, #1
-                               gTree(children = gList(rectGrob(), textGrob("Title B"))), #2
-                               gTree(children = gList(rectGrob(), textGrob("Title C"))), #3
-                               gTree(children = gList(rectGrob(), fig4_distributions_ytitle_grob)),#4
-                               gTree(children = gList(rectGrob(), fig4_distributions_ytext_grob)), #5
-                               fig4_distributions_panel_grob, #6
-                               fig4_ss_grob, #7
-                               ptemp_grob, #8
-                               gTree(children = gList(rectGrob(), fig4_distributions_xtext_grob)),#9
-                               gTree(children = gList(rectGrob(), fig4_ss_legend_scale_grob)), #10
-                               gTree(children = gList(rectGrob(), fig4_distributions_xtitle_grob)),#11
-                               gTree(children = gList(rectGrob(), fig4_distributions_legend_grob)), #12
-                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA, NA, NA,  1, NA,  2, NA,  3, NA),
-                                                     c(NA,  4,  5,  6, NA,  7, NA,  8, NA),
-                                                     c(NA, NA, NA,  9, NA, 10, NA,  8, NA),
-                                                     c(NA, NA, NA,  9, NA, 10, NA, NA, NA),
-                                                     c(NA, NA, NA, 11, NA, 10, NA, NA, NA),
-                                                     c(NA, NA, NA, 12, NA, NA, NA, NA, NA),
-                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.1, 0.3, 1.2, 2.2, 0.45, 1.8, 0.45, 3, 0.1), 'inch'),
-                               heights = unit(c(0.25, 0.4, 4.55, 0.09, 0.09, 0.3, 0.7, 0.25), 'inch'))
-
-#Empty rectangle grob to form the border
-fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
-
-#Width and height 
-sliceAMBA_width <- 0.9
-sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
-
-#New vieport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(2.1, 'inch'),
-                                          y = unit(0.55, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height,'inch'))
-
-#Figure 4 grob
-fig4_grob <- gTree(children = gList(fig4_plots_grob,
-                                    fig4_border_grob,
-                                    sliceAMBALegend_panel_grob))
-
-fig4_width <- 10
-fig4_height <- 7
-
-grid.newpage()
-grid.draw(fig4_grob)
-```
 
 
 ```{r results2-fig4-write}
