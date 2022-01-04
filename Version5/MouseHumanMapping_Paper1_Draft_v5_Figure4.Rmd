@@ -2,7 +2,7 @@
 title: "Mouse Human Mapping Paper 1"
 subtitle: "Results 2, Figure 4"
 author: "Antoine Beauchamp"
-date: 'December 24th, 2021'
+date: 'January 4th, 2022'
 output: html_document
 ---
 
@@ -26,6 +26,7 @@ library(RMINC)
 library(MRIcrotome)
 library(data.tree)
 library(RColorBrewer)
+library(viridis)
 ```
 
 ```{r functions}
@@ -111,7 +112,7 @@ rm(dfExprMouse, dfExprHuman)
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -122,7 +123,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
 #Compute average gene expression for 88 human brain regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
   select(Region = Region88,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -332,7 +333,7 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
              col = colPalette[1],
              size = 2) +  
   coord_flip(ylim = c(0,35)) + 
-  scale_y_continuous(breaks = c(1, seq(10, 40, by = 10)),
+  scale_y_continuous(breaks = c(1, seq(5, 40, by = 5)),
                      limits = c(0, 35),
                      expand = c(0,0)) + 
   labs(x = "Mouse region",
@@ -356,10 +357,10 @@ fig4_distributions_legend <- ggplot(dfCanonicalPairs_H88M67_Ranks,
   geom_point() + 
   scale_colour_manual(name = "Data",
                       values = colPalette,
-                      labels = c("Gene expression latent space", "Gene expression initial space")) + 
+                      labels = c("Gene expression initial space", "Gene expression latent space")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
-        legend.direction = "vertical",
+        legend.direction = "horizontal",
         legend.title = element_blank())
 
 #Extract the legend grob from the plot
@@ -368,12 +369,11 @@ fig4_distributions_legend_grob <- ggplotGrob(fig4_distributions_legend) %>%
   getGrob("guides.3-3-3-3")
 
 #Create plot title
-fig4_distributions_title_grob <- textGrob("Rank of canonical human homologue",
+fig4_distributions_title_grob <- textGrob("Rank of canonical human neuroanatomical homologue",
                                           x = unit(0, 'npc'), 
                                           y = unit(0.5, 'npc'),
                                           just = c("left", "centre"))
 ```
-
 
 ## Panel B: Slice series
 
@@ -403,9 +403,8 @@ fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$P
                                 labels = atlasMouse_67,
                                 defs = dfAtlasMouse_67)
 
+
 fig4_ss_palette <- viridis(n = 255)
-# fig4_ss_palette <- plasma(n = 255)
-# fig4_ss_palette <- magma(n = 255)
 
 #Generate base slice series
 fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
@@ -413,408 +412,41 @@ fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>%
   overlay(mincArray(fig4_ss_array), low = 0, high = 1, col = fig4_ss_palette) %>% 
   grobify()
 
-fig4_ss_legend_palette <- matrix(fig4_ss_palette, nrow = 1, ncol = 255)
 
+#Create slice series legend
+fig4_ss_legend_palette <- fig4_ss_palette
+fig4_ss_legend_scale_width <- 0.4
+fig4_ss_legend_scale_height <- 1
+fig4_ss_legend_scale_x <- 0.05
+fig4_ss_legend_scale_y <- 0.5
 fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
-                                        x = 0, y = 0.95,
-                                        width = 1,
-                                        height = 0.2,
-                                        just = c("left", "top"))
-```
+                                        x = fig4_ss_legend_scale_x,
+                                        y = fig4_ss_legend_scale_y,
+                                        width = fig4_ss_legend_scale_width,
+                                        height = fig4_ss_legend_scale_height,
+                                        just = c("left", "centre"))
 
-```{r results2-fig4-grob, fig.width = 10, fig.height = 7}
-#Generate the main figure grob
-fig4_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
-                               fig4_distributions_title_grob, #2
-                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
-                               gTree(children = gList(rectGrob(), textGrob("Title B"))), #4
-                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #5
-                               gTree(children = gList(rectGrob(), textGrob("Title C"))), #3
-                               gTree(children = gList(rectGrob(), fig4_distributions_ytitle_grob)),#4
-                               gTree(children = gList(rectGrob(), fig4_distributions_ytext_grob)), #5
-                               fig4_distributions_panel_grob, #6
-                               fig4_ss_grob, #7
-                               ptemp_grob, #8
-                               gTree(children = gList(rectGrob(), fig4_distributions_xtext_grob)),#9
-                               gTree(children = gList(rectGrob(), fig4_ss_legend_scale_grob)), #10
-                               gTree(children = gList(rectGrob(), fig4_distributions_xtitle_grob)),#11
-                               gTree(children = gList(rectGrob(), fig4_distributions_legend_grob)), #12
-                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  2,  2,  3,  4,  5,  6, NA),
-                                                     c(NA,  7,  8,  9, NA, 10, NA, 11, NA),
-                                                     c(NA, NA, NA, 12, NA, 13, NA, 11, NA),
-                                                     c(NA, NA, NA, 12, NA, 13, NA, NA, NA),
-                                                     c(NA, NA, NA, 14, NA, 13, NA, NA, NA),
-                                                     c(NA, NA, NA, 15, NA, NA, NA, NA, NA),
-                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.1, 0.3, 1.2, 2.2, 0.45, 1.8, 0.45, 3, 0.1), 'inch'),
-                               heights = unit(c(0.25, 0.4, 4.55, 0.09, 0.09, 0.3, 0.7, 0.25), 'inch'))
+#Create slice series legend text
+fig4_ss_legend_text <- c(0, 1)
+fig4_ss_legend_text_x <- fig4_ss_legend_scale_x + fig4_ss_legend_scale_width + 0.2
+fig4_ss_legend_text_y <- fig4_ss_legend_scale_y + 0.5*c(-1*fig4_ss_legend_scale_height,
+                                                        fig4_ss_legend_scale_height)
+fig4_ss_legend_text_grob <- textGrob(fig4_ss_legend_text,
+                                     x = fig4_ss_legend_text_x,
+                                     y = fig4_ss_legend_text_y)
 
-#Empty rectangle grob to form the border
-fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
+#Combine slice series legend grobs
+fig4_ss_legend_grob <- gTree(children = gList(fig4_ss_legend_scale_grob,
+                                              fig4_ss_legend_text_grob))
 
-#Width and height 
-sliceAMBA_width <- 0.9
-sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
-
-#New vieport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(2.1, 'inch'),
-                                          y = unit(0.55, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height,'inch'))
-
-#Figure 4 grob
-# fig4_grob <- gTree(children = gList(fig4_plots_grob,
-#                                     fig4_border_grob,
-#                                     sliceAMBALegend_panel_grob))
-fig4_grob <- gTree(children = gList(fig4_plots_grob,
-                                    fig4_border_grob))
-
-fig4_width <- 10
-fig4_height <- 7
-
-grid.newpage()
-grid.draw(fig4_grob)
-```
-
-## Panel C: Cerebellum top matches
-
-```{r}
-treeHuman_88 <- Clone(treeHuman)
-pruneAnatTree(treeHuman_88,
-              nodes = listLabelsHumanReordered$Region88_reordered,
-              method = "BelowNode")
-
-temp <- dfSimilarityProfiles %>% 
-  inner_join(dfCanonicalPairs_H88M67,
-             by = c("Seed" = "Mouse")) %>% 
-  filter(Data != "AllGenes") %>% 
-  rename(HumanPair = Human)
-
-dfCombinations <- expand_grid(Seed = unique(temp$Seed),
-                              Target = unique(temp$Target))
-
-nMLPsamples <- dfSimilarityProfiles %>% 
-  filter(Data != "AllGenes") %>% 
-  pull(Data) %>% 
-  unique() %>% 
-  length()
-
-dfCanonicalPairs_H88M67_TopMatch_Summary <- temp %>% 
-  filter(TargetRank == 1) %>% 
-  select(Data, Seed, HumanPair, Target) %>% 
-  group_by(Seed, Target) %>% 
-  summarise(Prop = n()/nMLPsamples) %>% 
-  ungroup() %>% 
-  right_join(dfCombinations, by = c("Seed", "Target")) %>% 
-  mutate(Prop = ifelse(is.na(Prop), 0, Prop))
-
-# seed <- "Declive (VI)"
-seed <- "Field CA2"
-
-dfCanonicalPairs_H88M67_TopMatch_Summary_Seed <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
-  filter(Seed == seed)
-
-# treeHuman_88_seedprop <- Clone(treeHuman_88)
-# treeHuman_88_seedprop$Do(function(node){
-#   if(isLeaf(node)){
-#     ind <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seed$Target == node$name
-#     node$prop <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seed[ind,][["Prop"]]
-#   }
-# })
-```
-
-```{r}
-library(ape)
-library(tidytree)
-library(ggtree)
-
-treePlot <- Clone(treeHuman_88)
-treePlot <- FindNode(treePlot, "gray matter")
-treePlot$Do(function(node){
-  if(node$name == "Heschl's gyrus"){
-    node$name <- "Heschls gyrus"
-  }
-})
-
-treePlotPhylo <- as.phylo(treePlot)
-
-dfTreePlotPhylo <- as_tibble(treePlotPhylo)
-
-dfTreeColours <- treePlot$Get("color_hex_triplet") %>% 
-  enframe(name = "label",
-          value = "color_hex_triplet") %>% 
-  mutate(label = str_remove_all(label, ","),
-         label = str_replace_all(label, " ", "_"))
-
-dfTreeAcronyms <- treePlot$Get("acronym") %>% 
-  enframe(name = "label",
-          value = "acronym")%>% 
-  mutate(label = str_remove_all(label, ","),
-         label = str_replace_all(label, " ", "_"))
-
-dfTreePlotPhylo <- dfTreePlotPhylo %>%
-  inner_join(dfTreeColours,
-             by = "label") %>%
-  inner_join(dfTreeAcronyms,
-             by = "label")
-
-treePlotPhylo <- as.treedata(dfTreePlotPhylo)
-```
-
-```{r}
-colourPalette <- dfTreeColours %>% 
-  mutate(label = factor(label)) %>% 
-  arrange(label) %>% 
-  pull(color_hex_triplet)
-```
-
-```{r fig.width = 10}
-ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none", layout = "circular") + 
-  geom_tiplab(aes(label = acronym)) + 
-  scale_color_manual(values = colourPalette) + 
-  theme(legend.position = "none")
-```
-
-```{r}
-dfCanonicalPairs_H88M67_TopMatch_Summary <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
-  mutate(Target = ifelse(Target == "Heschl's gyrus", "Heschls gyrus", Target))
-```
-
-```{r}
-seeds_Hipp <- c("Field CA1", "Field CA2", "Field CA3") 
-seeds_CbCx <- c("Lingula (I)", "Uvula (IX)", "Crus 1")
-dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
-  filter(Seed %in% c(seeds_Hipp, seeds_CbCx)) %>%
-  pivot_wider(id_cols = Target, names_from = Seed, values_from = Prop) %>% 
-  rename(label = Target) %>% 
-  mutate(label = str_remove_all(label, ","),
-         label = str_replace_all(label, " ", "_")) %>% 
-  column_to_rownames("label")
-```
-
-```{r fig.width = 4, fig.height = 4}
-df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
-  select(seeds_Hipp)
-df_cbcx <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
-  select(seeds_CbCx)
-```
-
-```{r fig.width = 4, fig.height = 4}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none") + 
-  geom_tiplab(aes(label = acronym),
-              offset = 0, align = TRUE, size = 1) +
-  # xlim(NA, 20) +
-  scale_color_manual(values = colourPalette,
-                     guide = F)
-
-p
+fig4_ss_title_grob <- textGrob("Proportion of latent spaces with\nnon-positive rank differences",
+                               x = 0, y = 0.5,
+                               just = "left",
+                               gp = gpar(lineheight = 1))
 ```
 
 
-```{r fig.width = 2.2, fig.height = 4.55}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none") + 
-  geom_tiplab(aes(label = acronym),
-              offset = 4.95, align = F, size = 1.5) +
-  xlim(NA, 20) +
-  scale_color_manual(values = colourPalette,
-                     guide = F)
-
-p1 <- gheatmap(p, df_hipp, offset = 0.05,
-               width = 0.3, colnames = F, colnames_angle = 0, hjust = -0.05,
-               color = "black") + 
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
-                      guide = FALSE) 
-
-# p1
-
-p2 <- p1 + new_scale_fill()
-
-ptree <- gheatmap(p2, df_cbcx, offset = 2.2,
-                  width = 0.3, colnames = F, colnames_angle = 265, hjust = -0.05,
-                  color = "grey40") +
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
-                      guide = F)
-
-treegrob <- ggplotGrob(ptree) %>% grid.force()
-```
-
-```{r fig.width = 3, fig.height = 4}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none") + 
-  # geom_tiplab(offset = 3, align = TRUE) + 
-  # xlim(NA, 20) +
-  # coord_polar(theta = "y", start = 0) + 
-  scale_color_manual(values = colourPalette,
-                     guide = F)
-
-p1 <- gheatmap(p, df_hipp, offset = 0,
-         width = 0.8, colnames = T, colnames_angle = 0, hjust = 1,
-         font.size = 2, color = "grey30") + 
-  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9], guide = F) + 
-  scale_x_ggtree()
-
-p1
-```
-
-
-```{r fig.width = 10, fig.height = 10}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none",
-       layout = "fan",
-       open.angle = 0) + 
-  geom_tiplab(offset = 3, align = TRUE) + 
-  xlim(NA, 20) +
-  # coord_polar(theta = "y", start = 0) + 
-  scale_color_manual(values = colourPalette,
-                     guide = F)
-
-p
-```
-
-
-```{r fig.width = 10, fig.height = 10}
-p1 <- gheatmap(p, df_hipp, offset = 0,
-         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
-         font.size = 2, color = "grey30") + 
-  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
-
-p1
-```
-
-```{r fig.width = 4, fig.height = 4}
-df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
-  select(seeds_Hipp)
-
-angle <- 20
-
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none", 
-       layout = "fan",
-       open.angle = 20,
-       ladderize = F) + 
-  geom_tiplab() +
-  # coord_cartesian(xlim = c(0, 5)) + 
-  # coord_polar(theta = "y", start = (angle/2)*(pi/180)) +
-  # xlim(0, 5) + 
-  scale_color_manual(values = colourPalette,
-                     guide = F) 
-
-p
-```
-
-```{r}
-p1 <- gheatmap(p, df_hipp, offset = 0,
-         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
-         font.size = 2, color = "grey30") + 
-  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
-
-temp <- ggplotGrob(p1) %>% grid.force()
-
-p1
-```
-
-```{r fig.width = 4}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none", 
-       layout = "rectangular",
-       # open.angle = 180,
-       ladderize = F) + 
-  coord_cartesian(xlim = c(0, 10)) +
-  # coord_polar(theta = "y", start = 0) +
-  # xlim(0, 5) + 
-  # geom_tiplab() + 
-  scale_color_manual(values = colourPalette,
-                     guide = F) + 
-  theme_tree2()
-
-p1 <- gheatmap(p, df_hipp, offset = 0,
-         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
-         font.size = 2, color = "grey30") + 
-  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
-
-temp <- ggplotGrob(p1) %>% grid.force()
-
-p1
-```
-
-
-
-```{r results2-fig4-plot-treedist, eval=FALSE}
-# treeHuman_88 <- Clone(treeHuman)
-# pruneAnatTree(treeHuman_88,
-#               nodes = listLabelsHumanReordered$Region88_reordered,
-#               method = "BelowNode")
-# 
-# structsHuman <- treeHuman_88$Get("name", filterFun = isLeaf)
-# 
-# dfTreeDist <- expand.grid(Node1 = structsHuman,
-#                           Node2 = structsHuman,
-#                           stringsAsFactors = FALSE) %>% 
-#   mutate(TreeDist = 0)
-# 
-# for(i in 1:nrow(dfTreeDist)){
-#   node1 <- dfTreeDist[i,][["Node1"]]
-#   node2 <- dfTreeDist[i,][["Node2"]]
-#   dfTreeDist[i,][["TreeDist"]] <- Distance(FindNode(treeHuman_88, node1),
-#                                            FindNode(treeHuman_88, node2))
-# }
-# 
-# dfCanonicalPairs_H88M67_TopMatch_TreeDist <- dfSimilarityProfiles %>%
-#   inner_join(dfCanonicalPairs_H88M67,
-#              by = c("Seed" = "Mouse")) %>% 
-#   filter(Data != "AllGenes", 
-#          TargetRank == 1) %>% 
-#   select(Data, Seed, HumanPair = Human, Target) %>% 
-#   inner_join(dfTreeDist,
-#              by = c("HumanPair" = "Node1",
-#                     "Target" = "Node2"))
-# 
-# dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary <- dfCanonicalPairs_H88M67_TopMatch_TreeDist %>%
-#   group_by(Seed, TreeDist) %>% 
-#   summarise(Count = n(),
-#             Prop = Count/500) %>% 
-#   ungroup()
-# 
-# dfCanonicalPairs_H88M67_TopMatch_TreeDist_Plot <- expand.grid(Seed = unique(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary$Seed),
-#                       TreeDist = unique(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary$TreeDist),
-#                       stringsAsFactors = FALSE) %>% 
-#   mutate(PropTemp = 0) %>% 
-#   left_join(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary,
-#             by = c("Seed", "TreeDist")) %>% 
-#   mutate(Prop = ifelse(is.na(Prop), PropTemp, Prop),
-#          Count = ifelse(is.na(Count), PropTemp, Count),
-#          Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)),
-#          TreeDist = factor(TreeDist))
-# 
-# fig4_treedist <- ggplot(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Plot,
-#        aes(x = Seed, y = TreeDist, fill = Prop)) + 
-#   geom_raster() + 
-#   coord_flip() + 
-#   scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(255)) + 
-#   theme_bw() + 
-#   theme(axis.ticks = element_blank(),
-#         axis.text.y = element_blank(),
-#         axis.title.y = element_blank(),
-#         legend.position = "bottom",
-#         legend.direction = "horizontal",
-#         legend.title = element_blank(),
-#         plot.margin = margin(l = 0, b = 0, r = 0, t = 0, unit = 'inch'))
-# fig4_treedist_grob <- ggplotGrob(fig4_treedist) %>% grid.force()
-# 
-# fig4_treedist_panel_grob <- getGrob(fig4_treedist_grob, "panel.7-5-7-5")
-# fig4_treedist_xtext_grob <- getGrob(fig4_treedist_grob, "axis-b.8-5-8-5")
-# fig4_treedist_xtitle_grob <- getGrob(fig4_treedist_grob, "xlab-b.9-5-9-5")
-# fig4_treedist_legend_grob <- getGrob(fig4_treedist_grob, "guides.3-3-3-3")
-```
-
+## AMBA legend slice
 
 ```{r}
 treeMouse_11 <- Clone(treeMouse)
@@ -890,7 +522,6 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
                     guide = 'none') +
   coord_fixed() +
   theme_void() +
-  # theme_minimal() +
   theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
 sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
 sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
@@ -910,129 +541,57 @@ rm(treeMouse_11,
    dfMouseColours)
 ```
 
-```{r fig.width = 2.2, fig.height = 4.55}
-p <- ggtree(treePlotPhylo, aes(color = label),
-       branch.length = "none") + 
-  geom_tiplab(aes(label = acronym),
-              offset = -12, align = F, size = 1.5, hjust = 1) +
-  xlim(NA, 20) +
-  scale_color_manual(values = colourPalette,
-                     guide = F) + 
-  scale_x_reverse() + 
-  theme_tree2()
-#offset is the offset in x coordinate as measured from the leaf nodes of the tree
-#use theme_tree2() to see the scale bar for reference
-
-p1 <- gheatmap(p, df_hipp, offset = 0.05,
-               width = 0.6, colnames = F, colnames_angle = 0, hjust = -0.05,
-               color = "black") + 
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
-                      guide = FALSE) 
-#width argument is percentage of the width size of the tree diagram
-
-# p1
-
-p2 <- p1 + new_scale_fill()
-
-ptree <- gheatmap(p2, df_cbcx, offset = 4.5,
-                  width = 1, colnames = F, colnames_angle = 265, hjust = -0.05,
-                  color = "black") +
-  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
-                      guide = F)
-
-ptree <- ptree + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = 'in'))
-
-treegrob <- ggplotGrob(ptree) %>% grid.force()
-```
-
-```{r}
-nMLPsamples <- 500
-
-temp <- dfSimilarityProfiles %>% 
-  inner_join(dfCanonicalPairs_H88M67,
-             by = c("Seed" = "Mouse")) %>% 
-  filter(Data != "AllGenes") %>% 
-  rename(HumanPair = Human)
-
-rank <- dfLabelsHuman %>% 
-  select(Region16, Region88) %>% 
-  distinct() %>% 
-  filter(str_detect(Region16, "cerebellar")) %>% 
-  nrow()
-
-structsCb <- dfLabelsHuman %>% 
-  select(Region16, Region88) %>% 
-  distinct() %>% 
-  filter(str_detect(Region16, "cerebellar")) %>% 
-  pull(Region88)
-
-seedsCb <- c("Copula pyramidis", "Crus 1")
-
-temp2 <- temp %>% 
-  filter(Seed %in% seedsCb) %>% 
-  filter(TargetRank <= rank) %>% 
-  select(Seed, Target, TargetRank) %>% 
-  group_by(Seed, Target, TargetRank) %>% 
-  summarise(prop = n()/nMLPsamples) %>% 
-  ungroup() 
-
-dfCombinations <- expand_grid(Seed = unique(temp2$Seed),
-                              Target = unique(temp2$Target),
-                              TargetRank = unique(temp2$TargetRank))
-
-temp3 <- temp2 %>% 
-  right_join(dfCombinations,
-             by = c("Seed", "Target", "TargetRank")) %>% 
-  mutate(prop = ifelse(is.na(prop), 0, prop)) %>% 
-  filter(Target %in% structsCb) %>% 
-  mutate(Target = str_to_sentence(Target),
-         Target = factor(Target, str_to_sentence(listLabelsHumanReordered$Region88_reordered)),
-         TargetRank = factor(TargetRank)) 
-```
-
-
-```{r}
-myPalette <- colorRampPalette(c("white", brewer.pal(n = 3, name = "BuPu")))(255)
-
-ptemp <- ggplot(temp3, aes(x = Target, y = TargetRank, fill = prop)) + 
-  geom_tile(col = "grey50") +
-  facet_wrap(~Seed, nrow = 2) + 
-  # scale_fill_gradientn(colours = c("white", brewer.pal(n = 9, name = "BuPu")[3:9])) +
-  # scale_fill_distiller(palette = "BuPu", direction = 1) +
-  # scale_fill_carto_c(palette = "BurgYl") + 
-  scale_fill_viridis(option = "mako", direction = -1) +
-  # scale_fill_gradient(low = "white", high = "black") + 
-  scale_y_discrete(position = "right") + 
-  theme_bw() + 
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 90,
-                                   size = 6,
-                                   hjust = 1,
-                                   vjust = 0.5),
-        axis.title.x = element_blank(),
-        axis.text.y = element_text(size = 6),
-        axis.title.y = element_blank(),
-        # legend.position = "none",
-        plot.margin = margin(t = 0, b = 0, l = 0, unit = 'in'))
-
-ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
-# ptemp_xtext_grob <- getGrob(ptemp_grob, "axis-b-1-2.14-5-14-5")
-# ptemp_xtitle_grob <- getGrob(ptemp_grob, "xlab-b.15-5-15-5")
-# 
-# ptemp <- ptemp + 
-#   theme(axis.text.x = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.ticks.x = element_blank())
-# ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
-
-ptemp
-```
-
 
 ## Figure 4 grob
 
+```{r results2-fig4-grob, fig.width = 7.6, fig.height = 6.5}
+#Generate the main figure grob
+fig4_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig4_distributions_title_grob, #2
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               fig4_ss_title_grob, #4
+                               fig4_distributions_ytitle_grob,#5
+                               fig4_distributions_ytext_grob, #6
+                               fig4_distributions_panel_grob, #7
+                               fig4_ss_grob, #8
+                               fig4_ss_legend_grob, #9
+                               fig4_distributions_xtext_grob,#10
+                               fig4_distributions_xtitle_grob,#11
+                               fig4_distributions_legend_grob, #12
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                     c(NA,  1,  2,  2,  3,  4, NA, NA),
+                                                     c(NA,  5,  6,  7, NA,  8,  9, NA),
+                                                     c(NA, NA, NA, 10, NA, NA, NA, NA),
+                                                     c(NA, NA, NA, 11, NA, NA, NA, NA),
+                                                     c(NA, NA, NA, 12, NA, NA, NA, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.1, 0.3, 1.2, 3, 0.45, 1.8, 0.5, 0.1), 'inch'),
+                               heights = unit(c(0.2, 0.6, 4.6, 0.18, 0.2, 0.4, 0.25), 'inch'))
 
+#Empty rectangle grob to form the border
+fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Width and height 
+sliceAMBA_width <- 0.8
+sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
+
+#New vieport for the atlas legend slice
+sliceAMBALegend_panel_grob$vp <- viewport(x = unit(0.7, 'inch'),
+                                          y = unit(0.5, 'inch'),
+                                          width = unit(sliceAMBA_width, 'inch'),
+                                          height = unit(sliceAMBA_height,'inch'))
+
+#Figure 4 grob
+fig4_grob <- gTree(children = gList(fig4_plots_grob,
+                                    fig4_border_grob,
+                                    sliceAMBALegend_panel_grob))
+
+fig4_width <- 7.6
+fig4_height <- 6.5
+
+grid.newpage()
+grid.draw(fig4_grob)
+```
 
 ```{r results2-fig4-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure4.RData")

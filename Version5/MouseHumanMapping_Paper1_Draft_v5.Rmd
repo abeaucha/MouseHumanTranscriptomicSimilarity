@@ -232,41 +232,21 @@ While the supervised learning approach improved our ability to identify matches 
 load("Figure4.RData")
 ```
 
-```{r results2-fig4-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=6.2}
+```{r results2-fig4-interactive, include=FALSE, echo=FALSE, fig.width=7.6, fig.height=6.5}
 grid.newpage()
 grid.draw(fig4_grob)
-sliceAMBAWidth <- 0.9
-#FIX THIS -----
-asp <- 1
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(2.1, 'inch'),
-              y = unit(0.55, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B."),
-          x = unit(c(0.2, 4.975), 'inch'),
-          y = unit(c(0.95, 0.95), 'npc'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results2-fig4-caption}
-fig4_cap_A <- "(A) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Axis colours correspond to AMBA annotations."
-fig4_cap_B <- "(B) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured areas correspond to regions with no established canonical human match."
-fig4_cap_C <- "(C) "
+fig4_cap_A <- "(A) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Mouse region names are coloured according to the AMBA palette."
+fig4_cap_B <- "(B) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured voxels correspond to regions with no established canonical human match."
 fig4_cap <- str_c("Recovering canonical neuroanatomical pairs in gene expression space.",
                   fig4_cap_A,
                   fig4_cap_B,
-                  fig4_cap_C,
                   sep = " ")
 ```
 
 ```{r results2-fig4-options}
-fig4_width <- 10
-fig4_height <- 6.2
 knitr::opts_chunk$set(include = TRUE,
                       echo = FALSE,
                       fig.width = fig4_width,
@@ -277,20 +257,6 @@ knitr::opts_chunk$set(include = TRUE,
 ```{r results2-fig4-print}
 grid.newpage()
 grid.draw(fig4_grob)
-sliceAMBAWidth <- 0.9
-sliceAMBAHeight <- sliceAMBAWidth/asp
-vp = viewport(x = unit(2.1, 'inch'),
-              y = unit(0.55, 'inch'),
-              width = unit(sliceAMBAWidth, 'inch'),
-              height = unit(sliceAMBAHeight, 'inch'))
-pushViewport(vp)
-grid.draw(sliceAMBALegend_panel_grob)
-popViewport()
-grid.rect(gp = gpar(fill = NA))
-grid.text(c("A.", "B."),
-          x = unit(c(0.2, 4.975), 'inch'),
-          y = unit(c(0.95, 0.95), 'npc'),
-          gp = gpar(fontsize = 14, fontface = "bold"))
 ```
 
 ```{r results2-fig4-clean}
