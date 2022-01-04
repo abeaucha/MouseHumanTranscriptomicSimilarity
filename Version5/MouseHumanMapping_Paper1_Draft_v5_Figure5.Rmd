@@ -1,10 +1,19 @@
 ---
 title: "Mouse Human Mapping Paper 1"
-subtitle: "Figure 5"
+subtitle: "Results 3, Figure 5"
 author: "Antoine Beauchamp"
-date: 'December 13th, 2021'
+date: 'January 4th, 2022'
 output: html_document
 ---
+
+# Initialization
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
 
 ```{r libraries}
 #Libraries
@@ -18,6 +27,8 @@ library(RMINC)
 library(MRIcrotome)
 library(data.tree)
 library(RColorBrewer)
+library(viridis)
+library(rcartocolor)
 ```
 
 ```{r functions}
@@ -99,7 +110,7 @@ genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), 
 rm(dfExprMouse, dfExprHuman)
 ```
 
-```{r results2-fig2-processing}
+```{r processing-mlp}
 #Path to MLP files
 pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
 
@@ -198,8 +209,11 @@ structsMouse_Cx_sensory <- c("Primary auditory area",
 structsMouse_Cx_association <- structsMouse_Cx[!(structsMouse_Cx %in% structsMouse_Cx_sensory)]
 ```
 
+# Figure 5
 
-```{r}
+## Panel A: Cortical clustering heatmap
+
+```{r results3-fig5-panelA-heatmap-processing}
 #List of human cerebral lobes
 structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
 
@@ -240,13 +254,8 @@ clusterOrder_cols <- names(sort(clusterLabels_Mouse_4))
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[,match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 ```
 
-```{r heatmap}
-library(rcartocolor)
-library(viridis)
-library(RColorBrewer)
-
+```{r results3-fig5-panelA-heatmap-base}
 heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
-# heatmapAnnotationColours_CxType <- c("#00325C", "#B27700")
 heatmapAnnotationColours_CxType <- c(brewer.pal(n = 9, name = "Blues")[4],
                                      carto_pal(n = 7, name = "Prism")[4])
 names(heatmapAnnotationColours_CxType) <- c("Sensorimotor", "Supramodal")
@@ -277,22 +286,49 @@ fig5_heatmap_rowannotations_grob <- getGrob(fig5_heatmap_main_grob, "row_annotat
 fig5_heatmap_rowannotations_grob$width <- unit(0.8, 'npc')
 fig5_heatmap_rowannotations_grob$x <- unit(0, 'npc')
 fig5_heatmap_rowannotations_grob$just <- "left"
-fig5_heatmap_annotationlegend_grob <- getGrob(fig5_heatmap_main_grob, "annotation_legend.3-6-5-6")
-fig5_heatmap_annotationlegend_grob$children[[1]]$label <- "Type of cortex"
 fig5_heatmap_rowtitle_grob <- textGrob("Mouse isocortical regions",rot = 270)
 fig5_heatmap_coltitle_grob <- textGrob("Human cerebral regions")
 ```
 
 ```{r}
+fig5_heatmap_annotationlegend_grob <- getGrob(fig5_heatmap_main_grob, "annotation_legend.3-6-5-6")
+
+#Title
+fig5_heatmap_annotationlegend_grob$children[[1]]$label <- "Type of cortex"
+fig5_heatmap_annotationlegend_grob$children[[1]]$x <- unit(0.5, 'npc') 
+fig5_heatmap_annotationlegend_grob$children[[1]]$y <- unit(0.8, 'npc') 
+fig5_heatmap_annotationlegend_grob$children[[1]]$hjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[1]]$vjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[1]]$just <- c("centre", "centre")
+
+#Boxes
+fig5_heatmap_annotationlegend_grob$children[[2]]$height <- unit(0.2, 'inch')
+fig5_heatmap_annotationlegend_grob$children[[2]]$width <- fig5_heatmap_annotationlegend_grob$children[[2]]$height
+fig5_heatmap_annotationlegend_grob$children[[2]]$x <- unit(0.08, 'npc')
+fig5_heatmap_annotationlegend_grob$children[[2]]$y <- unit(c(0.5, 0.2), 'npc')
+fig5_heatmap_annotationlegend_grob$children[[2]]$hjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[2]]$vjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[2]]$just <- c("left", "centre")
+
+#Text
+fig5_heatmap_annotationlegend_grob$children[[3]]$x <- fig5_heatmap_annotationlegend_grob$children[[2]]$x + unit(0.2, 'npc')
+fig5_heatmap_annotationlegend_grob$children[[3]]$y <- fig5_heatmap_annotationlegend_grob$children[[2]]$y
+fig5_heatmap_annotationlegend_grob$children[[3]]$hjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[3]]$vjust <- NULL
+fig5_heatmap_annotationlegend_grob$children[[3]]$just <- c("left", "centre")
+```
+
+```{r results3-fig5-panelA-heatmap-legend}
 #1. Legend scale
 #Generate the legend palette
 fig5_heatmap_legend_palette <- matrix(heatmapPalette, nrow = 1, ncol = 100)
 
 #Properties for the legend scale
-fig5_heatmap_legend_scale_width <- 1  #Width
-fig5_heatmap_legend_scale_height <- 0.2 #Height
-fig5_heatmap_legend_scale_x <- 0        #x
+fig5_heatmap_legend_scale_x <- as.numeric(fig5_heatmap_annotationlegend_grob$children[[2]]$x)        #x
 fig5_heatmap_legend_scale_y <- 0.95     #y
+# fig5_heatmap_legend_scale_width <- 0.5  #Width
+fig5_heatmap_legend_scale_width <- 1 - 2*fig5_heatmap_legend_scale_x  #Width
+fig5_heatmap_legend_scale_height <- 0.2 #Height
 
 #Create the raster grob for the legend scale
 fig5_heatmap_legend_scale_grob <- rasterGrob(fig5_heatmap_legend_palette,
@@ -310,9 +346,8 @@ fig5_heatmap_legend_text_nlabels <- 5
 
 fig5_heatmap_legend_text_seq <- c(0.2, 0.4, 0.6, 0.8)
 
-fig5_heatmap_legend_text_x <- fig5_heatmap_legend_text_seq/(fig5_heatmap_legend_text_max - fig5_heatmap_legend_text_min)
+fig5_heatmap_legend_text_x <- (fig5_heatmap_legend_text_seq/(fig5_heatmap_legend_text_max - fig5_heatmap_legend_text_min))*fig5_heatmap_legend_scale_width + fig5_heatmap_legend_scale_x
 fig5_heatmap_legend_text_y <- fig5_heatmap_legend_scale_y - fig5_heatmap_legend_scale_height - 0.05
-fig5_heatmap_legend_text_seq <- as.character(fig5_heatmap_legend_text_seq)
 
 #Create the text grob for the legend text
 fig5_heatmap_legend_text_grob <- textGrob(fig5_heatmap_legend_text_seq,
@@ -324,8 +359,8 @@ fig5_heatmap_legend_text_grob <- textGrob(fig5_heatmap_legend_text_seq,
 #3. Legend title
 #Properties for the legend title
 fig5_heatmap_legend_title <- "Correlation"
-fig5_heatmap_legend_title_x <- (fig5_heatmap_legend_scale_x + fig5_heatmap_legend_scale_width)/2
-fig5_heatmap_legend_title_y <- fig5_heatmap_legend_text_y - 0.2
+fig5_heatmap_legend_title_x <- fig5_heatmap_legend_scale_x + fig5_heatmap_legend_scale_width/2
+fig5_heatmap_legend_title_y <- fig5_heatmap_legend_text_y - 0.35
 
 #Create the legend title grob
 fig5_heatmap_legend_title_grob <- textGrob(fig5_heatmap_legend_title,
@@ -342,7 +377,10 @@ fig5_heatmap_legend_grob <- gTree(children = gList(fig5_heatmap_legend_scale_gro
 
 ```
 
-```{r}
+
+## Panel B: 
+
+```{r results3-fig5-panelB-wcss-processing}
 computeWCSS <- function(x, hc_tree){
   wcss_tot <- numeric(ncol(x))
   for(k in 1:ncol(x)){
@@ -359,7 +397,7 @@ computeWCSS <- function(x, hc_tree){
 
 #Compute aggregated expression matrix for all mouse regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
-  select(Region67, genes) %>% 
+  select(Region67, all_of(genes)) %>% 
   group_by(Region67) %>% 
   summarise_all(.funs = mean) %>% 
   ungroup() %>% 
@@ -369,7 +407,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
 
 #Compute aggregated expression matrix for all human regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
-  select(Region88, genes) %>% 
+  select(Region88, all_of(genes)) %>% 
   group_by(Region88) %>% 
   summarise_all(.funs = mean) %>% 
   ungroup() %>% 
@@ -407,7 +445,7 @@ dfWCSS_Human_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes),
 dfWCSS <- bind_rows(dfWCSS_Mouse_MLP, dfWCSS_Mouse_AllGenes, dfWCSS_Human_AllGenes, dfWCSS_Human_MLP)
 ```
 
-```{r}
+```{r results3-fig5-panelB-wcss}
 fig5_wcss <- ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) + 
   geom_line(aes(linetype = axis)) + 
   geom_point() + 
@@ -439,7 +477,9 @@ fig5_wcss_xaxis_grob <- getGrob(fig5_wcss_grob, "axis-b.8-5-8-5")
 fig5_wcss_xtitle_grob <- getGrob(fig5_wcss_grob, "xlab-b.9-5-9-5")
 ```
 
-```{r results3-fig5-panelA-regional}
+## Panel C: 
+
+```{r results3-fig5-panelC-regionaldist}
 #Identify maximal similarity values for every seed and data set
 dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
   group_by(Data, Seed) %>% 
@@ -489,6 +529,7 @@ fig5_regionaldist_xaxis_grob <- getGrob(fig5_regionaldist_grob, "axis-b.8-5-8-5"
 fig5_regionaldist_xtitle_grob <- getGrob(fig5_regionaldist_grob, "xlab-b.9-5-9-5")
 ```
 
+## Panel D: 
 
 ```{r results3-fig5-panelB-cortextype}
 #Compute mean maximal similarity per cortex type and data set
@@ -524,16 +565,18 @@ fig5_cortexdist_xaxis_grob <- getGrob(fig5_cortexdist_grob, "axis-b.8-5-8-5")
 fig5_cortexdist_xtitle_grob <- getGrob(fig5_cortexdist_grob, "xlab-b.9-5-9-5")
 ```
   
-```{r fig5_grob, fig.width=10, fig.height=7.5}
+## Figure 5 grob
+  
+```{r fig5_grob, fig.width=10, fig.height=7.8}
 #Generate figure 5 grob
-fig5_plots_grob <- arrangeGrob(fig5_heatmap_coltree_grob, #1
+fig5_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), fig5_heatmap_coltree_grob)), #1
                                fig5_heatmap_rowtree_grob, #2
                                fig5_heatmap_rowannotations_grob, #3
                                fig5_heatmap_matrix_grob, #4
                                fig5_heatmap_rownames_grob, #5
                                fig5_heatmap_colnames_grob, #6
-                               fig5_heatmap_annotationlegend_grob, #7
-                               fig5_heatmap_legend_grob, #8
+                               gTree(children = gList(rectGrob(), fig5_heatmap_annotationlegend_grob)), #7
+                               gTree(children = gList(rectGrob(), fig5_heatmap_legend_grob)),  #8
                                # fig5_heatmap_coltitle_grob, #9
                                fig5_wcss_panel_grob, #9
                                fig5_wcss_ytitle_grob, #10
@@ -554,18 +597,17 @@ fig5_plots_grob <- arrangeGrob(fig5_heatmap_coltree_grob, #1
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
                                                      c(NA, NA, NA,  1,  1, NA, NA, 10, 11,  9, NA),
                                                      c( 2,  2,  3,  4,  4,  5, NA, 10, 11,  9, NA),
-                                                     c(NA, NA, NA,  6,  6,  7, NA, NA, NA, 12, NA),
-                                                     c(NA, NA, NA,  6,  6,  7, NA, NA, NA, 13, NA),
-                                                     c(NA, NA, NA,  6,  6,  7, NA, NA, NA, 14, NA),
-                                                     c(NA, NA, NA,  6,  6,  8, NA, NA, NA, 14, NA),
-                                                     c(NA, NA, NA, NA, NA,  8, NA, NA, NA, NA, NA),
+                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 12, NA),
+                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 13, NA),
+                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 14, NA),
+                                                     c(NA, NA, NA,  6,  6,  8,  8, NA, NA, 14, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
                                                      c(15, 16, 16, 16, 17, 17, NA, 20, 21, 22, NA),
                                                      c(NA, NA, NA, NA, 18, 18, NA, NA, NA, 23, NA),
                                                      c(NA, NA, NA, NA, 19, 19, NA, NA, NA, 24, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
                                widths = unit(c(0.25, 0.2, 0.2, 0.9, 2.95, 1.1, 0.4, 0.35, 0.3, 2.9, 0.1), 'inch'),
-                               heights = unit(c(0.75, 0.5, 2, 0.2, 0.2, 0.2, 0.4, 0.3, 0.4, 2, 0.25, 0.25, 0.25), 'inch'))
+                               heights = unit(c(0.75, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.4, 2, 0.25, 0.25, 0.25), 'inch'))
 
 #Grob for panel labels
 fig5_panelid_grob <- textGrob(c("A.", "B.", "C.", "D."),
