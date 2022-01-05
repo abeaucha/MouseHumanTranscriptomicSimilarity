@@ -306,7 +306,7 @@ fig3_seedsim <- ggplot(dfSeedSim_Comparison,
                      expand = c(0,0)) + 
   scale_y_continuous(limits = c(-0.05, 1.05), breaks = ybreaks) + 
   scale_colour_manual(name = "Data space",
-                      labels = c("Gene expression initial space", "Gene expression latent space"),
+                      labels = c("Initial gene expression space", "Latent gene expression space"),
                       values = colPalette) + 
   labs(x = "Human regions (Rank ordered)",
        y = "Scaled similarity",
@@ -435,66 +435,6 @@ fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled simila
                                           x = 0, y = 0.5,
                                           just = c("left", "centre"),
                                           gp = gpar(lineheight = 0.8))
-```
-
-```{r results2-fig3-grob, fig.width = 10, fig.height = 7.4}
-#Generate the figure grob
-fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
-                               fig3_seedsim_title_grob, #2
-                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
-                               fig3_distributions_title_grob, #4
-                               fig3_seedsim_ytitle_grob, #5
-                               fig3_seedsim_ytext_grob, #6
-                               fig3_seedsim_panel_grob, #7
-                               fig3_distributions_panel_grob,#8
-                               fig3_distributions_ytext_grob, #9
-                               fig3_distributions_ytitle_grob, #10
-                               fig3_seedsim_xtext_grob, #11
-                               fig3_seedsim_xtitle_grob, #12
-                               fig3_seedsim_legend_grob, #13
-                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #14
-                               fig3_ss_title_grob, #15
-                               fig3_ss_legend_grob, #16
-                               fig3_ss_grob, #17
-                               fig3_distributions_xtext_grob, #18
-                               fig3_distributions_xtitle_grob, #19
-                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1, NA,  2,  3,  4,  4,  4, NA),
-                                                     c(NA,  5,  6,  7, NA,  8,  9, 10, NA),
-                                                     c(NA, NA, NA, 11, NA,  8,  9, 10, NA),
-                                                     c(NA, NA, NA, 12, NA,  8,  9, 10, NA),
-                                                     c(NA, NA, NA, 13, NA,  8,  9, 10, NA),
-                                                     c(NA, NA, NA, NA, NA,  8,  9, 10, NA),
-                                                     c(NA, 14, NA, 15, NA,  8,  9, 10, NA),
-                                                     c(NA, 16, 16, 17, NA,  8,  9, 10, NA),
-                                                     c(NA, NA, NA, NA, NA, 18, NA, NA, NA),
-                                                     c(NA, NA, NA, NA, NA, 19, NA, NA, NA),
-                                                     c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.1, 0.3, 0.4, 4.5, 0.45, 2.2, 1.5, 0.4, 0.1), 'inch'),
-                               heights = unit(c(0.25, 0.3, 2, 0.25, 0.25, 0.4, 0.1, 0.4, 2.7, 0.2, 0.3, 0.25), 'inch'))
-
-#Empty rectangle grob to form the border
-fig3_border_grob <- rectGrob(gp = gpar(fill = NA))
-
-#Width and height for the atlas legend slice
-sliceAMBA_width <- 0.9
-sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
-
-#New vieport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.5, 'inch'),
-                                          y = unit(1.4, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height,'inch'))
-
-fig3_grob <- gTree(children = gList(fig3_plots_grob,
-                                    fig3_border_grob,
-                                    sliceAMBALegend_panel_grob))
-
-fig3_width <- 10
-fig3_height <- 7.4
-
-grid.newpage()
-grid.draw(fig3_grob)
 ```
 
 ## Panel C: Slice series

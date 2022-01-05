@@ -357,7 +357,7 @@ fig4_distributions_legend <- ggplot(dfCanonicalPairs_H88M67_Ranks,
   geom_point() + 
   scale_colour_manual(name = "Data",
                       values = colPalette,
-                      labels = c("Gene expression initial space", "Gene expression latent space")) + 
+                      labels = c("Initial gene expression space", "Latent gene expression space")) + 
   theme_bw() + 
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
@@ -415,6 +415,7 @@ fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>%
 
 #Create slice series legend
 fig4_ss_legend_palette <- fig4_ss_palette
+fig4_ss_legend_palette <- fig4_ss_legend_palette[length(fig4_ss_legend_palette):1]
 fig4_ss_legend_scale_width <- 0.4
 fig4_ss_legend_scale_height <- 1
 fig4_ss_legend_scale_x <- 0.05
