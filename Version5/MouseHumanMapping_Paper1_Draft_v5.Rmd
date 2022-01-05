@@ -281,14 +281,11 @@ Mouse isocortical areas clustered nicely along the lines of sensorimotor and sup
 Overall we find that the expression of homologous genes captures sub-regional organization in the mouse and human isocortices. While the pattern of correspondences is not at the level of individual cortical areas, there are clear distinctions between areas that are sensorimotor and those that are supramodal, especially for regions in the mouse isocortex. Within these clusters, individual cortical areas are highly correlated to a number of regions in the brain of the other species. The majority of isocortical regions exhibit both divergent one-to-many and convergent many-to-one kinds of associations. For example the mouse primary somatosensory area have a diffusive pattern of similarity to the human postcentral gyrus and multiple visual areas, but each of these human regions in turn has a convergent pattern of similarity to the mouse somatosensory cortex, while also being diffusively associated with, for instance, the primary motor area. We also find that, while the identity of the most similar matches may vary, mouse sensorimotor areas are generally more similar than supramodal areas. This is reasonable from an evolutionary perspective. While certain sensorimotor areas have certainly become more specialized in either species over the course of evolution \edit{need ref}, the basic neurobiological machinery is likely to have been inherited from the last common ancestor rather than developed independently \edit{ref}. \edit{Finish this}
 
 
-
-
-
 ```{r results3-fig5-import}
 load("Figure5.RData")
 ```
 
-```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=7.5}
+```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=7.6}
 grid.newpage()
 grid.draw(fig5_grob)
 ```

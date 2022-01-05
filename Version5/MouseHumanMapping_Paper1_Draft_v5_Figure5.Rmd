@@ -265,7 +265,7 @@ fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_Cx_MLP_ordered),
                                 cutree_rows = 4, cutree_cols = 4,
                                 treeheight_col = 30, treeheight_row = 30,
                                 color = heatmapPalette,
-                                legend = T, 
+                                legend = F, 
                                 annotation_row = dfAnnotations,
                                 annotation_legend = T,
                                 annotation_names_row = F, 
@@ -377,6 +377,28 @@ fig5_heatmap_legend_grob <- gTree(children = gList(fig5_heatmap_legend_scale_gro
 
 ```
 
+```{r}
+fig5_heatmap_rowtitle_grob <- textGrob("Mouse regions",
+                                       x = 0.03,
+                                       y = 0.1,
+                                       just = c("left", "bottom"),
+                                       gp = gpar(fontsize = 8,
+                                                 fontface = "bold"))
+
+fig5_heatmap_coltitle_grob <- textGrob("Human regions",
+                                       x = 0.5,
+                                       y = 0.97,
+                                       just = c("left", "centre"),
+                                       rot = 270,
+                                       gp = gpar(fontsize = 8,
+                                                 fontface = "bold"))
+
+fig5_heatmap_title_grob <- textGrob("Title panel A",
+                                    x = 0,
+                                    y = 0.5,
+                                    just = c("left", "centre"))
+```
+
 
 ## Panel B: 
 
@@ -475,6 +497,11 @@ fig5_wcss_yaxis_grob <- getGrob(fig5_wcss_grob, "axis-l.7-4-7-4")
 fig5_wcss_ytitle_grob <- getGrob(fig5_wcss_grob, "ylab-l.7-3-7-3")
 fig5_wcss_xaxis_grob <- getGrob(fig5_wcss_grob, "axis-b.8-5-8-5")
 fig5_wcss_xtitle_grob <- getGrob(fig5_wcss_grob, "xlab-b.9-5-9-5")
+
+fig5_wcss_title_grob <- textGrob("Title panel B",
+                                 x = 0,
+                                 y = 0.5,
+                                 just = c("left", "centre"))
 ```
 
 ## Panel C: 
@@ -527,6 +554,11 @@ fig5_regionaldist_yaxis_grob <- getGrob(fig5_regionaldist_grob, "axis-l.7-4-7-4"
 fig5_regionaldist_ytitle_grob <- getGrob(fig5_regionaldist_grob, "ylab-l.7-3-7-3")
 fig5_regionaldist_xaxis_grob <- getGrob(fig5_regionaldist_grob, "axis-b.8-5-8-5")
 fig5_regionaldist_xtitle_grob <- getGrob(fig5_regionaldist_grob, "xlab-b.9-5-9-5")
+
+fig5_regionaldist_title_grob <- textGrob("Title panel C",
+                                         x = 0,
+                                         y = 0.5,
+                                         just = c("left", "centre"))
 ```
 
 ## Panel D: 
@@ -563,66 +595,79 @@ fig5_cortexdist_yaxis_grob <- getGrob(fig5_cortexdist_grob, "axis-l.7-4-7-4")
 fig5_cortexdist_ytitle_grob <- getGrob(fig5_cortexdist_grob, "ylab-l.7-3-7-3")
 fig5_cortexdist_xaxis_grob <- getGrob(fig5_cortexdist_grob, "axis-b.8-5-8-5")
 fig5_cortexdist_xtitle_grob <- getGrob(fig5_cortexdist_grob, "xlab-b.9-5-9-5")
+
+fig5_cortexdist_title_grob <- textGrob("Title panel D",
+                                       x = 0,
+                                       y = 0.5,
+                                       just = c("left", "centre"))
 ```
   
 ## Figure 5 grob
   
-```{r fig5_grob, fig.width=10, fig.height=7.8}
-#Generate figure 5 grob
-fig5_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), fig5_heatmap_coltree_grob)), #1
-                               fig5_heatmap_rowtree_grob, #2
-                               fig5_heatmap_rowannotations_grob, #3
-                               fig5_heatmap_matrix_grob, #4
-                               fig5_heatmap_rownames_grob, #5
-                               fig5_heatmap_colnames_grob, #6
-                               gTree(children = gList(rectGrob(), fig5_heatmap_annotationlegend_grob)), #7
-                               gTree(children = gList(rectGrob(), fig5_heatmap_legend_grob)),  #8
-                               # fig5_heatmap_coltitle_grob, #9
+```{r fig5_grob, fig.width=10, fig.height=7.6}
+#Grob for main plots in figure 5
+# gTree(children = gList(rectGrob(), 
+fig5_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig5_heatmap_title_grob, #2
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               fig5_wcss_title_grob, #4
+                               fig5_heatmap_coltree_grob, #5
+                               fig5_heatmap_rowtitle_grob,#6
+                               fig5_wcss_ytitle_grob, #7
+                               fig5_wcss_yaxis_grob, #8
                                fig5_wcss_panel_grob, #9
-                               fig5_wcss_ytitle_grob, #10
-                               fig5_wcss_yaxis_grob, #11,
-                               fig5_wcss_xaxis_grob, #12
-                               fig5_wcss_xtitle_grob, #13
-                               fig5_wcss_legend_grob, #14
-                               fig5_regionaldist_ytitle_grob, #15
-                               fig5_regionaldist_yaxis_grob, #16
-                               fig5_regionaldist_panel_grob, #17
-                               fig5_regionaldist_xaxis_grob, #18
-                               fig5_regionaldist_xtitle_grob, #19
-                               fig5_cortexdist_ytitle_grob, #20
-                               fig5_cortexdist_yaxis_grob, #21
-                               fig5_cortexdist_panel_grob, #22
-                               fig5_cortexdist_xaxis_grob, #23
-                               fig5_cortexdist_xtitle_grob, #24
+                               fig5_heatmap_rowtree_grob, #10
+                               fig5_heatmap_rowannotations_grob, #11
+                               fig5_heatmap_matrix_grob, #12
+                               fig5_heatmap_rownames_grob, #13
+                               fig5_heatmap_coltitle_grob, #14
+                               fig5_heatmap_colnames_grob, #15
+                               fig5_heatmap_annotationlegend_grob, #16
+                               fig5_wcss_xaxis_grob, #17
+                               fig5_wcss_xtitle_grob, #18
+                               fig5_wcss_legend_grob, #19
+                               fig5_heatmap_legend_grob,  #20
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #21
+                               fig5_regionaldist_title_grob, #22
+                               textGrob("D.", gp = gpar(fontsize = 14, fontface = "bold")), #23
+                               fig5_cortexdist_title_grob, #24
+                               fig5_regionaldist_ytitle_grob, #25
+                               fig5_regionaldist_yaxis_grob, #26
+                               fig5_regionaldist_panel_grob, #27
+                               fig5_cortexdist_ytitle_grob, #28
+                               fig5_cortexdist_yaxis_grob, #29
+                               fig5_cortexdist_panel_grob, #30
+                               fig5_regionaldist_xaxis_grob, #31
+                               fig5_cortexdist_xaxis_grob, #32
+                               fig5_regionaldist_xtitle_grob, #33
+                               fig5_cortexdist_xtitle_grob, #34
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA, NA, NA,  1,  1, NA, NA, 10, 11,  9, NA),
-                                                     c( 2,  2,  3,  4,  4,  5, NA, 10, 11,  9, NA),
-                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 12, NA),
-                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 13, NA),
-                                                     c(NA, NA, NA,  6,  6,  7,  7, NA, NA, 14, NA),
-                                                     c(NA, NA, NA,  6,  6,  8,  8, NA, NA, 14, NA),
+                                                     c( 1,  1, NA,  2,  2, NA, NA,  3,  4,  4, NA),
+                                                     c(NA, NA, NA,  5,  5,  6, NA,  7,  8,  9, NA),
+                                                     c(10, 10, 11, 12, 12, 13, NA,  7,  8,  9, NA),
+                                                     c(NA, NA, 14, 15, 15, 16, 16, NA, NA, 17, NA),
+                                                     c(NA, NA, 14, 15, 15, 16, 16, NA, NA, 18, NA),
+                                                     c(NA, NA, 14, 15, 15, 16, 16, NA, NA, 19, NA),
+                                                     c(NA, NA, 14, 15, 15, 20, 20, NA, NA, 19, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(15, 16, 16, 16, 17, 17, NA, 20, 21, 22, NA),
-                                                     c(NA, NA, NA, NA, 18, 18, NA, NA, NA, 23, NA),
-                                                     c(NA, NA, NA, NA, 19, 19, NA, NA, NA, 24, NA),
+                                                     c(21, 21, 22, 22, 22, 22, NA, 23, 24, 24, NA),
+                                                     c(25, 26, 26, 26, 27, 27, NA, 28, 29, 30, NA),
+                                                     c(NA, NA, NA, NA, 31, 31, NA, NA, NA, 32, NA),
+                                                     c(NA, NA, NA, NA, 33, 33, NA, NA, NA, 34, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
                                widths = unit(c(0.25, 0.2, 0.2, 0.9, 2.95, 1.1, 0.4, 0.35, 0.3, 2.9, 0.1), 'inch'),
-                               heights = unit(c(0.75, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.4, 2, 0.25, 0.25, 0.25), 'inch'))
+                               heights = unit(c(0.1, 0.4, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.15, 0.4, 2, 0.25, 0.25, 0.25), 'inch'))
 
-#Grob for panel labels
-fig5_panelid_grob <- textGrob(c("A.", "B.", "C.", "D."),
-                              x = unit(c(0.4, 6.3, 0.4, 6.3), 'inch'),
-                              y = unit(c(7, 7.0, 2.9, 2.9), 'inch'),
-                              gp = gpar(fontsize = 14, fontface = "bold"))
-
+#Empty rectangle grob to form the border
 fig5_border_grob <- rectGrob(gp = gpar(fill = NA))
 
+#Grob for figure 5
 fig5_grob <- gTree(children = gList(fig5_plots_grob,
-                                    fig5_panelid_grob,
                                     fig5_border_grob))
 
+#Figure 5 width and height
 fig5_width <- 10
-fig5_height <- 7.5
+fig5_height <- 7.6
 
 grid.newpage()
 grid.draw(fig5_grob)
