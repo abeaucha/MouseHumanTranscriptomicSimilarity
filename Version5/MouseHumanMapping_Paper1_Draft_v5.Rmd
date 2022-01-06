@@ -291,10 +291,10 @@ grid.draw(fig5_grob)
 ```
 
 ```{r results3-fig5-caption}
-fig5_cap_A <- "(A) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal." 
-fig5_cap_B <- c("(B) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space. We loosely selected an optimal cluster number equal to 4.")
-fig5_cap_C <- "(C) Maximal correlation values of mouse isocortical region. Points and error bars represent mean and 95% confidence interval over latent space samples."
-fig5_cap_D <- "(D) Average maximal correlation per sensorimotor or supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
+fig5_cap_A <- "(A) Maximal correlation values of mouse isocortical region. Points and error bars represent mean and 95% confidence interval over latent space samples."
+fig5_cap_B <- "(B) Average maximal correlation per sensorimotor or supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
+fig5_cap_C <- "(C) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal." 
+fig5_cap_D <- c("(D) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space. We loosely selected an optimal cluster number equal to 4.")
 fig5_cap <- str_c("Organization of mouse-human isocortical similarity.",
                   fig5_cap_A,
                   fig5_cap_B,

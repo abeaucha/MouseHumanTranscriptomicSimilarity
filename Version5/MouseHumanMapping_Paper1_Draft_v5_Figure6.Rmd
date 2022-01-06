@@ -1,18 +1,18 @@
 ---
 title: "Mouse Human Mapping Paper 1"
-subtitle: "Figure 6"
+subtitle: "Results 4, Figure 6"
 author: "Antoine Beauchamp"
-date: "November 12th, 2021"
+date: "January 6th, 2022"
 output: html_document
 ---
+
+#Initialization
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE,
                       cache.lazy = FALSE)
 ```
-
-# Main
 
 ```{r libraries}
 #Libraries
@@ -107,6 +107,10 @@ voxelNames <- str_c("V", 1:sum(indVoxels))
 names(emptyArray)[indVoxels] <- voxelNames
 rm(indVoxels)
 ```
+
+# Figure 6
+
+## Panel A: 
 
 ```{r import-humansample-sim}
 #Specify mouse and human striatal regions based on Balsters et al. 2020
@@ -343,10 +347,12 @@ fig6_histogram_grob <- ggplotGrob(fig6_histogram) %>% grid.force()
 
 #Title grob
 fig6_histogram_title_grob <- textGrob("Similarity of human striatal regions to targets in the mouse striatum",
-                                      x = unit(0.5, 'inch'),
+                                      x = 0,
                                       y = 0.5,
                                       just = c("left", "centre"))
 ```
+
+## Panels B and C 
 
 ```{r import-mousevoxel-sim}
 #Human striatal regions
@@ -614,7 +620,7 @@ for(i in 1:length(listArrayHumanTargets_Mean_200um)){
 }
 ```
 
-```{r fig6-panelB-sliceseries}
+```{r fig6-panelsBC-sliceseries}
 #Labels for human targets
 humanTargets_labels <- c("Caudate",
                          "Putamen",
@@ -789,38 +795,18 @@ fig6_ss_title_prop_grob <- textGrob("Voxels maximally similar to human targets",
                                     just = c("left", "centre"))
 ```
 
+## Figure 6 grob
 
 ```{r fig6-grob, fig.width = 8, fig.height = 6.8}
-#Figure 6 main grob
-# fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
-#                                fig6_histogram_grob, #2
-#                                fig6_histogram_legend_grob, #3
-#                                fig6_ss_title_grob, #4
-#                                fig6_ss_labels_list[[1]], #5
-#                                fig6_ss_labels_list[[2]], #6
-#                                fig6_ss_labels_list[[3]], #7
-#                                fig6_ss_labels_list[[4]], #8
-#                                fig6_ss_caudate_base_grob, #9
-#                                fig6_ss_putamen_base_grob, #10
-#                                fig6_ss_accumbens_base_grob, #11
-#                                fig6_ss_septal_base_grob, #12
-#                                fig6_ss_legend_mean_grob, #13
-#                                fig6_ss_legend_prop_grob, #14
-#                                layout_matrix = rbind(c(NA,  1,  1,  1,  1,  1,  1,  1,  1, NA),
-#                                                      c(NA,  2,  2,  2,  2,  2,  2,  2,  2, NA),
-#                                                      c(NA,  3,  3,  3,  3,  3,  3,  3,  3, NA),
-#                                                      c(NA, NA,  4,  4,  4,  4,  4,  4,  4, NA),
-#                                                      c(NA, NA,  5, NA,  6, NA,  7, NA,  8, NA),
-#                                                      c(NA, NA,  9, NA, 10, NA, 11, NA, 12, NA),
-#                                                      c(NA, NA, 13, 13, 13, NA, 14, 14, 14, NA),
-#                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-#                                widths = unit(c(0.25, 0.5, 1.5, 0.25, 1.5, 0.25, 1.5, 0.25, 1.5, 0.25), 'inch'),
-#                                heights = unit(c(0.5, 2, 0.5, 0.5, 0.2, 2.5, 0.5, 0.1), 'inch'))
-fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
-                               fig6_histogram_grob, #2
-                               fig6_histogram_legend_grob, #3
-                               fig6_ss_title_mean_grob, #4
-                               fig6_ss_title_prop_grob, #5
+#Figure 6 plots grob
+fig6_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig6_histogram_title_grob, #2
+                               fig6_histogram_grob, #3
+                               fig6_histogram_legend_grob, #4
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #5
+                               fig6_ss_title_mean_grob, #6
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #7
+                               fig6_ss_title_prop_grob, #6
                                fig6_ss_labels_mean_grob, #6
                                fig6_ss_labels_prop_grob, #7
                                fig6_ss_avgcorrelation_base_grob, #8
@@ -828,30 +814,23 @@ fig6_plots_grob <- arrangeGrob(fig6_histogram_title_grob, #1
                                fig6_ss_legend_mean_grob, #10
                                fig6_ss_legend_prop_grob, #11
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  1,  1,  1, NA),
-                                                     c(NA,  2,  2,  2,  2, NA),
+                                                     c(NA,  1,  2,  2,  2, NA),
                                                      c(NA,  3,  3,  3,  3, NA),
+                                                     c(NA,  4,  4,  4,  4, NA),
                                                      c(NA, NA, NA, NA, NA, NA),
-                                                     c(NA, NA,  4, NA,  5, NA),
-                                                     c(NA, NA,  6, NA,  7, NA),
-                                                     c(NA, NA,  8, NA,  9, NA),
-                                                     c(NA, NA, 10, NA, 11, NA),
+                                                     c(NA,  5,  6,  7,  8, NA),
+                                                     c(NA, NA,  9, NA, 10, NA),
+                                                     c(NA, NA, 11, NA, 12, NA),
+                                                     c(NA, NA, 13, NA, 14, NA),
                                                      c(NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.25, 0.5, 3.25, 0.5, 3.25, 0.25), 'inch'),
+                               widths = unit(c(0.29, 0.46, 3.25, 0.5, 3.25, 0.25), 'inch'),
                                heights = unit(c(0.1, 0.4, 2, 0.4, 0.2, 0.2, 0.4, 2.5, 0.5, 0.1), 'inch'))
 
-# #Grob for panel labels
-fig6_panelid_grob <- textGrob(c("A.", "B.", "C."),
-                              x = unit(c(0.34, 0.34, 4.25), 'inch'),
-                              y = unit(c(6.5, 3.60, 3.60), 'inch'),
-                              gp = gpar(fontsize = 14, fontface = "bold"))
-# 
 # #Grob for figure border
 fig6_border_grob <- rectGrob(gp = gpar(fill = NA))
-# 
-# #Complete grob for Figure 6
+
+#Figure 6 grob
 fig6_grob <- gTree(children = gList(fig6_plots_grob,
-                                    fig6_panelid_grob,
                                     fig6_border_grob))
 
 fig6_width <- 8
