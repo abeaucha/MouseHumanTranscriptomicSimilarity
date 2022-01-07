@@ -102,20 +102,9 @@ Using the spatial expression patterns of homologous genes, we observed clusters 
 load("Figure2.RData")
 ```
 
-```{r results2-fig2-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height=5.8}
+```{r results2-fig2-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height=6.4}
 grid.newpage()
 grid.draw(fig2_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.3, 0.3, 5.75), 'inch'),
-          y = unit(c(5.5, 2.85, 5.5), 'inch'),
-          gp = gpar(fontsize = 14,
-                    fontface = "bold"))
-grid.text(c("Training the MLP classifier", "Transforming the gene expression blueprints"),
-          x = unit(rep(0.5, 2), 'inch'),
-          y = unit(c(5.5, 2.85), 'inch'),
-          just = "left",
-          gp = gpar(fontsize = 14))
-grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results2-fig2-caption}
@@ -131,8 +120,6 @@ fig2_cap <- str_c("Transforming the common space.",
 ```
 
 ```{r results2-fig2-options}
-fig2_width <- 10
-fig2_height <- 5.8
 knitr::opts_chunk$set(include = TRUE,
                       echo = FALSE,
                       fig.width = fig2_width,
@@ -143,17 +130,6 @@ knitr::opts_chunk$set(include = TRUE,
 ```{r results2-fig2-print}
 grid.newpage()
 grid.draw(fig2_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.3, 0.3, 5.75), 'inch'),
-          y = unit(c(5.5, 2.85, 5.5), 'inch'),
-          gp = gpar(fontsize = 14,
-                    fontface = "bold"))
-grid.text(c("Training the MLP classifier", "Transforming the gene expression blueprints"),
-          x = unit(rep(0.5, 2), 'inch'),
-          y = unit(c(5.5, 2.85), 'inch'),
-          just = "left",
-          gp = gpar(fontsize = 14))
-grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results2-fig2-clean}

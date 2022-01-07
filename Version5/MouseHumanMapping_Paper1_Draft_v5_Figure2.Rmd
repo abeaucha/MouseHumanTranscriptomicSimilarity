@@ -354,7 +354,7 @@ fig2_heatmap_labsmouse_text_x <- dfLabelsMouse %>%
   mutate(x_i_med_perc = x_i_med/67) %>% 
   pull(x_i_med_perc)
   
-matWidth_in <- 2.97
+matWidth_in <- 3.07
 fig2_heatmap_labsmouse_text_x <- (fig2_heatmap_labsmouse_text_x*(matWidth_in - 0.1) + 0.1)/matWidth_in
 fig2_heatmap_labsmouse_text_x <- fig2_heatmap_labsmouse_text_x + c(0,  #Cortical subplate
                                                                    0, #Olfactory areas
@@ -1097,7 +1097,7 @@ fig2_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                fig2_illustration2_grob, #13
                                fig2_heatmap_legend_grob, #14
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  2,  3,  4,  4,  4, NA),
+                                                     c(NA,  1,  2, NA,  3,  4,  4, NA),
                                                      c(NA,  6,  6, NA, NA, NA,  5, NA),
                                                      c(NA,  6,  6, NA, NA, NA,  7, NA),
                                                      c(NA,  6,  6, NA,  8,  9, 10, NA),
@@ -1106,7 +1106,7 @@ fig2_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                                      c(NA, 13, 13, NA,  8,  9, 10, NA),
                                                      c(NA, 13, 13, NA, NA, NA, 14, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.1, 0.3, 5.0, 0.5, 0.3, 0.45, 2.97, 0.2), 'inch'),
+                               widths = unit(c(0.1, 0.3, 5.0, 0.4, 0.3, 0.45, 3.07, 0.2), 'inch'),
                                heights = unit(c(0.2, 0.3, 0.3, 0.4, 1.85, 0.1, 0.4, 2.05, 0.6, 0.2), 'inch'))
 
 #Empty rectangle grob to form the border
