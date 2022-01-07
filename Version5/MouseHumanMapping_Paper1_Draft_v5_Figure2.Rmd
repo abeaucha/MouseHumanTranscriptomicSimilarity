@@ -6,6 +6,8 @@ date: 'January 4th, 2022'
 output: html_document
 ---
 
+# Initialization 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE,
@@ -69,11 +71,6 @@ treeHuman$Do(function(node){
 pruneAnatTree(treeHuman,
               nodes = c("white matter", "sulci & spaces"),
               method = "AtNode")
-
-#Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r}
@@ -120,9 +117,22 @@ names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
 ```
 
-```{r results2-fig2-panelC-heatmap}
-# Figure 2: Heatmap processing ------------------------------------------------
+```{r fig.width = 1, fig.height =2}
+temp <- dfExprMouse[,1:50] %>% 
+  sample_n(size = 500) %>% 
+  as.matrix()
 
+pheatmap(temp, cluster_cols = F, cluster_rows = F,
+         legend = F,
+         show_rownames = F, show_colnames = F)
+```
+
+
+# Figure 2
+
+## Panel C: Similarity matrix heatmap
+
+```{r results2-fig2-panelC-heatmap-processing}
 #To create an average similarity matrix, first concat the matrices into a 3D array
 arraySimLatentSpace <- array(unlist(listSimLatentSpace),
                              dim = c(length(listLabelsHumanReordered$Region88_reordered),
@@ -196,14 +206,34 @@ annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
 annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
+```
 
 
-# Figure 2: Heatmap base ggplot -----------------------------------------------
+```{r results2-fig2-panelC-heatmap-base}
+#Some values to set up the palette
+paletteLength <- 255 #Palette length
+heatmapRange <- c(-0.3, 1) #Heatmap range
+heatmapRangeDist <- heatmapRange[2] - heatmapRange[1] #Range distance
+distNegative <- abs(heatmapRange[1] - 0) #Negative distance
+percNegative <- distNegative/heatmapRangeDist #Percent of range negative
+lengthNegative <- floor(percNegative*paletteLength) #Number of negative elements
+lengthPositive <- paletteLength - lengthNegative #Number of positive elements
+
+#Create the palette
+heatmapColours <- rev(brewer.pal(n = 11, name = "RdYlBu")) #Palette colours
+heatmapPaletteNegative <- colorRampPalette(heatmapColours[1:6])(lengthNegative) #Negative palette
+heatmapPalettePositive <- colorRampPalette(heatmapColours[6:11])(lengthPositive) #Positive palette
+heatmapPalette <- c(heatmapPaletteNegative, heatmapPalettePositive) #Full palette
+
+#Heatmap breaks
+heatmapBreaks <- seq(heatmapRange[1], heatmapRange[2], length.out = paletteLength)
 
 #Generate similarity matrix heatmap and convert to ggplot object
 fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
+                                color = heatmapPalette,
+                                breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
-                                border_color = NA,
+                                border_color = "white",
                                 show_rownames = F, show_colnames = F,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
@@ -212,11 +242,10 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
                                 annotation_legend = F,
                                 annotation_names_col = F, annotation_names_row = F) %>% 
   as.ggplot()
+```
 
 
-
-# Figure 2: Heatmap matrix ----------------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-matrix}
 #Convert the pheatmap plot to grob and force the gTree
 fig2_heatmap_main_grob <- ggplotGrob(fig2_heatmap_ggplot) %>% grid.force()
 
@@ -225,11 +254,6 @@ fig2_heatmap_main_matrix_grob <- fig2_heatmap_main_grob %>%
   getGrob("matrix.4-3-4-3") 
 
 #Extract the row annotations and reposition them
-# fig2_heatmap_main_rowannotations_grob <- fig2_heatmap_main_grob %>% 
-#   getGrob("row_annotation.4-2-4-2") %>%
-#   editGrob(x = unit(0.1,'npc'),
-#            width = unit(0.9, 'npc'),
-#            just = "left")
 fig2_heatmap_main_rowannotations_grob <- fig2_heatmap_main_grob %>% 
   getGrob("row_annotation.4-2-4-2") %>%
   editGrob(x = unit(0,'npc'),
@@ -245,13 +269,6 @@ fig2_heatmap_main_colannotations_grob <- fig2_heatmap_main_grob %>%
 
 #Recombine the plot into a single grob layout
 #Annotation sizes are fixed in inches. Matrix fills the remaining space
-# fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob, 
-#                                       fig2_heatmap_main_rowannotations_grob,
-#                                       fig2_heatmap_main_matrix_grob,
-#                                       layout_matrix = rbind(c(1, NA),
-#                                                             c(3,  2)),
-#                                       widths = unit(c(0.9, 0.1), c('null', 'inch')),
-#                                       heights = unit(c(0.1, 0.9), c('inch', 'null')))
 fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob, 
                                       fig2_heatmap_main_rowannotations_grob,
                                       fig2_heatmap_main_matrix_grob,
@@ -259,19 +276,17 @@ fig2_heatmap_main_grob <- arrangeGrob(fig2_heatmap_main_colannotations_grob,
                                                             c( 2, 3)),
                                       widths = unit(c(0.1, 0.9), c('inch', 'null')),
                                       heights = unit(c(0.1, 0.9), c('inch', 'null')))
+```
 
 
-
-# Figure 2: Heatmap legend ----------------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-legend}
 #1. Legend scale
-#Generate the legend palette
-fig2_heatmap_legend_palette <- colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100) %>%
-  matrix(nrow = 1, ncol = 100)
+#Convert the heatmap palette to a matrix
+fig2_heatmap_legend_palette <- matrix(heatmapPalette, nrow = 1, ncol = paletteLength)
 
 #Properties for the legend scale
 fig2_heatmap_legend_scale_width <- 1  #Width
-fig2_heatmap_legend_scale_height <- 0.2 #Height
+fig2_heatmap_legend_scale_height <- 0.3 #Height
 fig2_heatmap_legend_scale_x <- 0        #x
 fig2_heatmap_legend_scale_y <- 0.95     #y
 
@@ -284,53 +299,37 @@ fig2_heatmap_legend_scale_grob <- rasterGrob(fig2_heatmap_legend_palette,
                                              just = c("left", "top"))
 
 #2. Legend text
-#Properties for legend text
-fig2_heatmap_legend_text_min <- min(matSim_H88M67_MLP_mean)
-fig2_heatmap_legend_text_max <- max(matSim_H88M67_MLP_mean)
-fig2_heatmap_legend_text_nlabels <- 5
-
-#Legend text is defined as a sequence from min to max
-fig2_heatmap_legend_text_seq <- seq(fig2_heatmap_legend_text_min,
-                                    fig2_heatmap_legend_text_max,
-                                    length.out = fig2_heatmap_legend_text_nlabels) %>%
-  round(2) %>%
-  as.character()
-
-#Legend text x and y positions are based on the raster's positions and dimensions
-fig2_heatmap_legend_text_x <- seq(fig2_heatmap_legend_scale_x,
-                                  fig2_heatmap_legend_scale_width,
-                                  length.out = fig2_heatmap_legend_text_nlabels)
+fig2_heatmap_legend_text <- seq(-0.2, heatmapRange[2], by = 0.2)
+fig2_heatmap_legend_text_x <- (fig2_heatmap_legend_text - heatmapRange[1])/heatmapRangeDist
 fig2_heatmap_legend_text_y <- fig2_heatmap_legend_scale_y - fig2_heatmap_legend_scale_height - 0.05
 
 #Create the text grob for the legend text
-fig2_heatmap_legend_text_grob <- textGrob(fig2_heatmap_legend_text_seq,
+fig2_heatmap_legend_text_grob <- textGrob(fig2_heatmap_legend_text,
                                           x = fig2_heatmap_legend_text_x,
                                           y = fig2_heatmap_legend_text_y,
                                           just = c("center", "top"),
-                                          gp = gpar(fontsize = 10))
+                                          gp = gpar(fontsize = 9))
 
 #3. Legend title
 #Properties for the legend title
 fig2_heatmap_legend_title <- "Correlation"
 fig2_heatmap_legend_title_x <- (fig2_heatmap_legend_scale_x + fig2_heatmap_legend_scale_width)/2
-fig2_heatmap_legend_title_y <- fig2_heatmap_legend_text_y - 0.2
+fig2_heatmap_legend_title_y <- fig2_heatmap_legend_text_y - 0.3
 
 #Create the legend title grob
 fig2_heatmap_legend_title_grob <- textGrob(fig2_heatmap_legend_title,
                                            x = fig2_heatmap_legend_title_x,
                                            y = fig2_heatmap_legend_title_y,
                                            just = c("center", "top"),
-                                           gp = gpar(fontsize = 12))
+                                           gp = gpar(fontsize = 11))
 
 #Combine the scale, text and title into a single grob
 fig2_heatmap_legend_grob <- gTree(children = gList(fig2_heatmap_legend_scale_grob,
                                                    fig2_heatmap_legend_text_grob,
                                                    fig2_heatmap_legend_title_grob))
+```
 
-
-
-# Figure 2: Heatmap mouse labels ----------------------------------------------
-
+```{r results2-fig2-panelC-heatmap-mouselabs}
 #1. Mouse label text
 #The mouse labels are acronyms for 11 coarse regions
 fig2_heatmap_labsmouse_text <- treeMouse_11$Get("acronym", filterFun = isLeaf) %>% 
@@ -342,28 +341,43 @@ fig2_heatmap_labsmouse_text <- treeMouse_11$Get("acronym", filterFun = isLeaf) %
   as.character()
 
 #Mouse label x positions
-fig2_heatmap_labsmouse_text_x <- c(0.160, #Cortical subplate
-                                   0.338, #Olfactory areas
-                                   0.665, #Hippocampal formation
-                                   1.199, #Isocortex
-                                   1.704, #Cerebral nuclei
-                                   1.852, #Interbrain
-                                   2.001, #Midbrain
-                                   2.149, #Pons
-                                   2.297, #Medulla
-                                   2.505, #Cerebellar cortex
-                                   2.773) #Cerebellar nuclei
+fig2_heatmap_labsmouse_text_x <- dfLabelsMouse %>% 
+  select(Region11, Region67) %>% 
+  distinct() %>% 
+  mutate(Region11 = factor(Region11, levels = listLabelsMouseReordered$Region11_reordered),
+         Region67 = factor(Region67, levels = listLabelsMouseReordered$Region67_reordered)) %>% 
+  arrange(Region67) %>% 
+  mutate(x_i = 1:nrow(.) - 0.5) %>% 
+  group_by(Region11) %>% 
+  summarise(x_i_med = median(x_i)) %>% 
+  ungroup() %>% 
+  mutate(x_i_med_perc = x_i_med/67) %>% 
+  pull(x_i_med_perc)
+  
+matWidth_in <- 2.97
+fig2_heatmap_labsmouse_text_x <- (fig2_heatmap_labsmouse_text_x*(matWidth_in - 0.1) + 0.1)/matWidth_in
+fig2_heatmap_labsmouse_text_x <- fig2_heatmap_labsmouse_text_x + c(0,  #Cortical subplate
+                                                                   0, #Olfactory areas
+                                                                   0,  #Hippocampal formation
+                                                                   0, #Isocortex
+                                                                   0,  #Cerebral nuclei
+                                                                   0, #Interbrain
+                                                                   0,  #Midbrain
+                                                                   0, #Pons
+                                                                   0.04, #Medulla
+                                                                   0, #Cerebellar cortex
+                                                                   0)  #Cerebellar nuclei
 
 #Mouse label y positions are organized in two rows
-fig2_heatmap_labsmouse_text_y <- rep(c(0.3,0.125), length.out = length(fig2_heatmap_labsmouse_text))
+fig2_heatmap_labsmouse_text_y <- rep(c(0.75,0.3), length.out = length(fig2_heatmap_labsmouse_text))
 
 #Colours for the mouse labels
 fig2_heatmap_labsmouse_text_col <- annotation_colours_mod$MouseRegion
 
 #Create the text grob for the mouse labels
 fig2_heatmap_labsmouse_text_grob <- textGrob(fig2_heatmap_labsmouse_text,
-                                             x = unit(fig2_heatmap_labsmouse_text_x, 'inch'),
-                                             y = unit(fig2_heatmap_labsmouse_text_y, 'inch'),
+                                             x = fig2_heatmap_labsmouse_text_x,
+                                             y = fig2_heatmap_labsmouse_text_y,
                                              just = "centre",
                                              gp = gpar(fontsize = 8, 
                                                        col = fig2_heatmap_labsmouse_text_col,
@@ -371,7 +385,7 @@ fig2_heatmap_labsmouse_text_grob <- textGrob(fig2_heatmap_labsmouse_text,
 
 #2. Mouse label lines
 #Positions of the lines are dependent on text positions
-fig2_heatmap_labsmouse_line_x0 <- fig2_heatmap_labsmouse_text_x + c(-0.078, #Cortical subplate
+fig2_heatmap_labsmouse_line_x0 <- fig2_heatmap_labsmouse_text_x + c(0, #Cortical subplate
                                                                     NA, #Olfactory areas
                                                                     0, #Hippocampal formation
                                                                     NA, #Isocortex
@@ -379,9 +393,9 @@ fig2_heatmap_labsmouse_line_x0 <- fig2_heatmap_labsmouse_text_x + c(-0.078, #Cor
                                                                     NA, #Interbrain
                                                                     0, #Midbrain
                                                                     NA, #Pons
-                                                                    -0.115, #Medulla
+                                                                    -0.04, #Medulla
                                                                     NA, #Cerebellar cortex
-                                                                    0.078) #Cerebellar nuclei
+                                                                    0) #Cerebellar nuclei
 fig2_heatmap_labsmouse_line_x1 <- fig2_heatmap_labsmouse_line_x0 + c(0, #Cortical subplate
                                                                      0, #Olfactory areas
                                                                      0, #Hippocampal formation
@@ -390,33 +404,31 @@ fig2_heatmap_labsmouse_line_x1 <- fig2_heatmap_labsmouse_line_x0 + c(0, #Cortica
                                                                      0, #Interbrain
                                                                      0, #Midbrain
                                                                      0, #Pons
-                                                                     0.115, #Medulla
+                                                                     0.04, #Medulla
                                                                      0, #Cerebellar cortex
                                                                      0) #Cerebellar nuclei
 fig2_heatmap_labsmouse_line_y0 <- rep(0, length.out = length(fig2_heatmap_labsmouse_text))
-fig2_heatmap_labsmouse_line_y1 <- fig2_heatmap_labsmouse_text_y - 0.08
+fig2_heatmap_labsmouse_line_y1 <- fig2_heatmap_labsmouse_text_y - 0.15
 
 #Create the mouse label line grob
-fig2_heatmap_labsmouse_line_grob <- segmentsGrob(x0 = unit(fig2_heatmap_labsmouse_line_x0, 'inch'),
-                                                 x1 = unit(fig2_heatmap_labsmouse_line_x1, 'inch'),
-                                                 y0 = unit(fig2_heatmap_labsmouse_line_y0, 'inch'),
-                                                 y1 = unit(fig2_heatmap_labsmouse_line_y1, 'inch'),
+fig2_heatmap_labsmouse_line_grob <- segmentsGrob(x0 = fig2_heatmap_labsmouse_line_x0,
+                                                 x1 = fig2_heatmap_labsmouse_line_x1,
+                                                 y0 = fig2_heatmap_labsmouse_line_y0,
+                                                 y1 = fig2_heatmap_labsmouse_line_y1,
                                                  gp = gpar(col = annotation_colours$MouseRegion,
                                                            lwd = 1))
 
 #3. Mouse label title
 fig2_heatmap_labsmouse_title_grob <- textGrob("Mouse regions",
-                                              x = 0.5, 
-                                              y = unit(0, 'npc'),
-                                              just = "bottom")
+                                              x = 0.5, y = 0.5,
+                                              gp = gpar(fontsize = 11))
 
 #Combine the mouse label grobs into one
 fig2_heatmap_labsmouse_grob <- gTree(children = gList(fig2_heatmap_labsmouse_text_grob,
                                                       fig2_heatmap_labsmouse_line_grob))
+```
 
-
-
-# Figure 2: Heatmap human labels ----------------------------------------------
+```{r results2-fig2-panelC-heatmap-humanlabs}
 #1. Human label text
 fig2_heatmap_labshuman_text <- treeHuman_16$Get("acronym", filterFun = isLeaf) %>% 
   enframe(name = "Region",
@@ -426,35 +438,44 @@ fig2_heatmap_labshuman_text <- treeHuman_16$Get("acronym", filterFun = isLeaf) %
   pull(Acronym) %>% 
   as.character()
 
-# fig2_heatmap_labshuman_text_x <- rep(0.1, length.out = length(fig2_heatmap_labshuman_text))
-fig2_heatmap_labshuman_text_x <- rep(0.9, length.out = length(fig2_heatmap_labshuman_text))
-fig2_heatmap_labshuman_text_y <- c(3.783, #Claustrum
-                                   3.588, #Limbic lobe
-                                   3.081, #Frontal lobe
-                                   2.672, #Insula
-                                   2.516, #Occipital lobe
-                                   2.301, #Parietal lobe
-                                   1.950, #Temporal lobe
-                                   1.775, #Amygdala
-                                   1.638, #Basal ganglia
-                                   1.521, #Basal forebrain
-                                   1.385, #Diencephalon
-                                   1.209, #Mesencephalon
-                                   1.100, #Pons,
-                                   0.975, #Myelencephalon,
-                                   0.585, #Cerebellar cortex,
-                                   0.039) #Cerebellar nuclei
+fig2_heatmap_labshuman_text_x <- 0.8
+
+fig2_heatmap_labshuman_text_y <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  mutate(Region16 = factor(Region16, levels = listLabelsHumanReordered$Region16_reordered),
+         Region88 = factor(Region88, levels = listLabelsHumanReordered$Region88_reordered)) %>% 
+  arrange(desc(Region88)) %>% 
+  mutate(y_i = 1:nrow(.) - 0.5) %>% 
+  group_by(Region16) %>% 
+  summarise(y_i_med = median(y_i)) %>% 
+  ungroup() %>% 
+  mutate(y_i_med_perc = y_i_med/88) %>% 
+  pull(y_i_med_perc)
+
+matHeight_in <- 4.4
+fig2_heatmap_labshuman_text_y <- (fig2_heatmap_labshuman_text_y*(matHeight_in - 0.1))/matHeight_in
+fig2_heatmap_labshuman_text_y <- fig2_heatmap_labshuman_text_y + c(0, #Claustrum
+                                                                   0, #Limbic lobe
+                                                                   0, #Frontal lobe
+                                                                   0, #Insula
+                                                                   0, #Occipital lobe
+                                                                   0, #Parietal lobe
+                                                                   0, #Temporal lobe
+                                                                   0, #Amygdala
+                                                                   0, #Basal ganglia
+                                                                   0, #Basal forebrain
+                                                                   0, #Diencephalon
+                                                                   0, #Mesencephalon
+                                                                   0, #Pons,
+                                                                   -0.022, #Myelencephalon,
+                                                                   0, #Cerebellar cortex,
+                                                                   0) #Cerebellar nuclei
+
 fig2_heatmap_labshuman_text_col <- annotation_colours_mod$HumanRegion
-# fig2_heatmap_labshuman_text_grob <- textGrob(fig2_heatmap_labshuman_text,
-#                                              x = unit(fig2_heatmap_labshuman_text_x, 'inch'),
-#                                              y = unit(fig2_heatmap_labshuman_text_y, 'inch'),
-#                                              just = c("left", "centre"),
-#                                              gp = gpar(fontsize = 8,
-#                                                        fontface = "bold",
-#                                                        col = fig2_heatmap_labshuman_text_col))
 fig2_heatmap_labshuman_text_grob <- textGrob(fig2_heatmap_labshuman_text,
-                                             x = unit(fig2_heatmap_labshuman_text_x, 'npc'),
-                                             y = unit(fig2_heatmap_labshuman_text_y, 'inch'),
+                                             x = fig2_heatmap_labshuman_text_x,
+                                             y = fig2_heatmap_labshuman_text_y,
                                              just = c("right", "centre"),
                                              gp = gpar(fontsize = 8,
                                                        fontface = "bold",
@@ -462,83 +483,139 @@ fig2_heatmap_labshuman_text_grob <- textGrob(fig2_heatmap_labshuman_text,
 
 #2. Human label lines
 # Only need a line for the myelencephalon
-# fig2_heatmap_labshuman_line_grob <- segmentsGrob(x0 = 0.1, x1 = 0,
-#                                                  y0 = 0.25, y1 = 0.27,
-#                                                  gp = gpar(col = annotation_colours$HumanRegion[[14]],
-#                                                            lwd = 1))
-fig2_heatmap_labshuman_line_grob <- segmentsGrob(x0 = 0.9, x1 = 1,
+fig2_heatmap_labshuman_line_grob <- segmentsGrob(x0 = fig2_heatmap_labshuman_text_x, x1 = 1,
                                                  y0 = 0.25, y1 = 0.27,
                                                  gp = gpar(col = annotation_colours$HumanRegion[[14]],
                                                            lwd = 1))
 
 #3. Human label title
-# fig2_heatmap_labshuman_title_grob <- textGrob("Human regions",
-#                                               x = 0.5, y = 0.5,
-#                                               rot = 270)
 fig2_heatmap_labshuman_title_grob <- textGrob("Human regions",
                                               x = 0.5, y = 0.5,
-                                              rot = 90)
+                                              rot = 90,
+                                              gp = gpar(fontsize = 11))
 
 #Combine the human label grobs into one
 fig2_heatmap_labshuman_grob <- gTree(children = gList(fig2_heatmap_labshuman_text_grob,
                                                       fig2_heatmap_labshuman_line_grob))
+
+fig2_heatmap_title_grob <- textGrob("Average latent space grey matter similarity",
+                                    x = 0,
+                                    just = "left")
 ```
 
-```{r results2-fig2-panelA-illustration1}
-# Figure 2: Illustration 1 network architecture -------------------------------
 
+## Panel A: Training the neural network
+
+
+```{r results2-fig2-panelA-network-nodes}
 # Parameters
 fig2_illustration1_neuralnet_nodes_xcentre <- 0.52
 fig2_illustration1_neuralnet_nodes_ycentre <- 0.5
 fig2_illustration1_neuralnet_nodes_lyrwidth <- 0.125
 fig2_illustration1_neuralnet_nodes_height <- 0.65
-fig2_illustration1_neuralnet_nodes_r <- 0.04
+fig2_illustration1_neuralnet_nodes_r <- 0.03
 
 # 1. Neural network nodes
 #Layer 1 x and y
-fig2_illustration1_neuralnet_nodes_lyr1_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre - 1.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 5)
+fig2_illustration1_neuralnet_nodes_lyr1_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre - 1.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 4)
 fig2_illustration1_neuralnet_nodes_lyr1_ystart <- fig2_illustration1_neuralnet_nodes_ycentre - fig2_illustration1_neuralnet_nodes_height/2
 fig2_illustration1_neuralnet_nodes_lyr1_yend <- fig2_illustration1_neuralnet_nodes_ycentre + fig2_illustration1_neuralnet_nodes_height/2
 fig2_illustration1_neuralnet_nodes_lyr1_y <- seq(fig2_illustration1_neuralnet_nodes_lyr1_ystart, 
                                                  fig2_illustration1_neuralnet_nodes_lyr1_yend,
-                                                 length.out = 5)
+                                                 length.out = 8)
+fig2_illustration1_neuralnet_nodes_lyr1_y <- fig2_illustration1_neuralnet_nodes_ycentre + fig2_illustration1_neuralnet_nodes_height*c(-0.5, -0.35, 0.35, 0.5)
+
+
 #Layer 2 x and y
-fig2_illustration1_neuralnet_nodes_lyr2_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre - 0.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 3)
-fig2_illustration1_neuralnet_nodes_lyr2_y <- fig2_illustration1_neuralnet_nodes_lyr1_y[2:4]
+# fig2_illustration1_neuralnet_nodes_lyr2_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre - 0.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 3)
+# fig2_illustration1_neuralnet_nodes_lyr2_y <- fig2_illustration1_neuralnet_nodes_lyr1_y[2:4]
+fig2_illustration1_neuralnet_nodes_lyr2_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre - 0.75*fig2_illustration1_neuralnet_nodes_lyrwidth, 4)
+# fig2_illustration1_neuralnet_nodes_lyr2_ystart <- mean(c(fig2_illustration1_neuralnet_nodes_lyr1_y[1],
+#                                                          fig2_illustration1_neuralnet_nodes_lyr1_y[2]))
+# fig2_illustration1_neuralnet_nodes_lyr2_yend <- mean(c(fig2_illustration1_neuralnet_nodes_lyr1_y[length(fig2_illustration1_neuralnet_nodes_lyr1_y)],
+#                                                        fig2_illustration1_neuralnet_nodes_lyr1_y[length(fig2_illustration1_neuralnet_nodes_lyr1_y)-1]))
+fig2_illustration1_neuralnet_nodes_lyr2_y <- fig2_illustration1_neuralnet_nodes_lyr1_y + 0.05*c(1, 1, -1, -1) 
 
 #Layer 3 x and y
-fig2_illustration1_neuralnet_nodes_lyr3_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 0.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 3)
+# fig2_illustration1_neuralnet_nodes_lyr3_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 0.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 3)
+fig2_illustration1_neuralnet_nodes_lyr3_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre, 4)
 fig2_illustration1_neuralnet_nodes_lyr3_y <- fig2_illustration1_neuralnet_nodes_lyr2_y
 
 #Layer 4 x and y
-fig2_illustration1_neuralnet_nodes_lyr4_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 1.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 4)
-fig2_illustration1_neuralnet_nodes_lyr4_ystart <- mean(c(fig2_illustration1_neuralnet_nodes_lyr1_y[1],
-                                                         fig2_illustration1_neuralnet_nodes_lyr1_y[2]))
-fig2_illustration1_neuralnet_nodes_lyr4_yend <- mean(c(fig2_illustration1_neuralnet_nodes_lyr1_y[length(fig2_illustration1_neuralnet_nodes_lyr1_y)],
-                                                       fig2_illustration1_neuralnet_nodes_lyr1_y[length(fig2_illustration1_neuralnet_nodes_lyr1_y)-1]))
-fig2_illustration1_neuralnet_nodes_lyr4_y <- seq(fig2_illustration1_neuralnet_nodes_lyr4_ystart,
-                                                 fig2_illustration1_neuralnet_nodes_lyr4_yend,
-                                                 length.out = 4)
+# fig2_illustration1_neuralnet_nodes_lyr3_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 0.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 3)
+fig2_illustration1_neuralnet_nodes_lyr4_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 0.75*fig2_illustration1_neuralnet_nodes_lyrwidth, 4)
+fig2_illustration1_neuralnet_nodes_lyr4_y <- fig2_illustration1_neuralnet_nodes_lyr3_y
+
+#Layer 5 x and y
+fig2_illustration1_neuralnet_nodes_lyr5_x <- rep(fig2_illustration1_neuralnet_nodes_xcentre + 1.5*fig2_illustration1_neuralnet_nodes_lyrwidth, 4)
+fig2_illustration1_neuralnet_nodes_lyr5_y <- fig2_illustration1_neuralnet_nodes_lyr4_y + 0.05*c(1, 1, -1, -1) 
 
 #Combine nodes x and y positions
 fig2_illustration1_neuralnet_nodes_x <- c(fig2_illustration1_neuralnet_nodes_lyr1_x,
                                           fig2_illustration1_neuralnet_nodes_lyr2_x,
                                           fig2_illustration1_neuralnet_nodes_lyr3_x,
-                                          fig2_illustration1_neuralnet_nodes_lyr4_x)
+                                          fig2_illustration1_neuralnet_nodes_lyr4_x,
+                                          fig2_illustration1_neuralnet_nodes_lyr5_x)
 fig2_illustration1_neuralnet_nodes_y <- c(fig2_illustration1_neuralnet_nodes_lyr1_y,
                                           fig2_illustration1_neuralnet_nodes_lyr2_y,
                                           fig2_illustration1_neuralnet_nodes_lyr3_y,
-                                          fig2_illustration1_neuralnet_nodes_lyr4_y)
+                                          fig2_illustration1_neuralnet_nodes_lyr4_y,
+                                          fig2_illustration1_neuralnet_nodes_lyr5_y)
 
 #Generate circle grobs for nodes
 fig2_illustration1_neuralnet_nodes_grob <- circleGrob(x = fig2_illustration1_neuralnet_nodes_x, 
                                                       y = fig2_illustration1_neuralnet_nodes_y,
                                                       r = fig2_illustration1_neuralnet_nodes_r,
-                                                      gp = gpar(fill = "#719DC0",
-                                                                col = "#00325C"))
+                                                      gp = gpar(fill = "grey80",
+                                                                col = "black"))
+                                                      # gp = gpar(fill = "#719DC0",
+                                                      #           col = "#00325C"))
+```
 
+```{r results2-fig2-panelA-network-ellipses}
+fig2_illustration1_neuralnet_nodes_ellipses_r <- 0.005
+
+fig2_illustration1_neuralnet_nodes_ellipses_lyr1_x <- rep(unique(fig2_illustration1_neuralnet_nodes_lyr1_x), 8)
+fig2_illustration1_neuralnet_nodes_ellipses_lyr1_y <- seq(fig2_illustration1_neuralnet_nodes_lyr1_y[2] + fig2_illustration1_neuralnet_nodes_r + 0.04,
+                                                          fig2_illustration1_neuralnet_nodes_lyr1_y[3] - fig2_illustration1_neuralnet_nodes_r - 0.04,
+                                                          length.out = 8)
+
+fig2_illustration1_neuralnet_nodes_ellipses_lyr2_x <- rep(unique(fig2_illustration1_neuralnet_nodes_lyr2_x), 6)
+fig2_illustration1_neuralnet_nodes_ellipses_lyr2_y <- seq(fig2_illustration1_neuralnet_nodes_lyr2_y[2] + fig2_illustration1_neuralnet_nodes_r + 0.04,
+                                                          fig2_illustration1_neuralnet_nodes_lyr2_y[3] - fig2_illustration1_neuralnet_nodes_r - 0.04,
+                                                          length.out = 6)
+
+fig2_illustration1_neuralnet_nodes_ellipses_lyr3_x <- rep(unique(fig2_illustration1_neuralnet_nodes_lyr3_x), 6)
+fig2_illustration1_neuralnet_nodes_ellipses_lyr3_y <- fig2_illustration1_neuralnet_nodes_ellipses_lyr2_y
+
+fig2_illustration1_neuralnet_nodes_ellipses_lyr4_x <- rep(unique(fig2_illustration1_neuralnet_nodes_lyr4_x), 6)
+fig2_illustration1_neuralnet_nodes_ellipses_lyr4_y <- fig2_illustration1_neuralnet_nodes_ellipses_lyr3_y
+
+fig2_illustration1_neuralnet_nodes_ellipses_lyr5_x <- rep(unique(fig2_illustration1_neuralnet_nodes_lyr5_x), 3)
+fig2_illustration1_neuralnet_nodes_ellipses_lyr5_y <- seq(fig2_illustration1_neuralnet_nodes_lyr5_y[2] + fig2_illustration1_neuralnet_nodes_r + 0.04,
+                                                          fig2_illustration1_neuralnet_nodes_lyr5_y[3] - fig2_illustration1_neuralnet_nodes_r - 0.04,
+                                                          length.out = 3)
+
+fig2_illustration1_neuralnet_nodes_ellipses_x <- c(fig2_illustration1_neuralnet_nodes_ellipses_lyr1_x,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr2_x,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr3_x,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr4_x,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr5_x)
+fig2_illustration1_neuralnet_nodes_ellipses_y <- c(fig2_illustration1_neuralnet_nodes_ellipses_lyr1_y,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr2_y,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr3_y,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr4_y,
+                                                   fig2_illustration1_neuralnet_nodes_ellipses_lyr5_y)
+
+fig2_illustration1_neuralnet_nodes_ellipses_grob <- circleGrob(x = fig2_illustration1_neuralnet_nodes_ellipses_x,
+                                                               y = fig2_illustration1_neuralnet_nodes_ellipses_y,
+                                                               r = fig2_illustration1_neuralnet_nodes_ellipses_r,
+                                                               gp = gpar(fill = "black"))
+```
+
+```{r results2-fig2-panelA-network-weights}
 #2. Neural net weights
-#Line start/end points for 1st layer
+#Line start/end points for 1st-2nd layer
 fig2_illustration1_neuralnet_weights_12 <- expand.grid(fig2_illustration1_neuralnet_nodes_lyr1_y,
                                                        fig2_illustration1_neuralnet_nodes_lyr2_y) %>% 
   mutate(y0 = Var1,
@@ -546,7 +623,7 @@ fig2_illustration1_neuralnet_weights_12 <- expand.grid(fig2_illustration1_neural
          x0 = unique(fig2_illustration1_neuralnet_nodes_lyr1_x),
          x1 = unique(fig2_illustration1_neuralnet_nodes_lyr2_x))
 
-#Line start/end points for 2nd layer
+#Line start/end points for 2nd-3rd layer
 fig2_illustration1_neuralnet_weights_23 <- expand.grid(fig2_illustration1_neuralnet_nodes_lyr2_y,
                                                        fig2_illustration1_neuralnet_nodes_lyr3_y) %>% 
   mutate(y0 = Var1,
@@ -554,7 +631,7 @@ fig2_illustration1_neuralnet_weights_23 <- expand.grid(fig2_illustration1_neural
          x0 = unique(fig2_illustration1_neuralnet_nodes_lyr2_x),
          x1 = unique(fig2_illustration1_neuralnet_nodes_lyr3_x))
 
-#Line start/end points for 3rd layer
+#Line start/end points for 3rd-4th layer
 fig2_illustration1_neuralnet_weights_34 <- expand.grid(fig2_illustration1_neuralnet_nodes_lyr3_y,
                                                        fig2_illustration1_neuralnet_nodes_lyr4_y) %>% 
   mutate(y0 = Var1,
@@ -562,10 +639,19 @@ fig2_illustration1_neuralnet_weights_34 <- expand.grid(fig2_illustration1_neural
          x0 = unique(fig2_illustration1_neuralnet_nodes_lyr3_x),
          x1 = unique(fig2_illustration1_neuralnet_nodes_lyr4_x))
 
+#Line start/end points for 4th-5th layer
+fig2_illustration1_neuralnet_weights_45 <- expand.grid(fig2_illustration1_neuralnet_nodes_lyr4_y,
+                                                       fig2_illustration1_neuralnet_nodes_lyr5_y) %>% 
+  mutate(y0 = Var1,
+         y1 = Var2,
+         x0 = unique(fig2_illustration1_neuralnet_nodes_lyr4_x),
+         x1 = unique(fig2_illustration1_neuralnet_nodes_lyr5_x))
+
 #Combine line points together
 fig2_illustration1_neuralnet_weights <- rbind(fig2_illustration1_neuralnet_weights_12,
                                               fig2_illustration1_neuralnet_weights_23,
-                                              fig2_illustration1_neuralnet_weights_34)
+                                              fig2_illustration1_neuralnet_weights_34,
+                                              fig2_illustration1_neuralnet_weights_45)
 
 #Create segments grob for all weights lines
 fig2_illustration1_neuralnet_weights_grob <- segmentsGrob(x0 = fig2_illustration1_neuralnet_weights$x0,
@@ -573,34 +659,39 @@ fig2_illustration1_neuralnet_weights_grob <- segmentsGrob(x0 = fig2_illustration
                                                           y0 = fig2_illustration1_neuralnet_weights$y0,
                                                           y1 = fig2_illustration1_neuralnet_weights$y1,
                                                           gp = gpar(lty = "dashed",
-                                                                    col = "#B27700"))
+                                                                    col = "grey40"))
+                                                          # gp = gpar(lty = "dashed",
+                                                          #           col = "#B27700"))
+```
 
+```{r results2-fig2-panelA-network-text} 
 #3. Neural net annotations
 fig2_illustration1_neuralnet_annotations <- c("Input", "Hidden layers", "Output")
 fig2_illustration1_neuralnet_annotation_x <- c(unique(fig2_illustration1_neuralnet_nodes_lyr1_x),
                                                fig2_illustration1_neuralnet_nodes_xcentre,
-                                               unique(fig2_illustration1_neuralnet_nodes_lyr4_x))
-fig2_illustration1_neuralnet_annotation_y <- c(fig2_illustration1_neuralnet_nodes_lyr1_yend,
-                                               max(fig2_illustration1_neuralnet_nodes_lyr2_y),
-                                               fig2_illustration1_neuralnet_nodes_lyr1_yend) + 0.1
+                                               unique(fig2_illustration1_neuralnet_nodes_lyr5_x))
+fig2_illustration1_neuralnet_annotation_y <- c(max(fig2_illustration1_neuralnet_nodes_lyr1_y),
+                                               max(fig2_illustration1_neuralnet_nodes_lyr3_y),
+                                               max(fig2_illustration1_neuralnet_nodes_lyr5_y)) + 0.075
 fig2_illustration1_neuralnet_annotation_grob <- textGrob(fig2_illustration1_neuralnet_annotations,
                                                          x = fig2_illustration1_neuralnet_annotation_x,
-                                                         y = fig2_illustration1_neuralnet_annotation_y)
+                                                         y = fig2_illustration1_neuralnet_annotation_y,
+                                                         gp = gpar(fontsize = 10))
 
 fig2_illustration1_neuralnet_title_grob <- textGrob("Untrained network",
                                                     x = fig2_illustration1_neuralnet_nodes_xcentre,
-                                                    y = fig2_illustration1_neuralnet_nodes_lyr1_ystart)
+                                                    y = 0.1,
+                                                    gp = gpar(fontsize = 10))
 
 #Combine neural network schematic into one grob
 fig2_illustration1_neuralnet_grob <- gTree(children = gList(fig2_illustration1_neuralnet_weights_grob,
+                                                            fig2_illustration1_neuralnet_nodes_ellipses_grob,
                                                             fig2_illustration1_neuralnet_nodes_grob,
                                                             fig2_illustration1_neuralnet_annotation_grob,
                                                             fig2_illustration1_neuralnet_title_grob))
+```
 
-
-
-#Figure 2: Illustration 1 network input ---------------------------------------
-
+```{r results2-fig2-panelA-input-labels}
 #1. Input labels
 fig2_illustration1_input_labels_rect_x <- unique(fig2_illustration1_neuralnet_nodes_lyr1_x) - fig2_illustration1_neuralnet_nodes_r - 0.06
 fig2_illustration1_input_labels_rect_y <- fig2_illustration1_neuralnet_nodes_ycentre
@@ -620,13 +711,14 @@ fig2_illustration1_input_labels_text_grob <- textGrob("True\nlabels",
                                                       x = fig2_illustration1_input_labels_text_x,
                                                       y = fig2_illustration1_input_labels_text_y,
                                                       just = "bottom",
-                                                      gp = gpar(fontsize = 10,
+                                                      gp = gpar(fontsize = 8,
                                                                 lineheight = 0.75))
 
 fig2_illustration1_input_labels_grob <- gTree(children = gList(fig2_illustration1_input_labels_rect_grob,
                                                                fig2_illustration1_input_labels_text_grob))
+```
 
-
+```{r results2-fig2-panelA-input-matrix}
 #2. Input data matrix
 #2.1. Input data matrix rectangle
 fig2_illustration1_input_data_rect_x <- fig2_illustration1_input_labels_rect_x - fig2_illustration1_input_labels_rect_width - 0.02
@@ -640,7 +732,9 @@ fig2_illustration1_input_data_rect_grob <- rectGrob(x = fig2_illustration1_input
                                                     height = fig2_illustration1_input_data_rect_height,
                                                     gp = gpar(fill = "#719DC0",
                                                                 col = "#00325C"))
+```
 
+```{r results2-fig2-panelA-input-text} 
 #2.2. Input data matrix annotations
 fig2_illustration1_input_data_text_xaxis_x <- fig2_illustration1_input_data_rect_x - fig2_illustration1_input_data_rect_width/2
 fig2_illustration1_input_data_text_xaxis_y <- fig2_illustration1_input_data_rect_y + fig2_illustration1_input_data_rect_height/2 + 0.03
@@ -648,7 +742,7 @@ fig2_illustration1_input_data_text_xaxis_grob <- textGrob("Genes",
                                                           just = "bottom",
                                                           x = fig2_illustration1_input_data_text_xaxis_x,
                                                           y = fig2_illustration1_input_data_text_xaxis_y,
-                                                          gp = gpar(fontsize = 10,
+                                                          gp = gpar(fontsize = 8,
                                                                     lineheight = 0.75))
 
 fig2_illustration1_input_data_text_yaxis_x <- fig2_illustration1_input_data_rect_x - fig2_illustration1_input_data_rect_width - 0.02
@@ -657,26 +751,25 @@ fig2_illustration1_input_data_text_yaxis_grob <- textGrob("Voxels",
                                                           x = fig2_illustration1_input_data_text_yaxis_x,
                                                           y = fig2_illustration1_input_data_text_yaxis_y,
                                                           rot = 90,
-                                                          gp = gpar(fontsize = 10))
+                                                          gp = gpar(fontsize = 8))
 
 fig2_illustration1_input_data_text_title_x <- mean(c(fig2_illustration1_input_labels_rect_x,
                                                      fig2_illustration1_input_data_rect_x - fig2_illustration1_input_data_rect_width))
 fig2_illustration1_input_data_text_title_y <- fig2_illustration1_neuralnet_nodes_lyr1_ystart
 fig2_illustration1_input_data_text_title_grob <- textGrob("Mouse voxel data",
                                                           x = fig2_illustration1_input_data_text_title_x,
-                                                          y = fig2_illustration1_input_data_text_title_y)
+                                                          y = 0.1,
+                                                          gp = gpar(fontsize = 10))
 
 fig2_illustration1_input_data_grob <- gTree(children = gList(fig2_illustration1_input_data_rect_grob,
                                                              fig2_illustration1_input_data_text_xaxis_grob,
                                                              fig2_illustration1_input_data_text_yaxis_grob,
                                                              fig2_illustration1_input_data_text_title_grob))
+```
 
-
-
-# Figure 2: Illustration 1 network output -------------------------------------
-
+```{r results2-fig2-panelA-output}
 #1. Loss function text
-fig2_illustration1_output_loss_text_xstart <- unique(fig2_illustration1_neuralnet_nodes_lyr4_x) + fig2_illustration1_neuralnet_nodes_r + 0.06
+fig2_illustration1_output_loss_text_xstart <- unique(fig2_illustration1_neuralnet_nodes_lyr5_x) + fig2_illustration1_neuralnet_nodes_r + 0.06
 fig2_illustration1_output_loss_text_xend <- 0.98
 fig2_illustration1_output_loss_text_xseq <- seq(fig2_illustration1_output_loss_text_xstart + 0.04,
                                                 fig2_illustration1_output_loss_text_xend,
@@ -702,14 +795,14 @@ fig2_illustration1_output_labels_grob <- rectGrob(x = fig2_illustration1_output_
                                                             col = "#00325C"))
 
 #3. Output annotations
-fig2_illustration1_output_text_x <- fig2_illustration1_output_labels_rect_x + c(-0.01, 0.01)
+fig2_illustration1_output_text_x <- fig2_illustration1_output_labels_rect_x + c(0, 0.01)
 fig2_illustration1_output_text_y <- fig2_illustration1_output_labels_rect_y + fig2_illustration1_output_labels_rect_height/2 + 0.03
 fig2_illustration1_output_text <- c("True\nlabels", "Predicted\nlabels")
 fig2_illustration1_output_text_grob <- textGrob(fig2_illustration1_output_text,
                                                 x = fig2_illustration1_output_text_x,
                                                 y = fig2_illustration1_output_text_y,
                                                 just = "bottom",
-                                                gp = gpar(fontsize = 10,
+                                                gp = gpar(fontsize = 8,
                                                           lineheight = 0.75))
 
 fig2_illustration1_output_title_x <- mean(c(fig2_illustration1_output_loss_text_xstart,
@@ -717,21 +810,23 @@ fig2_illustration1_output_title_x <- mean(c(fig2_illustration1_output_loss_text_
 fig2_illustration1_output_title_y <- fig2_illustration1_neuralnet_nodes_lyr1_ystart
 fig2_illustration1_output_title_grob <- textGrob("Objective function",
                                                  x = fig2_illustration1_output_title_x,
-                                                 y = fig2_illustration1_output_title_y)
+                                                 y = 0.1,
+                                                 gp = gpar(fontsize = 10))
 
 fig2_illustration1_output_grob <- gTree(children = gList(fig2_illustration1_output_loss_text_grob,
                                                          fig2_illustration1_output_labels_grob,
                                                          fig2_illustration1_output_text_grob,
                                                          fig2_illustration1_output_title_grob))
+```
 
-
-
-# Figure 2: Illustration 1 arrows ---------------------------------------------
-
+```{r results2-fig2-panelA-arrows}
 fig2_illustration1_arrows_x0 <- rep(fig2_illustration1_neuralnet_nodes_lyr1_x, 2) - 0.05
-fig2_illustration1_arrows_x1 <- rep(fig2_illustration1_neuralnet_nodes_lyr4_x, 2) + 0.05
-fig2_illustration1_arrows_y0 <- fig2_illustration1_neuralnet_nodes_lyr4_y[2:3]
-fig2_illustration1_arrows_y1 <- fig2_illustration1_neuralnet_nodes_lyr4_y[2:3] 
+fig2_illustration1_arrows_x1 <- rep(fig2_illustration1_neuralnet_nodes_lyr5_x, 2) + 0.05
+# fig2_illustration1_arrows_y0 <- fig2_illustration1_neuralnet_nodes_lyr4_y[2:3]
+fig2_illustration1_arrows_y0 <- seq(fig2_illustration1_neuralnet_nodes_lyr5_y[2],
+                                    fig2_illustration1_neuralnet_nodes_lyr5_y[3],
+                                    length.out = 4)[2:3]
+fig2_illustration1_arrows_y1 <- fig2_illustration1_arrows_y0
 fig2_illustration1_arrows_grob <- segmentsGrob(x0 = fig2_illustration1_arrows_x0,
                                                x1 = fig2_illustration1_arrows_x1,
                                                y0 = fig2_illustration1_arrows_y0,
@@ -740,65 +835,72 @@ fig2_illustration1_arrows_grob <- segmentsGrob(x0 = fig2_illustration1_arrows_x0
                                                              length = unit(0.05, 'npc'),
                                                              type = "closed",
                                                              ends = c("last", "first")),
-                                               gp = gpar(lwd = 3, fill = "black"))
+                                               gp = gpar(lwd = 2, fill = "black"))
+```
 
+```{r results2-fig2-panelA-grob}
 #Fig 2 illustration 1 grob
 fig2_illustration1_grob <- gTree(children = gList(fig2_illustration1_input_data_grob,
                                                   fig2_illustration1_input_labels_grob,
                                                   fig2_illustration1_neuralnet_grob,
                                                   fig2_illustration1_output_grob,
                                                   fig2_illustration1_arrows_grob))
+
+fig2_illustration1_title_grob <- textGrob("Training the neural network",
+                                          x = 0,
+                                          just = "left")
 ```
 
-```{r results2-fig2-panelB-illustration2}
-# Figure 2: Illustration 2 network architecture -------------------------------
 
+## Panel B: Transforming the common space
+
+```{r results2-fig2-panelB-network-nodes}
 #1. Neural net nodes
-fig2_illustration2_neuralnet_nodes_x <- fig2_illustration1_neuralnet_nodes_x
-fig2_illustration2_neuralnet_nodes_y <- fig2_illustration1_neuralnet_nodes_y
-ind_lyr4 <- fig2_illustration2_neuralnet_nodes_x == unique(fig2_illustration1_neuralnet_nodes_lyr4_x)
-fig2_illustration2_neuralnet_nodes_alpha <- rep(1, length(fig2_illustration2_neuralnet_nodes_x))
-fig2_illustration2_neuralnet_nodes_alpha[ind_lyr4] <- 0.2
+ind_lyr5 <- fig2_illustration1_neuralnet_nodes_x == unique(fig2_illustration1_neuralnet_nodes_lyr5_x)
+fig2_illustration2_neuralnet_nodes_alpha <- rep(1, length(fig2_illustration1_neuralnet_nodes_x))
+fig2_illustration2_neuralnet_nodes_alpha[ind_lyr5] <- 0.2
 
 #Generate circle grobs for nodes
-fig2_illustration2_neuralnet_nodes_grob <- circleGrob(x = fig2_illustration2_neuralnet_nodes_x, 
-                                                      y = fig2_illustration2_neuralnet_nodes_y,
-                                                      r = fig2_illustration1_neuralnet_nodes_r,
-                                                      gp = gpar(alpha = fig2_illustration2_neuralnet_nodes_alpha,
-                                                                fill = "#719DC0",
-                                                                col = "#00325C"))
+fig2_illustration2_neuralnet_nodes_grob <- fig2_illustration1_neuralnet_nodes_grob
+fig2_illustration2_neuralnet_nodes_grob$gp$alpha <- fig2_illustration2_neuralnet_nodes_alpha
 
 #2. Neural net weights
 #Combine line points together
-fig2_illustration2_neuralnet_weights <- fig2_illustration1_neuralnet_weights
-ind_lyr4 <- fig2_illustration2_neuralnet_weights$x1 == unique(fig2_illustration1_neuralnet_nodes_lyr4_x)
-fig2_illustration2_neuralnet_weights_alpha <- rep(1, nrow(fig2_illustration2_neuralnet_weights))
-fig2_illustration2_neuralnet_weights_alpha[ind_lyr4] <- 0.2
+ind_lyr5 <- fig2_illustration1_neuralnet_weights$x1 == unique(fig2_illustration1_neuralnet_nodes_lyr5_x)
+fig2_illustration2_neuralnet_weights_alpha <- rep(1, nrow(fig2_illustration1_neuralnet_weights))
+fig2_illustration2_neuralnet_weights_alpha[ind_lyr5] <- 0.2
 
 #Create segments grob for all weights lines
-fig2_illustration2_neuralnet_weights_grob <- segmentsGrob(x0 = fig2_illustration2_neuralnet_weights$x0,
-                                                          x1 = fig2_illustration2_neuralnet_weights$x1,
-                                                          y0 = fig2_illustration2_neuralnet_weights$y0,
-                                                          y1 = fig2_illustration2_neuralnet_weights$y1,
-                                                          gp = gpar(alpha = fig2_illustration2_neuralnet_weights_alpha,
-                                                                    col = "#B27700"))
+fig2_illustration2_neuralnet_weights_grob <- fig2_illustration1_neuralnet_weights_grob
+fig2_illustration2_neuralnet_weights_grob$gp$alpha <- fig2_illustration2_neuralnet_weights_alpha
+
+#3. Neural net ellipses
+ind_lyr5 <- fig2_illustration1_neuralnet_nodes_ellipses_x == unique(fig2_illustration1_neuralnet_nodes_ellipses_lyr5_x)
+fig2_illustration2_neuralnet_nodes_ellipses_alpha <- rep(1, length(fig2_illustration1_neuralnet_nodes_ellipses_x))
+fig2_illustration2_neuralnet_nodes_ellipses_alpha[ind_lyr5] <- 0.2
+fig2_illustration2_neuralnet_nodes_ellipses_grob <- fig2_illustration1_neuralnet_nodes_ellipses_grob
+fig2_illustration2_neuralnet_nodes_ellipses_grob$gp$alpha <- fig2_illustration2_neuralnet_nodes_ellipses_alpha
+
+fig2_illustration2_neuralnet_annotations_grob <- fig2_illustration1_neuralnet_annotation_grob
+fig2_illustration2_neuralnet_annotations_grob$gp$alpha <- c(1, 1, 0.2)
 
 #3. Neural net annotations
 fig2_illustration2_neuralnet_title_grob <- textGrob("Trained network",
                                                     x = fig2_illustration1_neuralnet_nodes_xcentre,
-                                                    y = min(fig2_illustration2_neuralnet_nodes_y))
+                                                    y = 0.1,
+                                                    gp = gpar(fontsize = 10))
 
 fig2_illustration2_neuralnet_grob <- gTree(children = gList(fig2_illustration2_neuralnet_weights_grob,
+                                                            fig2_illustration2_neuralnet_nodes_ellipses_grob,
                                                             fig2_illustration2_neuralnet_nodes_grob,
+                                                            fig2_illustration2_neuralnet_annotations_grob,
                                                             fig2_illustration2_neuralnet_title_grob))
+```
 
-
-
-#Figure 2: Illustration 2 network input ---------------------------------------
-
+```{r results2-fig2-panelB-input}
 #Data rectangles
-fig2_illustration2_input_rect_x <- min(fig2_illustration2_neuralnet_nodes_x) - 0.12
-fig2_illustration2_input_rect_y <- fig2_illustration1_neuralnet_nodes_ycentre + c(-0.2, 0.2)
+fig2_illustration2_input_rect_x <- min(as.numeric(fig2_illustration2_neuralnet_nodes_grob$x)) - 0.12
+fig2_illustration2_input_rect_y <- fig2_illustration1_neuralnet_nodes_ycentre + c(-0.175, 0.175)
 fig2_illustration2_input_rect_width <- fig2_illustration1_input_data_rect_width
 fig2_illustration2_input_rect_height <- 0.2
 fig2_illustration2_input_rect_grob <- rectGrob(x = fig2_illustration2_input_rect_x,
@@ -806,8 +908,10 @@ fig2_illustration2_input_rect_grob <- rectGrob(x = fig2_illustration2_input_rect
                                                just = "right",
                                                width = fig2_illustration2_input_rect_width,
                                                height = fig2_illustration2_input_rect_height,
-                                               gp = gpar(col = c("#B27700", "#00325C"),
-                                                         fill = c("#D8BD8A", "#719DC0")))
+                                               gp = gpar(fill = "#B27700",
+                                                         col = "#D8BD8A"))
+                                               # gp = gpar(col = c("#B27700", "#00325C"),
+                                               #           fill = c("#D8BD8A", "#719DC0")))
 
 #
 fig2_illustration2_input_text_xaxis_x <- fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width/2 
@@ -815,34 +919,41 @@ fig2_illustration2_input_text_xaxis_y <- fig2_illustration2_input_rect_y + fig2_
 fig2_illustration2_input_text_xaxis_grob <- textGrob("Genes",
                                                      x = fig2_illustration2_input_text_xaxis_x,
                                                      y = fig2_illustration2_input_text_xaxis_y,
-                                                     gp = gpar(fontsize = 10))
+                                                     gp = gpar(fontsize = 8))
 
 fig2_illustration2_input_text_yaxis_x <- fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width - 0.02
 fig2_illustration2_input_text_yaxis_y <- fig2_illustration2_input_rect_y
-fig2_illustration2_input_text_yaxis_grob <- textGrob("ROIs",
+fig2_illustration2_input_text_yaxis_grob <- textGrob("Regions",
                                                      x = fig2_illustration2_input_text_yaxis_x,
                                                      y = fig2_illustration2_input_text_yaxis_y,
                                                      rot = 90,
-                                                     gp = gpar(fontsize = 10))
+                                                     gp = gpar(fontsize = 8))
 
-fig2_illustration2_input_text_title <- c("Human data", "Mouse data")
-fig2_illustration2_input_text_title_x <- mean(c(fig2_illustration2_input_rect_x,
+fig2_illustration2_input_text_species <- c("Human data", "Mouse data")
+fig2_illustration2_input_text_species_x <- mean(c(fig2_illustration2_input_rect_x,
                                                 fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width))
-fig2_illustration2_input_text_title_y <- fig2_illustration2_input_rect_y - fig2_illustration2_input_rect_height/2 - 0.05
-fig2_illustration2_input_text_title_grob <- textGrob(fig2_illustration2_input_text_title,
+fig2_illustration2_input_text_species_y <- fig2_illustration2_input_rect_y - fig2_illustration2_input_rect_height/2 - 0.03
+fig2_illustration2_input_text_species_grob <- textGrob(fig2_illustration2_input_text_species,
+                                                     x = fig2_illustration2_input_text_species_x,
+                                                     y = fig2_illustration2_input_text_species_y,
+                                                     gp = gpar(fontsize = 8))
+
+fig2_illustration2_input_text_title_x <- fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width/2
+fig2_illustration2_input_text_title_grob <- textGrob("Initial space",
                                                      x = fig2_illustration2_input_text_title_x,
-                                                     y = fig2_illustration2_input_text_title_y)
+                                                     y = 0.1,
+                                                     gp = gpar(fontsize = 10))
 
 fig2_illustration2_input_grob <- gTree(children = gList(fig2_illustration2_input_rect_grob,
                                                         fig2_illustration2_input_text_xaxis_grob,
                                                         fig2_illustration2_input_text_yaxis_grob,
+                                                        fig2_illustration2_input_text_species_grob,
                                                         fig2_illustration2_input_text_title_grob))
+```
 
-
-
-#Figure 2: Illustration 2 network output --------------------------------------
+```{r results2-fig2-panelB-output}
 #Data rectangles
-fig2_illustration2_output_rect_x <- max(fig2_illustration2_neuralnet_nodes_x) + 0.12
+fig2_illustration2_output_rect_x <- max(as.numeric(fig2_illustration2_neuralnet_nodes_grob$x)) + 0.12
 fig2_illustration2_output_rect_y <- fig2_illustration2_input_rect_y
 fig2_illustration2_output_rect_width <- fig2_illustration2_input_rect_width
 fig2_illustration2_output_rect_height <- fig2_illustration2_input_rect_height
@@ -851,8 +962,10 @@ fig2_illustration2_output_rect_grob <- rectGrob(x = fig2_illustration2_output_re
                                                 just = "left",
                                                 width = fig2_illustration2_output_rect_width,
                                                 height = fig2_illustration2_output_rect_height,
-                                                gp = gpar(col = c("#B27700", "#00325C"),
-                                                         fill = c("#D8BD8A", "#719DC0")))
+                                                gp = gpar(fill = "#00325C",
+                                                          col = "#719DC0"))
+                                                # gp = gpar(col = c("#B27700", "#00325C"),
+                                                #          fill = c("#D8BD8A", "#719DC0")))
 
 #
 fig2_illustration2_output_text_xaxis_x <- fig2_illustration2_output_rect_x + fig2_illustration2_input_rect_width/2 
@@ -860,23 +973,29 @@ fig2_illustration2_output_text_xaxis_y <- fig2_illustration2_output_rect_y + fig
 fig2_illustration2_output_text_xaxis_grob <- textGrob("Hidden units",
                                                       x = fig2_illustration2_output_text_xaxis_x,
                                                       y = fig2_illustration2_output_text_xaxis_y,
-                                                      gp = gpar(fontsize = 10))
+                                                      gp = gpar(fontsize = 8))
 
 fig2_illustration2_output_text_yaxis_x <- fig2_illustration2_output_rect_x - 0.02
 fig2_illustration2_output_text_yaxis_y <- fig2_illustration2_output_rect_y
-fig2_illustration2_output_text_yaxis_grob <- textGrob("ROIs",
+fig2_illustration2_output_text_yaxis_grob <- textGrob("Regions",
                                                      x = fig2_illustration2_output_text_yaxis_x,
                                                      y = fig2_illustration2_output_text_yaxis_y,
                                                      rot = 90,
+                                                     gp = gpar(fontsize = 8))
+
+fig2_illustration2_output_text_title_x <- fig2_illustration2_output_rect_x + fig2_illustration2_output_rect_width/2
+fig2_illustration2_output_text_title_grob <- textGrob("Latent space",
+                                                     x = fig2_illustration2_output_text_title_x,
+                                                     y = 0.1,
                                                      gp = gpar(fontsize = 10))
 
 fig2_illustration2_output_grob <- gTree(children = gList(fig2_illustration2_output_rect_grob,
                                                          fig2_illustration2_output_text_xaxis_grob,
-                                                         fig2_illustration2_output_text_yaxis_grob))
+                                                         fig2_illustration2_output_text_yaxis_grob,
+                                                         fig2_illustration2_output_text_title_grob))
+```
 
-
-
-# Figure 2: Illustration 2 arrows ---------------------------------------------
+```{r results2-fig2-panelB-arrows}
 fig2_illustration2_arrow1_segment1_x1 <- fig2_illustration2_input_rect_x + 0.05
 fig2_illustration2_arrow1_segment1_x2 <- fig2_illustration1_neuralnet_nodes_xcentre
 fig2_illustration2_arrow1_segment1_y1 <- min(fig2_illustration2_input_rect_y)
@@ -894,7 +1013,7 @@ fig2_illustration2_arrow1_segment1_grob <- curveGrob(x1 = fig2_illustration2_arr
                                                      curvature = -0.1,
                                                      ncp = 8,
                                                      square = FALSE,
-                                                     gp = gpar(lwd = 3, fill = "black"))
+                                                     gp = gpar(lwd = 2, fill = "black"))
 fig2_illustration2_arrow1_segment2_grob <- curveGrob(x1 = fig2_illustration2_arrow1_segment2_x1,
                                                      x2 = fig2_illustration2_arrow1_segment2_x2,
                                                      y1 = fig2_illustration2_arrow1_segment2_y1,
@@ -906,7 +1025,7 @@ fig2_illustration2_arrow1_segment2_grob <- curveGrob(x1 = fig2_illustration2_arr
                                                                    length = unit(0.05, 'npc'),
                                                                    type = "closed",
                                                                    ends = "last"),
-                                                     gp = gpar(lwd = 3, fill = "black"))
+                                                     gp = gpar(lwd = 2, fill = "black"))
 
 
 fig2_illustration2_arrow2_segment1_x1 <- fig2_illustration2_input_rect_x + 0.05
@@ -926,7 +1045,7 @@ fig2_illustration2_arrow2_segment1_grob <- curveGrob(x1 = fig2_illustration2_arr
                                                      curvature = 0.1,
                                                      ncp = 8,
                                                      square = FALSE,
-                                                     gp = gpar(lwd = 3, fill = "black"))
+                                                     gp = gpar(lwd = 2, fill = "black"))
 fig2_illustration2_arrow2_segment2_grob <- curveGrob(x1 = fig2_illustration2_arrow2_segment2_x1,
                                                      x2 = fig2_illustration2_arrow2_segment2_x2,
                                                      y1 = fig2_illustration2_arrow2_segment2_y1,
@@ -938,77 +1057,78 @@ fig2_illustration2_arrow2_segment2_grob <- curveGrob(x1 = fig2_illustration2_arr
                                                                    length = unit(0.05, 'npc'),
                                                                    type = "closed",
                                                                    ends = "last"),
-                                                     gp = gpar(lwd = 3, fill = "black"))
+                                                     gp = gpar(lwd = 2, fill = "black"))
 
 
 fig2_illustration2_arrows_grob <- gTree(children = gList(fig2_illustration2_arrow1_segment1_grob,
                                                          fig2_illustration2_arrow1_segment2_grob,
                                                          fig2_illustration2_arrow2_segment1_grob,
                                                          fig2_illustration2_arrow2_segment2_grob))
+```
 
+```{r results2-fig2-panelB-grob}
 fig2_illustration2_grob <- gTree(children = gList(fig2_illustration2_neuralnet_grob,
                                                   fig2_illustration2_input_grob,
                                                   fig2_illustration2_output_grob,
                                                   fig2_illustration2_arrows_grob))
+
+fig2_illustration2_title_grob <- textGrob("Transforming the gene expression matrices",
+                                          x = 0,
+                                          just = "left")
 ```
 
-```{r results2-fig2-grob}
-#Heatmap aspect ratio, figure height and width
-matAsp <- ncol(matSim_H88M67_MLP_mean)/nrow(matSim_H88M67_MLP_mean)
-matHeight <- 3.9
-matWidth <- matAsp*matHeight
+
+## Figure 2 grob
+
+```{r results2-fig2-grob, fig.width=10, fig.height=6.4}
+#Grob for main plots in figure 2
+fig2_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
+                               fig2_illustration1_title_grob, #2
+                               textGrob("C.", gp = gpar(fontsize = 14, fontface = "bold")), #3
+                               fig2_heatmap_title_grob, #4
+                               fig2_heatmap_labsmouse_title_grob, #5
+                               fig2_illustration1_grob, #6
+                               fig2_heatmap_labsmouse_grob, #7
+                               fig2_heatmap_labshuman_title_grob, #8
+                               fig2_heatmap_labshuman_grob, #9
+                               fig2_heatmap_main_grob, #10
+                               textGrob("B.", gp = gpar(fontsize = 14, fontface = "bold")), #11
+                               fig2_illustration2_title_grob, #12
+                               fig2_illustration2_grob, #13
+                               fig2_heatmap_legend_grob, #14
+                               layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                     c(NA,  1,  2,  3,  4,  4,  4, NA),
+                                                     c(NA,  6,  6, NA, NA, NA,  5, NA),
+                                                     c(NA,  6,  6, NA, NA, NA,  7, NA),
+                                                     c(NA,  6,  6, NA,  8,  9, 10, NA),
+                                                     c(NA, NA, NA, NA,  8,  9, 10, NA),
+                                                     c(NA, 11, 12, NA,  8,  9, 10, NA),
+                                                     c(NA, 13, 13, NA,  8,  9, 10, NA),
+                                                     c(NA, 13, 13, NA, NA, NA, 14, NA),
+                                                     c(NA, NA, NA, NA, NA, NA, NA, NA)),
+                               widths = unit(c(0.1, 0.3, 5.0, 0.5, 0.3, 0.45, 2.97, 0.2), 'inch'),
+                               heights = unit(c(0.2, 0.3, 0.3, 0.4, 1.85, 0.1, 0.4, 2.05, 0.6, 0.2), 'inch'))
+
+#Empty rectangle grob to form the border
+fig2_border_grob <- rectGrob(gp = gpar(fill = NA))
 
 #Grob for figure 2
-# fig2_grob <- arrangeGrob(fig2_heatmap_main_grob, #1
-#                          fig2_heatmap_labsmouse_grob, #2
-#                          fig2_heatmap_labsmouse_title_grob, #3
-#                          fig2_heatmap_labshuman_grob, #4
-#                          fig2_heatmap_labshuman_title_grob, #5
-#                          fig2_heatmap_legend_grob, #6
-#                          fig2_illustration1_grob, #7
-#                          fig2_illustration2_grob, #8
-#                          layout_matrix = rbind(c(NA, NA,  3, NA, NA),
-#                                                c( 7, NA,  2, NA, NA),
-#                                                c( 7, NA,  1,  4,  5),
-#                                                c( 8, NA,  1,  4,  5),
-#                                                c( 8, NA,  6, NA, NA)),
-#                          widths = unit(c(5.3, 0.7, matWidth, 0.5, 0.3), 'inch'),
-#                          heights = unit(c(0.3, 0.5, matHeight/2, matHeight/2, 1), 'inch'))
-fig2_grob <- arrangeGrob(fig2_heatmap_main_grob, #1
-                         fig2_heatmap_labsmouse_grob, #2
-                         fig2_heatmap_labsmouse_title_grob, #3
-                         fig2_heatmap_labshuman_grob, #4
-                         fig2_heatmap_labshuman_title_grob, #5
-                         fig2_heatmap_legend_grob, #6
-                         fig2_illustration1_grob, #7
-                         fig2_illustration2_grob, #8
-                         layout_matrix = rbind(c(NA, NA, NA, NA,  3, NA),
-                                               c( 7, NA, NA, NA,  2, NA),
-                                               c( 7, NA,  5,  4,  1, NA),
-                                               c( 8, NA,  5,  4,  1, NA),
-                                               c( 8, NA, NA, NA,  6, NA)),
-                         widths = unit(c(5.3, 0.5, 0.3, 0.45, matWidth, 0.2), 'inch'),
-                         heights = unit(c(0.3, 0.5, matHeight/2, matHeight/2, 1), 'inch'))
-```
+fig2_grob <- gTree(children = gList(fig2_plots_grob,
+                                    fig2_border_grob))
 
-```{r results2-fig2-interactive, include=TRUE, echo = FALSE, fig.width=10, fig.height=5.8}
+#Figure 2 height and width
+fig2_width <- 10
+fig2_height <- 6.4
+
 grid.newpage()
 grid.draw(fig2_grob)
-grid.text(c("A.", "B.", "C."),
-          x = unit(c(0.3, 0.3, 5.75), 'inch'),
-          y = unit(c(5.5, 2.85, 5.5), 'inch'),
-          gp = gpar(fontsize = 14,
-                    fontface = "bold"))
-grid.text(c("Training the MLP classifier", "Transforming the gene expression blueprints"),
-          x = unit(rep(0.5, 2), 'inch'),
-          y = unit(c(5.5, 2.85), 'inch'),
-          just = "left",
-          gp = gpar(fontsize = 14))
-grid.rect(gp = gpar(fill = NA))
 ```
+
 
 ```{r results2-fig2-write}
 fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure2.RData")
 save(fig2_grob,
+     fig2_width,
+     fig2_height,
      file = fileout)
 ```
