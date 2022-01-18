@@ -2,7 +2,7 @@
 title: "Mouse Human Mapping Paper 1"
 subtitle: "Results 3, Figure 5"
 author: "Antoine Beauchamp"
-date: 'January 4th, 2022'
+date: 'January 18th, 2022'
 output: html_document
 ---
 
@@ -393,7 +393,7 @@ fig5_heatmap_coltitle_grob <- textGrob("Human regions",
                                        gp = gpar(fontsize = 8,
                                                  fontface = "bold"))
 
-fig5_heatmap_title_grob <- textGrob("Title panel C",
+fig5_heatmap_title_grob <- textGrob("Clustering of mouse and human isocortical regions",
                                     x = 0,
                                     y = 0.5,
                                     just = c("left", "centre"))
@@ -498,7 +498,7 @@ fig5_wcss_ytitle_grob <- getGrob(fig5_wcss_grob, "ylab-l.7-3-7-3")
 fig5_wcss_xaxis_grob <- getGrob(fig5_wcss_grob, "axis-b.8-5-8-5")
 fig5_wcss_xtitle_grob <- getGrob(fig5_wcss_grob, "xlab-b.9-5-9-5")
 
-fig5_wcss_title_grob <- textGrob("Title panel D",
+fig5_wcss_title_grob <- textGrob("Mouse and human scree plots",
                                  x = 0,
                                  y = 0.5,
                                  just = c("left", "centre"))
@@ -555,7 +555,7 @@ fig5_regionaldist_ytitle_grob <- getGrob(fig5_regionaldist_grob, "ylab-l.7-3-7-3
 fig5_regionaldist_xaxis_grob <- getGrob(fig5_regionaldist_grob, "axis-b.8-5-8-5")
 fig5_regionaldist_xtitle_grob <- getGrob(fig5_regionaldist_grob, "xlab-b.9-5-9-5")
 
-fig5_regionaldist_title_grob <- textGrob("Title panel A",
+fig5_regionaldist_title_grob <- textGrob("Distributions of maximal correlation for mouse isocortical regions",
                                          x = 0,
                                          y = 0.5,
                                          just = c("left", "centre"))
@@ -596,10 +596,11 @@ fig5_cortexdist_ytitle_grob <- getGrob(fig5_cortexdist_grob, "ylab-l.7-3-7-3")
 fig5_cortexdist_xaxis_grob <- getGrob(fig5_cortexdist_grob, "axis-b.8-5-8-5")
 fig5_cortexdist_xtitle_grob <- getGrob(fig5_cortexdist_grob, "xlab-b.9-5-9-5")
 
-fig5_cortexdist_title_grob <- textGrob("Title panel B",
+fig5_cortexdist_title_grob <- textGrob("Distributions of maximal correlation for\nmouse cortical types",
                                        x = 0,
                                        y = 0.5,
-                                       just = c("left", "centre"))
+                                       just = c("left", "centre"),
+                                       gp = gpar(lineheight = 1))
 ```
   
 ## Figure 5 grob
@@ -656,7 +657,7 @@ fig5_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                                      c(NA, NA, 28, 29, 29, 34, 34, NA, 33, 33, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
                                widths = unit(c(0.25, 0.2, 0.2, 1.05, 2.8, 1.1, 0.4, 0.35, 0.3, 2.9, 0.1), 'inch'),
-                               heights = unit(c(0.1, 0.4, 2, 0.25, 0.25, 0.15, 0.4, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.25), 'inch'))
+                               heights = unit(c(0.15, 0.4, 2, 0.25, 0.25, 0.15, 0.4, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.25), 'inch'))
 
 #Empty rectangle grob to form the border
 fig5_border_grob <- rectGrob(gp = gpar(fill = NA))
