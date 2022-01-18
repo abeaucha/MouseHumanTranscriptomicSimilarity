@@ -2,7 +2,7 @@
 title: "Mouse Human Mapping Paper 1"
 subtitle: "Results 2, Figure 2"
 author: "Antoine Beauchamp"
-date: 'January 7th, 2022'
+date: 'January 18th, 2022'
 output: html_document
 ---
 
@@ -847,7 +847,7 @@ fig2_illustration1_grob <- gTree(children = gList(fig2_illustration1_input_data_
                                                   fig2_illustration1_arrows_grob))
 
 fig2_illustration1_title_grob <- textGrob("Training the neural network",
-                                          x = 0,
+                                          x = 0.025,
                                           just = "left")
 ```
 
@@ -1073,7 +1073,7 @@ fig2_illustration2_grob <- gTree(children = gList(fig2_illustration2_neuralnet_g
                                                   fig2_illustration2_arrows_grob))
 
 fig2_illustration2_title_grob <- textGrob("Transforming the gene expression matrices",
-                                          x = 0,
+                                          x = 0.025,
                                           just = "left")
 ```
 
@@ -1097,7 +1097,7 @@ fig2_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                fig2_illustration2_grob, #13
                                fig2_heatmap_legend_grob, #14
                                layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                     c(NA,  1,  2, NA,  3,  4,  4, NA),
+                                                     c(NA,  1,  2, NA,  3, NA,  4, NA),
                                                      c(NA,  6,  6, NA, NA, NA,  5, NA),
                                                      c(NA,  6,  6, NA, NA, NA,  7, NA),
                                                      c(NA,  6,  6, NA,  8,  9, 10, NA),

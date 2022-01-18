@@ -107,13 +107,12 @@ grid.draw(fig2_grob)
 ```
 
 ```{r results2-fig2-caption}
-fig2_cap_A <- str_c("(A) Schematic of the neural network training process. Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
-fig2_cap_B <- "(B) Schematic illustrating the transformation from the input space to the gene expression latent space. Once the network is trained, the output layer is removed.  The mouse and human regional gene expression matrices are fed through the network, resulting in latent space representations of the data."
-fig2_cap_C <- "(C) Similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 MLP training runs. Similar brain regions exhibit very high correlation values."
-fig2_cap <- str_c("Transforming the common space.",
+fig2_cap_A <- str_c("(A) Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
+fig2_cap_B <- "(B) Once the network is trained, the output layer is removed. The mouse and human regional gene expression matrices are passed through the network, resulting in lower-dimensional latent space representations of the data. The training and transformation process was repeated 500 times."
+fig2_cap_C <- "(C) A similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 neural network training runs. Similar brain regions exhibit very high correlation values. Column and row annotations as described in Figure 1."
+fig2_cap <- str_c("Creating a new common space.",
                   fig2_cap_A,
                   fig2_cap_B,
-                  "The training and transformation process was repeated 500 times.",
                   fig2_cap_C,
                   sep = " ")
 ```
