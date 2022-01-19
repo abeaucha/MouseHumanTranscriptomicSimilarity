@@ -1,7 +1,4 @@
 ---
-title: "Transcriptomic similarity in the mouse and human brain"
-author: "Antoine Beauchamp"
-date: "`r format(Sys.Date(), format = '%B %d, %Y')`"
 output: 
   pdf_document:
       includes:
@@ -22,7 +19,6 @@ library(grid)
 library(gridExtra)
 ```
 
-\edit{Make front matter}
 
 # Abstract
 
