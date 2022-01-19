@@ -19,10 +19,13 @@ library(grid)
 library(gridExtra)
 ```
 
+***
 
 # Abstract
 
 \edit{Write abstract}
+
+*** 
 
 # Introduction {#intro}
 

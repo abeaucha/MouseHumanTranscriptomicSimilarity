@@ -7,3 +7,6 @@
 
 \usepackage{caption}
 \captionsetup[figure]{font=scriptsize}
+
+\let\oldrule=\rule
+\renewcommand{\rule}[1]{\oldrule{\linewidth}}
