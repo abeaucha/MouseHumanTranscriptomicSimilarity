@@ -6,6 +6,7 @@ output:
   pdf_document:
       includes:
         in_header: MouseHumanMapping_Paper1_Header.tex
+        before_body: MouseHumanMapping_Paper1_FrontMatter.tex
 bibliography: MouseHumanMapping_Paper1.bib
 ---
 
