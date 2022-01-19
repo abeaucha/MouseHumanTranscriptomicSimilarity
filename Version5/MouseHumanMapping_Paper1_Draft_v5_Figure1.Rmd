@@ -1,8 +1,8 @@
 ---
-title: "Mouse Human Mapping Paper 1"
+title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 1, Figure 1"
 author: "Antoine Beauchamp"
-date: 'December 23rd, 2021'
+date: 'January 19th, 2022'
 output: html_document
 ---
 
