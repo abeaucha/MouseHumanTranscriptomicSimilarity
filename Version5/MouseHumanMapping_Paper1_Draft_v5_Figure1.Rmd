@@ -107,101 +107,6 @@ genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), 
 rm(dfExprMouse, dfExprHuman)
 ```
 
-```{r results1-fig1-slicelegend}
-treeMouse_11 <- Clone(treeMouse)
-pruneAnatTree(treeMouse_11,
-              nodes = listLabelsMouseReordered$Region11_reordered,
-              method = "BelowNode")
-atlasMouse_11 <- hanatToAtlas(treeMouse_11, mincArray(dsurqeLabels))
-dfAtlasMouse_11 <- hanatToAtlasDefs(treeMouse_11)
-dfAtlasMouse_11 <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
-  enframe(name = "Structure",
-          value = "Colour") %>% 
-  inner_join(dfAtlasMouse_11,
-             by = "Structure")
-rm(treeMouse_11)
-
-dsurqeAnat_3d <- mincArray(dsurqeAnat)
-dsurqeMask_3d <- mincArray(dsurqeMask)
-
-dsurqeAnat_3d[dsurqeMask_3d == 0] <- NA
-
-anatLow <-  700
-anatHigh <- 1400
-dsurqeAnat_3d[dsurqeAnat_3d >= anatHigh] <- anatHigh
-dsurqeAnat_3d[dsurqeAnat_3d <= anatLow] <- anatLow
-dims <- dim(dsurqeAnat_3d)
-
-slice <- 100
-sliceSelectionAnat <- dsurqeAnat_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionAnat) <- 1:ncol(sliceSelectionAnat)
-rownames(sliceSelectionAnat) <- nrow(sliceSelectionAnat):1
-
-dfSliceSelectionAnat <- sliceSelectionAnat %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Intensity") %>% 
-  mutate_all(.funs = as.numeric)
-
-atlasMouse_11_3d <- mincArray(atlasMouse_11)
-atlasMouse_11_3d[dsurqeMask_3d == 0] <- NA
-atlasMouse_11_3d[atlasMouse_11_3d == 0] <- NA
-sliceSelectionLabels <- atlasMouse_11_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionLabels) <- 1:ncol(sliceSelectionLabels)
-rownames(sliceSelectionLabels) <- nrow(sliceSelectionLabels):1
-
-dfSliceSelectionLabels <- sliceSelectionLabels %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Label") %>% 
-  mutate_all(.funs = as.numeric) 
-
-dfSliceSelection <- inner_join(dfSliceSelectionAnat,
-                               dfSliceSelectionLabels,
-                               by = c("x", "y"))
-
-dfMouseColours <- dfAtlasMouse_11 %>% 
-  semi_join(dfSliceSelection,
-            by = "Label") %>% 
-  arrange(Label)
-
-dfSliceSelection <- dfSliceSelection %>% 
-  filter(y <= 400) %>% 
-  mutate(Label = factor(Label))
-
-sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
-
-sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
-  geom_tile(aes(fill = Intensity),
-            alpha = 0.5) + 
-  scale_fill_gradient(low = gray.colors(255)[1],
-                      high = gray.colors(255)[255],
-                      na.value = 'transparent',
-                      guide = "none") + 
-  new_scale_fill() + 
-  geom_tile(aes(fill = Label)) + 
-  scale_fill_manual(na.value = 'transparent',
-                      values = dfMouseColours$Colour,
-                    guide = "none") +
-  coord_fixed() +
-  theme_void() +
-  # theme_minimal() +
-  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
-sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
-sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
-
-rm(atlasMouse_11,
-   dfAtlasMouse_11,
-   dsurqeAnat_3d,
-   dsurqeMask_3d,
-   slice,
-   sliceSelectionAnat,
-   atlasMouse_11_3d,
-   sliceSelectionLabels,
-   dfSliceSelectionAnat,
-   dfSliceSelectionLabels,
-   dfSliceSelection,
-   dfMouseColours)
-```
-
 # Figure 1
 
 ## Panel A: Similarity matrix heatmap
@@ -300,7 +205,6 @@ annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
 ```
-
 
 ```{r results1-fig1-panelA-heatmap-base}
 #Heatmap palette and legend breaks
@@ -474,7 +378,6 @@ fig1_heatmap_labshuman_text <- treeHuman_16$Get("acronym", filterFun = isLeaf) %
   pull(Acronym) %>% 
   as.character()
 
-# fig1_heatmap_labshuman_text_x <- rep(0.9, length.out = length(fig1_heatmap_labshuman_text))
 fig1_heatmap_labshuman_text_x <- 0.9
 fig1_heatmap_labshuman_text_y <- c(0.97, #Claustrum
                                    0.92, #Limbic lobe
@@ -510,7 +413,6 @@ fig1_heatmap_labshuman_text_y <- c(4.850, #Claustrum
                                    0.050) #Cerebellar nuclei
 fig1_heatmap_labshuman_text_col <- annotation_colours_mod$HumanRegion
 fig1_heatmap_labshuman_text_grob <- textGrob(fig1_heatmap_labshuman_text,
-                                             # x = unit(fig1_heatmap_labshuman_text_x, 'inch'),
                                              x = unit(fig1_heatmap_labshuman_text_x, 'npc'),
                                              y = unit(fig1_heatmap_labshuman_text_y, 'inch'),
                                              just = c("right", "centre"),
@@ -667,6 +569,7 @@ fig1_ss_title_grob <- textGrob("Correlation maps of human seed regions",
 ## Panel C: Similarity profiles line chart
 
 ```{r results1-fig1-panelC-linechart}
+#Simplify superior colliculus label
 mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
   str_replace("Superior colliculus, sensory related", "Superior colliculus")
 
@@ -677,6 +580,7 @@ dfSeedSim_AllGenes_plot <- dfSeedSim_AllGenes %>%
          Target = str_replace(Target, "Superior colliculus, sensory related", "Superior colliculus"),
          Target = factor(Target, levels = mouseLabels_67)) 
 
+#Identify canonical pairs
 dfSeedSim_Annotations <- dfSeedSim_AllGenes_plot %>% 
   filter(Target %in% c("Primary motor area", "Visual areas", "Crus 1")) %>% 
   mutate(Match = case_when(Target == "Primary motor area" ~ "precentral gyrus",
@@ -684,6 +588,7 @@ dfSeedSim_Annotations <- dfSeedSim_AllGenes_plot %>%
                            Target == "Crus 1" ~ "crus I")) %>% 
   filter(Seed == Match)
 
+#Store colours in a data frame
 dfSeedSim_TextColours <- annotation_colours_mod$MouseRegion %>%
   enframe(name = "Region11",
           value = "Colour") %>% 
@@ -742,6 +647,7 @@ fig1_linechart_xtext_grob <- getGrob(fig1_linechart_grob, "axis-b.8-5-8-5")
 fig1_linechart_xtitle_grob <- getGrob(fig1_linechart_grob, "xlab-b.9-5-9-5")
 fig1_linechart_legend_grob <- getGrob(fig1_linechart_grob, "guides.3-3-3-3")
 
+#Panel C title grob
 fig1_linechart_title_grob <- textGrob("Anatomically-ordered similarity profiles of human seed regions",
                                       x = 0, y = 0.5,
                                       just = "left")
@@ -793,20 +699,23 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 #Empty rectangle grob to form the border
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
 
+#Import AMBA legend slice
+load(str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData"))
+
 #Width and height for the atlas legend slice
 sliceAMBA_width <- 1.1
 sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
 
 #New viewport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.15, 'inch'),
-                                          y = unit(0.8, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height, 'inch'))
+sliceAMBALegend_grob$vp <- viewport(x = unit(9.15, 'inch'),
+                                    y = unit(0.8, 'inch'),
+                                    width = unit(sliceAMBA_width, 'inch'),
+                                    height = unit(sliceAMBA_height, 'inch'))
 
 #Grob for figure 1
 fig1_grob <- gTree(children = gList(fig1_plots_grob,
                                     fig1_border_grob,
-                                    sliceAMBALegend_panel_grob))
+                                    sliceAMBALegend_grob))
 
 #Figure 1 width and height
 fig1_width <- 10
@@ -826,26 +735,29 @@ save(fig1_grob,
      file = fileout)
 ```
 
+# In-text quantification
 
-# Quantification
-
-
-```{r}
+```{r results1-fig1-intext-1}
+#Correlation between mouse cerebellar nuclei and human cerebellar nuclei, pons, and myelencephalon
 matSim_H88M67_AllGenes[c("cerebellar nuclei", "pons", "myelencephalon"), "Cerebellar nuclei"]
 ```
 
-```{r}
+```{r results1-fig1-intext-2}
+#Correlation between human cerebellar nuclei and mouse cerebellar nuclei, pons, and myelencephalon (medulla)
 matSim_H88M67_AllGenes["cerebellar nuclei", c("Cerebellar nuclei", "Pons", "Medulla")]
 ```
 
+```{r results1-fig1-intext-3}
+#Variance of correlation values across cortical regions
 
-```{r}
+#Extract mouse labels belonging to the isocortex
 cortexMouse <- dfLabelsMouse %>% 
   select(Region11, Region67) %>% 
   distinct() %>% 
   filter(Region11 == "Isocortex") %>% 
   pull(Region67)
 
+#Extract human labels belonging to the cerebrum (remove hippocampal regions)
 cortexHuman <- dfLabelsHuman %>% 
   select(Region16, Region88) %>% 
   distinct() %>% 
@@ -853,12 +765,17 @@ cortexHuman <- dfLabelsHuman %>%
   filter(!(Region88 %in% c("dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field"))) %>% 
   pull()
 
+#Indices selecting for cortical regions
 indCortexMouse <- colnames(matSim_H88M67_AllGenes) %in% cortexMouse
 indCortexHuman <- rownames(matSim_H88M67_AllGenes) %in% cortexHuman
 
+#Average correlation of cortical pairs
 meanCortex <- mean(matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse])
+
+#Standard deviation of correlations of cortical pairs
 sdCortex <- sd(matSim_H88M67_AllGenes[indCortexHuman, indCortexMouse])
 
+#Variance of correlations of cortical pairs
 varCortex <- sdCortex^2
 
 print(round(meanCortex, 2))
@@ -866,30 +783,34 @@ print(round(2*sdCortex, 2))
 print(round(varCortex, 4))
 ```
 
-```{r}
+```{r results1-fig1-intext-4}
+#Variance of correlation values across cerebellar cortical regions
+
+#Extract mouse labels belonging to the cerebellar cortex
 cbMouse <- dfLabelsMouse %>% 
   select(Region11, Region67) %>% 
   distinct() %>% 
   filter(Region11 == "Cerebellar cortex") %>% 
   pull(Region67)
 
+#Extract human labels belonging to the cerebellar cortex
 cbHuman <- dfLabelsHuman %>% 
   select(Region16, Region88) %>% 
   distinct() %>% 
   filter(Region16 == "cerebellar cortex") %>% 
   pull()
 
+#Indices selecting for cerebellar cortical regions
 indCbMouse <- colnames(matSim_H88M67_AllGenes) %in% cbMouse
 indCbHuman <- rownames(matSim_H88M67_AllGenes) %in% cbHuman
 
-meanCb <- matSim_H88M67_AllGenes[indCbHuman, indCbMouse] %>% 
-  as.numeric() %>% 
-  mean()
+#Average correlation of cerebellar cortical pairs
+meanCb <- mean(matSim_H88M67_AllGenes[indCbHuman, indCbMouse])
 
-sdCb <- matSim_H88M67_AllGenes[indCbHuman, indCbMouse] %>% 
-  as.numeric() %>% 
-  sd()
+#Standard deviation of correlations of cerebellar cortical pairs
+sdCb <- sd(matSim_H88M67_AllGenes[indCbHuman, indCbMouse])
 
+#Variance of correlations of cerebellar cortical pairs
 varCb <- sdCb^2
 
 print(round(meanCb, 2))
@@ -897,43 +818,28 @@ print(round(2*sdCb, 2))
 print(round(varCb, 4))
 ```
 
-```{r}
+```{r results1-fig1-intext-5}
+#Variance over entire matrix
 varTot <- sd(matSim_H88M67_AllGenes)^2
+print(varTot)
 ```
 
-```{r}
-varCortex/varTot
-varCb/varTot
-```
+```{r results1-fig1-intext-6}
+#Correlation of similarity profiles of the precentral gyrus and cuneus
 
-
-```{r}
-matSim_H88M67_AllGenes %>% 
-  t() %>% 
-  .[,c("precentral gyrus", "cuneus")] %>% 
+t(matSim_H88M67_AllGenes)[,c("precentral gyrus", "cuneus")] %>% 
   cor()
 ```
 
-```{r}
-matSim_H88M67_AllGenes["crus I", indCbMouse]
+```{r results1-fig1-intext-7}
+#Average correlation and standard deviation between the human crus I and all mouse cerebellar cortical regions
 
-meanCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>% 
-  as.numeric() %>% 
-  mean()
+#Average correlation
+meanCrus1 <- mean(matSim_H88M67_AllGenes["crus I", indCbMouse])
 
-sdCrus1 <- matSim_H88M67_AllGenes["crus I", indCbMouse] %>% 
-  as.numeric() %>% 
-  sd()
+#Standard deviation
+sdCrus1 <- sd(matSim_H88M67_AllGenes["crus I", indCbMouse])
 
 print(round(meanCrus1, 3))
 print(round(sdCrus1, 3))
 ```
-
-```{r}
-matSim_H88M67_AllGenes %>% 
-  t() %>% 
-  .[,indCbHuman] %>% 
-  cor() %>% 
-  .[,"crus I"]
-```
-
