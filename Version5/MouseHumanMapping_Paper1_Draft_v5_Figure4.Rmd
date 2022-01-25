@@ -1,8 +1,8 @@
 ---
-title: "Mouse Human Mapping Paper 1"
+title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 2, Figure 4"
 author: "Antoine Beauchamp"
-date: 'January 4th, 2022'
+date: 'January 25th, 2022'
 output: html_document
 ---
 
@@ -108,7 +108,7 @@ genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), 
 rm(dfExprMouse, dfExprHuman)
 ```
 
-```{r}
+```{r initial-space-similarity}
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
@@ -140,7 +140,7 @@ matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,match(listLabelsMouseReordered
 matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[match(listLabelsHumanReordered$Region88_reordered, rownames(matSim_H88M67_AllGenes)),]
 ```
 
-```{r results2-fig2-processing}
+```{r import-latent-space}
 #Path to MLP files
 pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
 
@@ -165,7 +165,9 @@ listHumanLatentSpace <- map(filesMLP_Human,
                                 as.matrix() %>% 
                                 t()
                             })
+```
 
+```{r latent-space-similarity}
 #Compute the latent space similarity matrices
 listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
                            function(x1, x2){

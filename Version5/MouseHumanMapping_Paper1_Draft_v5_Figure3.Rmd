@@ -179,11 +179,7 @@ names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
 ```
 
-# Figure 3
-
-## Processing similarity profiles
-
-```{r results2-fig3-processing}
+```{r similarity-profiles}
 #' Compute scaled similarity profiles for every column in a similarity matrix
 #'
 #' @param similarity A similarity matrix
@@ -221,7 +217,9 @@ dfSimilarityProfiles <- map_df(.x = listSimMats,
                                .f = computeSimilarityProfiles,
                                .id = "Data",
                                scale = TRUE)
+```
 
+```{r rank-differences}
 #Compute the rank at s = 0.75 for all data representations
 dfRankThresholds <- dfSimilarityProfiles %>% 
   filter(Similarity >= 0.75) %>% 
@@ -239,6 +237,8 @@ dfRankDifferences <- dfRankThresholds %>%
   gather(key = "Data", value = "RankDiff", -Seed) %>% 
   mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)))
 ```
+
+# Figure 3
 
 ## Panel A: Rank-ordered similarity profile for mouse primary motor area
 
