@@ -1,8 +1,8 @@
 ---
-title: "Mouse Human Mapping Paper 1"
+title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 2, Figure 3"
 author: "Antoine Beauchamp"
-date: 'December 23rd, 2021'
+date: 'January 25th, 2022'
 output: html_document
 ---
 
@@ -108,11 +108,11 @@ genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), 
 rm(dfExprMouse, dfExprHuman)
 ```
 
-```{r}
+```{r initial-space-similarity}
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -123,7 +123,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
 #Compute average gene expression for 88 human brain regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
   select(Region = Region88,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -140,7 +140,7 @@ matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,match(listLabelsMouseReordered
 matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[match(listLabelsHumanReordered$Region88_reordered, rownames(matSim_H88M67_AllGenes)),]
 ```
 
-```{r results2-fig2-processing}
+```{r import-latent-space}
 #Path to MLP files
 pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
 
@@ -165,7 +165,9 @@ listHumanLatentSpace <- map(filesMLP_Human,
                                 as.matrix() %>% 
                                 t()
                             })
+```
 
+```{r latent-space-similarity}
 #Compute the latent space similarity matrices
 listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
                            function(x1, x2){
@@ -179,7 +181,7 @@ rm(listMouseLatentSpace, listHumanLatentSpace)
 
 # Figure 3
 
-## Processing
+## Processing similarity profiles
 
 ```{r results2-fig3-processing}
 #' Compute scaled similarity profiles for every column in a similarity matrix
@@ -321,14 +323,15 @@ fig3_seedsim <- ggplot(dfSeedSim_Comparison,
 #Convert the rank ordered ggplot to a grob
 fig3_seedsim_grob <- ggplotGrob(fig3_seedsim) %>% grid.force()
 
-#Extract legend grob from ggplot
+#Extract relevant grobs for panel A
 fig3_seedsim_panel_grob <- getGrob(fig3_seedsim_grob, "panel.7-5-7-5")
 fig3_seedsim_ytext_grob <- getGrob(fig3_seedsim_grob, "axis-l.7-4-7-4")
 fig3_seedsim_ytitle_grob <- getGrob(fig3_seedsim_grob, "ylab-l.7-3-7-3")
 fig3_seedsim_xtext_grob <- getGrob(fig3_seedsim_grob, "axis-b.8-5-8-5")
 fig3_seedsim_xtitle_grob <- getGrob(fig3_seedsim_grob, "xlab-b.9-5-9-5")
 fig3_seedsim_legend_grob <- getGrob(fig3_seedsim_grob, "guides.3-3-3-3")
-# fig3_seedsim_title_grob <- getGrob(fig3_seedsim_grob, "title.3-5-3-5")
+
+#Plot title for panel A
 fig3_seedsim_title_grob <- textGrob("Rank-ordered similarity profiles of the mouse M1",
                                     x = 0, y = 0.5,
                                     just = c("left", "centre"))
@@ -336,7 +339,7 @@ fig3_seedsim_title_grob <- textGrob("Rank-ordered similarity profiles of the mou
 
 ## Panel B: Distributions of rank differences
 
-```{r}
+```{r results2-fig3-panelB-distributions}
 #Prune mouse tree to 11 regions for cluster annotations
 treeMouse_11 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_11,
@@ -371,10 +374,7 @@ annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
 annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
-```
 
-
-```{r results2-fig3-panelB-distributions}
 #Create data frame with summary stats for MLP samples
 dfRankDifferencesSummary <- dfRankDifferences %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -386,6 +386,7 @@ dfRankDifferencesSummary <- dfRankDifferences %>%
             PropNonPos = sum(NonPositive)/n()) %>% 
   ungroup() 
 
+#Create a data frame containing mouse colours for y-axis annotations
 dfMouseColours <- annotation_colours_mod$MouseRegion %>% 
   enframe(name = "Region11",
           value = "Colour") %>% 
@@ -396,6 +397,7 @@ dfMouseColours <- annotation_colours_mod$MouseRegion %>%
   mutate(Region67 = fct_rev(factor(Region67, levels = listLabelsMouseReordered$Region67_reordered)),
          Region11 = factor(Region11, levels = listLabelsMouseReordered$Region11_reordered))
 
+#Join summary and colours data frames
 dfRankDifferencesSummary <- inner_join(dfRankDifferencesSummary,
                                        dfMouseColours,
                                        by = c("Seed" = "Region67"))
@@ -426,20 +428,23 @@ fig3_distributions <- ggplot(dfRankDifferencesSummary, aes(x = Seed, y = RankDif
         plot.margin = margin(r = 0, b = 0, l = 0, t = 0, unit = 'inch'))
 fig3_distributions_grob <- ggplotGrob(fig3_distributions) %>% grid.force()
 
+#Extract relevant grobs for panel B
 fig3_distributions_panel_grob <- getGrob(fig3_distributions_grob, "panel.7-5-7-5")
 fig3_distributions_ytext_grob <- getGrob(fig3_distributions_grob, "axis-r.7-6-7-6")
 fig3_distributions_ytitle_grob <- getGrob(fig3_distributions_grob, "ylab-r.7-7-7-7")
 fig3_distributions_xtext_grob <- getGrob(fig3_distributions_grob, "axis-b.8-5-8-5")
 fig3_distributions_xtitle_grob <- getGrob(fig3_distributions_grob, "xlab-b.9-5-9-5")
+
+#Plot title for panel B
 fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled similarity of 0.75",
                                           x = 0, y = 0.5,
                                           just = c("left", "centre"),
                                           gp = gpar(lineheight = 0.8))
 ```
 
-## Panel C: Slice series
+## Panel C: Proportions slice series
 
-```{r}
+```{r results2-fig3-panelC-proportions}
 #Generate a mouse tree with 67 leaf nodes
 treeMouse_67 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_67,
@@ -449,26 +454,24 @@ pruneAnatTree(treeMouse_67,
 #Create a mouse atlas with 67 regions
 atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
 dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
-```
 
-
-```{r results2-fig3-panelC-proportions}
 #Create MINC array for proportions non-positive
 fig3_ss_array <- mincBuildArray(values = dfRankDifferencesSummary$PropNonPos,
                                 values.names = dfRankDifferencesSummary$Seed,
                                 labels = atlasMouse_67,
                                 defs = dfAtlasMouse_67)
 
-#Generate base slice series
-# fig3_ss_palette <- magma(n = 255, begin = 0.5)
-# fig3_ss_palette <- mako(n = 255, begin = 0.2)
+#Slice series palette
 fig3_ss_palette <- viridis(n = 255)
+
+#Generate base slice series
 fig3_ss_grob <- sliceSeries(nrow = 3, ncol = 4, begin = 70, end = 330) %>% 
   anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
   overlay(mincArray(fig3_ss_array), low = 0, high = 1, col = fig3_ss_palette) %>% 
   grobify()
 
-#Create slice series legend
+#Create custom slice series legend
+#Legend scale
 fig3_ss_legend_palette <- fig3_ss_palette
 fig3_ss_legend_palette <- fig3_ss_legend_palette[length(fig3_ss_legend_palette):1]
 fig3_ss_legend_scale_width <- 0.3
@@ -482,7 +485,7 @@ fig3_ss_legend_scale_grob <- rasterGrob(fig3_ss_legend_palette,
                                         height = fig3_ss_legend_scale_height,
                                         just = c("right", "centre"))
 
-#Create slice series legend text
+#Legend text
 fig3_ss_legend_text <- c(min(fig3_ss_array), max(fig3_ss_array))
 fig3_ss_legend_text_x <- fig3_ss_legend_scale_x - fig3_ss_legend_scale_width - 0.1
 fig3_ss_legend_text_y <- fig3_ss_legend_scale_y + 0.5*c(-1*fig3_ss_legend_scale_height,
@@ -491,125 +494,19 @@ fig3_ss_legend_text_grob <- textGrob(fig3_ss_legend_text,
                                      x = fig3_ss_legend_text_x,
                                      y = fig3_ss_legend_text_y)
 
-#Create slice series legend title
-fig3_ss_legend_title_x <- 0.4
-fig3_ss_legend_title_y <- fig3_ss_legend_scale_y
-fig3_ss_legend_title_grob <- textGrob("Proportion of non-positive\nrank differences",
-                                      x = fig3_ss_legend_title_x,
-                                      y = fig3_ss_legend_title_y,
-                                      rot = 90,
-                                      gp = gpar(fontsize = 12,
-                                                lineheight = 0.8))
-
 #Combine slice series legend grobs
 fig3_ss_legend_grob <- gTree(children = gList(fig3_ss_legend_scale_grob,
                                               fig3_ss_legend_text_grob))
 
+#Plot title for panel C
 fig3_ss_title_grob <- textGrob("Proportion of latent spaces with non-positive rank differences",
                                x = 0, y = 0.5,
                                just = "left")
 ```
 
-
-## AMBA legend slice
-
-```{r}
-treeMouse_11 <- Clone(treeMouse)
-pruneAnatTree(treeMouse_11,
-              nodes = listLabelsMouseReordered$Region11_reordered,
-              method = "BelowNode")
-atlasMouse_11 <- hanatToAtlas(treeMouse_11, mincArray(dsurqeLabels))
-dfAtlasMouse_11 <- hanatToAtlasDefs(treeMouse_11)
-
-dsurqeAnat_3d <- mincArray(dsurqeAnat)
-dsurqeMask_3d <- mincArray(dsurqeMask)
-
-dsurqeAnat_3d[dsurqeMask_3d == 0] <- NA
-
-anatLow <-  700
-anatHigh <- 1400
-dsurqeAnat_3d[dsurqeAnat_3d >= anatHigh] <- anatHigh
-dsurqeAnat_3d[dsurqeAnat_3d <= anatLow] <- anatLow
-dims <- dim(dsurqeAnat_3d)
-
-slice <- 100
-sliceSelectionAnat <- dsurqeAnat_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionAnat) <- 1:ncol(sliceSelectionAnat)
-rownames(sliceSelectionAnat) <- nrow(sliceSelectionAnat):1
-
-dfSliceSelectionAnat <- sliceSelectionAnat %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Intensity") %>% 
-  mutate_all(.funs = as.numeric)
-
-atlasMouse_11_3d <- mincArray(atlasMouse_11)
-atlasMouse_11_3d[dsurqeMask_3d == 0] <- NA
-atlasMouse_11_3d[atlasMouse_11_3d == 0] <- NA
-sliceSelectionLabels <- atlasMouse_11_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionLabels) <- 1:ncol(sliceSelectionLabels)
-rownames(sliceSelectionLabels) <- nrow(sliceSelectionLabels):1
-
-dfSliceSelectionLabels <- sliceSelectionLabels %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Label") %>% 
-  mutate_all(.funs = as.numeric) 
-
-dfSliceSelection <- inner_join(dfSliceSelectionAnat,
-                               dfSliceSelectionLabels,
-                               by = c("x", "y"))
-
-dfMouseColours <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
-  enframe(name = "Structure",
-          value = "Colour") %>% 
-  inner_join(dfAtlasMouse_11,
-             by = "Structure") %>% 
-  semi_join(dfSliceSelection,
-            by = "Label") %>% 
-  arrange(Label)
-
-dfSliceSelection <- dfSliceSelection %>% 
-  filter(y <= 400) %>% 
-  mutate(Label = factor(Label))
-
-sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
-
-sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
-  geom_tile(aes(fill = Intensity),
-            alpha = 0.5) + 
-  scale_fill_gradient(low = gray.colors(255)[1],
-                      high = gray.colors(255)[255],
-                      na.value = 'transparent',
-                      guide = 'none') + 
-  new_scale_fill() + 
-  geom_tile(aes(fill = Label)) + 
-  scale_fill_manual(na.value = 'transparent',
-                      values = dfMouseColours$Colour,
-                    guide = 'none') +
-  coord_fixed() +
-  theme_void() +
-  # theme_minimal() +
-  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
-sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
-sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
-
-rm(treeMouse_11,
-   atlasMouse_11,
-   dfAtlasMouse_11,
-   dsurqeAnat_3d,
-   dsurqeMask_3d,
-   slice,
-   sliceSelectionAnat,
-   atlasMouse_11_3d,
-   sliceSelectionLabels,
-   dfSliceSelectionAnat,
-   dfSliceSelectionLabels,
-   dfSliceSelection,
-   dfMouseColours)
-```
-
 ## Figure 3 grob
 
-```{r results2-fig3-grob, fig.width = 10, fig.height = 7.4}
+```{r results2-fig3-grob, fig.width = 12, fig.height = 10}
 #Generate the main figure grob
 fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface = "bold")), #1
                                fig3_seedsim_title_grob, #2
@@ -648,20 +545,23 @@ fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 #Empty rectangle grob to form the border
 fig3_border_grob <- rectGrob(gp = gpar(fill = NA))
 
+#Import AMBA legend slice
+load(str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData"))
+
 #Width and height for the atlas legend slice
 sliceAMBA_width <- 0.9
 sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
 
-#New vieport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(9.5, 'inch'),
-                                          y = unit(1.4, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height,'inch'))
+#New viewport for the atlas legend slice
+sliceAMBALegend_grob$vp <- viewport(x = unit(9.5, 'inch'),
+                                    y = unit(1.4, 'inch'),
+                                    width = unit(sliceAMBA_width, 'inch'),
+                                    height = unit(sliceAMBA_height,'inch'))
 
 #Figure 3 grob
 fig3_grob <- gTree(children = gList(fig3_plots_grob,
                                     fig3_border_grob,
-                                    sliceAMBALegend_panel_grob))
+                                    sliceAMBALegend_grob))
 
 fig3_width <- 10
 fig3_height <- 7.4
@@ -679,27 +579,13 @@ save(fig3_grob,
 ```
 
 
-# Quantitative
+# In-text quantification
 
-```{r}
-dfRankDifferencesSummary <- dfRankDifferences %>% 
-  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
-  group_by(Seed) %>% 
-  summarise(RankDiffMean = mean(RankDiff),
-            RankDiffSd = sd(RankDiff),
-            RankDiffLower = RankDiffMean - 2*RankDiffSd,
-            RankDiffUpper = RankDiffMean + 2*RankDiffSd,
-            PropNonPos = sum(NonPositive)/n()) %>% 
-  ungroup() 
-```
-
-```{r}
-head(dfRankDifferences)
-```
-
-```{r}
+```{r results2-fig3-intext-1}
+#Number of latent spaces
 nMLP <- length(unique(dfRankDifferences$Data))
 
+#Data frame containing proportions non-positive rank differences
 temp <- dfRankDifferences %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE),
          Positive = !NonPositive) %>%  
@@ -709,64 +595,73 @@ temp <- dfRankDifferences %>%
             RankDiffMean = mean(RankDiff),
             RankDiffSd = sd(RankDiff)) %>% 
   ungroup() 
-```
 
-```{r}
+#Number and proportion of regions having mean rank difference less than or equal to zero
 temp %>% 
   summarise(nregions = sum(RankDiffMean <= 0),
             fracregions = nregions/n())
 ```
 
-```{r}
+```{r results2-fig3-intext-2}
+#Proportion of regions having non-positive rank difference in greater than 80% of latent spaces
 temp %>% 
   summarise(sum(PropNonPositive >= 0.80)/n())
 ```
 
 
-```{r}
+```{r results2-fig3-intext-3}
+#Summary statistics for specific mouse regions
 temp %>% 
   filter(Seed %in% c("Main olfactory bulb", "Accessory olfactory bulb", "Cerebellar nuclei"))
 ```
 
-```{r}
+```{r results2-fig3-intext-4}
+#Mouse regions in the isocortex
 structsCx <- dfLabelsMouse %>%
   select(Region11, Region67) %>% 
   distinct() %>% 
   filter(Region11 == "Isocortex") %>% 
   pull(Region67)
 
+#Number and proportion of isocortical regions with non-positive rank differences in at least 96% of latent spaces
 temp %>% 
   filter(Seed %in% structsCx) %>% 
   summarise(nregions = sum(PropNonPositive >= 0.96),
             fracregions = nregions/n())
 ```
 
-```{r}
+```{r results2-fig3-intext-5}
+#Mouse regions in the cerebellar cortex
 structsCb <- dfLabelsMouse %>%
   select(Region11, Region67) %>% 
   distinct() %>% 
   filter(Region11 == "Cerebellar cortex") %>% 
   pull(Region67)
 
+#Number and proportion of cerebellar cortical regions with non-positive rank differences in at least 96% of latent spaces
 temp %>% 
   filter(Seed %in% structsCb) %>% 
   summarise(nregions = sum(PropNonPositive >= 0.96),
             fracregions = nregions/n())
 ```
 
+```{r results2-fig3-intext-6}
+#Summary statistics for thalamus
 temp %>% 
-filter(Seed == "Thalamus")
+  filter(Seed == "Thalamus")
+```
 
-```{r}
+```{r results2-fig3-intext-7}
+#Mouse regions in the sub-cortex
 structsSubCx <- dfLabelsMouse %>% 
   select(Region11, Region67) %>% 
   distinct() %>% 
   filter(Region11 %in% c("Cerebral nuclei", "Diencephalon", "Midbrain", "Pons", "Medulla")) %>% 
   pull(Region67)
 
+#Mean and sd of rank differences for subcortical regions
 dfRankDifferences %>% 
   filter(Seed %in% structsSubCx) %>% 
-  pull(RankDiff) %>% 
-  sd()
+  summarise(mean(RankDiff),
+            sd(RankDiff))
 ```
-
