@@ -179,7 +179,7 @@ names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
 ```
 
-```{r results2-fig3-processing}
+```{r similarity-profiles}
 #' Compute scaled similarity profiles for every column in a similarity matrix
 #'
 #' @param similarity A similarity matrix
@@ -219,7 +219,7 @@ dfSimilarityProfiles <- map_df(.x = listSimMats,
                                scale = TRUE)
 ```
 
-```{r results2-fig4-processing}
+```{r canonical-pairs}
 #Import the data frame containing mouse-human canonical pairs
 dfCanonicalPairs_H88M67 <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseHumanMatches_H88M67.csv")))
 
@@ -253,7 +253,7 @@ dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_RankDiffs %>%
 
 ## Panel A: Rank distributions of canonical pairs
 
-```{r}
+```{r results2-fig4-panelA-distributions}
 #Prune mouse tree to 11 regions for cluster annotations
 treeMouse_11 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_11,
@@ -288,16 +288,17 @@ annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
 annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
 annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
-```
 
-```{r results2-fig4-panelA-distributions}
+#Add a binary label for initial space vs latent space
 dfCanonicalPairs_H88M67_Ranks <- dfCanonicalPairs_H88M67_Ranks %>% 
   mutate(Data2 = ifelse(Data == "AllGenes", "AllGenes", "MLP"),
          Data2 = factor(Data2, levels = c("MLP", "AllGenes")))
 
+#Extract values for initial space
 dfCanonicalPairs_H88M67_Ranks_AllGenes <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data == "AllGenes")
 
+#Compute summary values for latent spaces
 dfCanonicalPairs_H88M67_Ranks_MLP <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes") %>% 
   group_by(Seed) %>% 
@@ -306,6 +307,7 @@ dfCanonicalPairs_H88M67_Ranks_MLP <- dfCanonicalPairs_H88M67_Ranks %>%
             RankSdUpper = RankMean + 2*sd(TargetRank)) %>% 
   ungroup()
 
+#Create a data frame contain mouse region colours for annotation
 dfMouseColours <- annotation_colours_mod$MouseRegion %>% 
   enframe(name = "Region11",
           value = "Colour") %>% 
@@ -319,6 +321,7 @@ dfMouseColours <- annotation_colours_mod$MouseRegion %>%
          Region67 = fct_rev(factor(Region67, levels = mouseLabels_67))) %>% 
   arrange(Region67)
 
+#Colour palette
 colPalette <- c("#B27700", "#00325C")
 
 #Create rank distributions plot
@@ -345,8 +348,11 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
                                    size = 6,
                                    face = "bold"),
         plot.margin = margin(t = 0, r = 0, l = 0, b = 0, unit = 'inch'))
+
+#Convert the ggplot object into a grob
 fig4_distributions_grob <- ggplotGrob(fig4_distributions) %>% grid.force()
 
+#Extract relevant grobs
 fig4_distributions_panel_grob <- getGrob(fig4_distributions_grob, "panel.7-5-7-5")
 fig4_distributions_ytext_grob <- getGrob(fig4_distributions_grob, "axis-l.7-4-7-4")
 fig4_distributions_ytitle_grob <- getGrob(fig4_distributions_grob, "ylab-l.7-3-7-3")
@@ -370,16 +376,16 @@ fig4_distributions_legend_grob <- ggplotGrob(fig4_distributions_legend) %>%
   grid.force() %>% 
   getGrob("guides.3-3-3-3")
 
-#Create plot title
+#Plot title for panel A
 fig4_distributions_title_grob <- textGrob("Rank of canonical human neuroanatomical homologue",
                                           x = unit(0, 'npc'), 
                                           y = unit(0.5, 'npc'),
                                           just = c("left", "centre"))
 ```
 
-## Panel B: Slice series
+## Panel B: Proportions slice series
 
-```{r}
+```{r results2-fig4-panelB-proportions}
 #Generate a mouse tree with 67 leaf nodes
 treeMouse_67 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_67,
@@ -389,9 +395,7 @@ pruneAnatTree(treeMouse_67,
 #Create a mouse atlas with 67 regions
 atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
 dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
-```
 
-```{r results2-fig4-panelB-proportions}
 #Compute the proportion of rank differences non-positive
 dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -405,7 +409,7 @@ fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$P
                                 labels = atlasMouse_67,
                                 defs = dfAtlasMouse_67)
 
-
+#Slice series palette
 fig4_ss_palette <- viridis(n = 255)
 
 #Generate base slice series
@@ -414,8 +418,8 @@ fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>%
   overlay(mincArray(fig4_ss_array), low = 0, high = 1, col = fig4_ss_palette) %>% 
   grobify()
 
-
-#Create slice series legend
+#Create a custom slice series legend
+#Legend scale
 fig4_ss_legend_palette <- fig4_ss_palette
 fig4_ss_legend_palette <- fig4_ss_legend_palette[length(fig4_ss_legend_palette):1]
 fig4_ss_legend_scale_width <- 0.4
@@ -429,7 +433,7 @@ fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
                                         height = fig4_ss_legend_scale_height,
                                         just = c("left", "centre"))
 
-#Create slice series legend text
+#Legend text
 fig4_ss_legend_text <- c(0, 1)
 fig4_ss_legend_text_x <- fig4_ss_legend_scale_x + fig4_ss_legend_scale_width + 0.2
 fig4_ss_legend_text_y <- fig4_ss_legend_scale_y + 0.5*c(-1*fig4_ss_legend_scale_height,
@@ -442,108 +446,12 @@ fig4_ss_legend_text_grob <- textGrob(fig4_ss_legend_text,
 fig4_ss_legend_grob <- gTree(children = gList(fig4_ss_legend_scale_grob,
                                               fig4_ss_legend_text_grob))
 
+#Plot title for panel B
 fig4_ss_title_grob <- textGrob("Proportion of latent spaces with\nnon-positive rank differences",
                                x = 0, y = 0.5,
                                just = "left",
                                gp = gpar(lineheight = 1))
 ```
-
-
-## AMBA legend slice
-
-```{r}
-treeMouse_11 <- Clone(treeMouse)
-pruneAnatTree(treeMouse_11,
-              nodes = listLabelsMouseReordered$Region11_reordered,
-              method = "BelowNode")
-atlasMouse_11 <- hanatToAtlas(treeMouse_11, mincArray(dsurqeLabels))
-dfAtlasMouse_11 <- hanatToAtlasDefs(treeMouse_11)
-
-dsurqeAnat_3d <- mincArray(dsurqeAnat)
-dsurqeMask_3d <- mincArray(dsurqeMask)
-
-dsurqeAnat_3d[dsurqeMask_3d == 0] <- NA
-
-anatLow <-  700
-anatHigh <- 1400
-dsurqeAnat_3d[dsurqeAnat_3d >= anatHigh] <- anatHigh
-dsurqeAnat_3d[dsurqeAnat_3d <= anatLow] <- anatLow
-dims <- dim(dsurqeAnat_3d)
-
-slice <- 100
-sliceSelectionAnat <- dsurqeAnat_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionAnat) <- 1:ncol(sliceSelectionAnat)
-rownames(sliceSelectionAnat) <- nrow(sliceSelectionAnat):1
-
-dfSliceSelectionAnat <- sliceSelectionAnat %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Intensity") %>% 
-  mutate_all(.funs = as.numeric)
-
-atlasMouse_11_3d <- mincArray(atlasMouse_11)
-atlasMouse_11_3d[dsurqeMask_3d == 0] <- NA
-atlasMouse_11_3d[atlasMouse_11_3d == 0] <- NA
-sliceSelectionLabels <- atlasMouse_11_3d[1:dims[1], 1:dims[2], slice]
-colnames(sliceSelectionLabels) <- 1:ncol(sliceSelectionLabels)
-rownames(sliceSelectionLabels) <- nrow(sliceSelectionLabels):1
-
-dfSliceSelectionLabels <- sliceSelectionLabels %>% 
-  as_tibble(rownames = "x") %>% 
-  pivot_longer(-x, names_to = "y", values_to = "Label") %>% 
-  mutate_all(.funs = as.numeric) 
-
-dfSliceSelection <- inner_join(dfSliceSelectionAnat,
-                               dfSliceSelectionLabels,
-                               by = c("x", "y"))
-
-dfMouseColours <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
-  enframe(name = "Structure",
-          value = "Colour") %>% 
-  inner_join(dfAtlasMouse_11,
-             by = "Structure") %>% 
-  semi_join(dfSliceSelection,
-            by = "Label") %>% 
-  arrange(Label)
-
-dfSliceSelection <- dfSliceSelection %>% 
-  filter(y <= 400) %>% 
-  mutate(Label = factor(Label))
-
-sliceAMBA_asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
-
-sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
-  geom_tile(aes(fill = Intensity),
-            alpha = 0.5) + 
-  scale_fill_gradient(low = gray.colors(255)[1],
-                      high = gray.colors(255)[255],
-                      na.value = 'transparent',
-                      guide = 'none') + 
-  new_scale_fill() + 
-  geom_tile(aes(fill = Label)) + 
-  scale_fill_manual(na.value = 'transparent',
-                      values = dfMouseColours$Colour,
-                    guide = 'none') +
-  coord_fixed() +
-  theme_void() +
-  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
-sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
-sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
-
-rm(treeMouse_11,
-   atlasMouse_11,
-   dfAtlasMouse_11,
-   dsurqeAnat_3d,
-   dsurqeMask_3d,
-   slice,
-   sliceSelectionAnat,
-   atlasMouse_11_3d,
-   sliceSelectionLabels,
-   dfSliceSelectionAnat,
-   dfSliceSelectionLabels,
-   dfSliceSelection,
-   dfMouseColours)
-```
-
 
 ## Figure 4 grob
 
@@ -574,12 +482,15 @@ fig4_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 #Empty rectangle grob to form the border
 fig4_border_grob <- rectGrob(gp = gpar(fill = NA))
 
+#Import AMBA legend slice
+load(str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData"))
+
 #Width and height 
 sliceAMBA_width <- 0.8
 sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
 
 #New vieport for the atlas legend slice
-sliceAMBALegend_panel_grob$vp <- viewport(x = unit(0.7, 'inch'),
+sliceAMBALegend_grob$vp <- viewport(x = unit(0.7, 'inch'),
                                           y = unit(0.5, 'inch'),
                                           width = unit(sliceAMBA_width, 'inch'),
                                           height = unit(sliceAMBA_height,'inch'))
@@ -587,7 +498,7 @@ sliceAMBALegend_panel_grob$vp <- viewport(x = unit(0.7, 'inch'),
 #Figure 4 grob
 fig4_grob <- gTree(children = gList(fig4_plots_grob,
                                     fig4_border_grob,
-                                    sliceAMBALegend_panel_grob))
+                                    sliceAMBALegend_grob))
 
 fig4_width <- 7.6
 fig4_height <- 6.5
@@ -604,64 +515,49 @@ save(fig4_grob,
      file = fileout)
 ```
 
-# Quantitative
+# In-text quantification
 
-```{r}
+```{r results2-fig4-intext-1}
+#Data frame containing proportions of non-positive rank differences
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
   group_by(Seed) %>% 
   summarise(PropNonPos = sum(NonPositive)/n()) %>% 
   ungroup()
-```
 
-```{r}
+#Number and proportions of regions with non-positive rank differences in more than 80% latent spaces
 dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
   summarise(nregions = sum(PropNonPos >= 0.80),
             fracregions = nregions/n())
 ```
 
-```{r}
-thresholds <- seq(0, 1, by = 0.005)
-dfPropNonPos <- tibble(thresholds = thresholds,
-                       nRegions = 0,
-                       fracRegions = 0)
-
-for(i in 1:length(thresholds)){
-  dfTemp <- dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
-    summarise(nRegions = sum(PropNonPos >= thresholds[i]),
-              fracRegions = nRegions/n())
-  dfPropNonPos[i,"nRegions"] <- dfTemp$nRegions
-  dfPropNonPos[i,"fracRegions"] <- dfTemp$fracRegions
-}
-
-ggplot(dfPropNonPos, aes(x = thresholds, y = fracRegions)) + 
-  geom_point(size = 0.5) + 
-  coord_fixed(xlim = c(0,1),
-              ylim = c(0,1)) +
-  labs(x = "Proportion of latent spaces",
-       y = "Proportion of regions showing improvement") + 
-  theme_bw()
-```
-
-```{r}
-x <- dfPropNonPos$thresholds
-y <- dfPropNonPos$fracRegions
-AUC <- sum(diff(x)*zoo::rollmean(y, k = 2))
-AUC
-```
-
-
-```{r}
+```{r results2-fig4-intext-2}
+#Ranks for frontal pole and visual areas
 dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
   select(Seed, Data2, TargetRank) %>% 
   group_by(Seed, Data2) %>% 
   summarise(mean(TargetRank))
 ```
+```{r results2-fig4-intext-3}
+#Number of MLP samples
+nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != "AllGenes") %>% 
+  pull(Data) %>% 
+  unique() %>% 
+  length()
 
-```{r}
+#Proportion of latent spaces in which subcortical regions are maximally similar to their canonical pair
 dfCanonicalPairs_H88M67_Ranks %>% 
-filter(Seed %in% c("Pallidum", "Striatum ventral region", "Caudoputamen", "Hypothalamus", "Thalamus", "Inferior colliculus", "Superior colliculus, sensory related", "Pons", "Medulla"),
+filter(Seed %in% c("Pallidum",
+                   "Striatum ventral region",
+                   "Caudoputamen",
+                   "Hypothalamus", 
+                   "Thalamus",
+                   "Inferior colliculus",
+                   "Superior colliculus",
+                   "Pons",
+                   "Medulla"),
        Data != "AllGenes") %>% 
   select(Seed, TargetRank) %>% 
   group_by(Seed) %>% 
@@ -670,19 +566,68 @@ filter(Seed %in% c("Pallidum", "Striatum ventral region", "Caudoputamen", "Hypot
   arrange(prop)
 ```
 
-```{r}
-temp3 %>% 
-  filter(Seed == "Crus 1",
-         Target == "crus I") %>% 
-  ggplot(aes(x = TargetRank, y = prop)) + 
-  geom_col()
+```{r results2-fig4-intext-4}
+#Calculate rank frequency for crus 1 pair
+temp <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != "AllGenes",
+         Seed == "Crus 1") %>% 
+  group_by(TargetRank) %>% 
+  count() %>% 
+  ungroup() 
+
+ggplot(temp, aes(x = TargetRank, y = n)) + 
+  geom_col(fill = "grey70",
+           col = "black", width = 0.8) + 
+  coord_cartesian(xlim = c(0, 20),
+                  ylim = c(0, 80)) + 
+  scale_x_continuous(breaks = seq(1, 20, 1)) + 
+  scale_y_continuous(breaks = seq(0, 80, 10)) + 
+  labs(x = "Rank of human crus 1",
+       y = "Number of latent spaces",
+       title = "Rank distribution of mouse-human crus 1 pair") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r}
-temp3 %>% 
-  filter(Seed == "Crus 1",
-         Target == "crus I") %>% 
-  filter(prop == max(prop)) %>% 
-  pull(TargetRank)
+# Supplementary
+
+```{r results2-fig4-supp-1}
+#Compute a ROC-type curve for proportions of regions and proportions of latent spaces returning non-positive rank differences
+
+#Threshold increments
+thresholds <- seq(0, 1, by = 0.005)
+
+#Initialize data frame to store proportions of regions for each threshold
+dfPropNonPos <- tibble(thresholds = thresholds,
+                       nRegions = 0,
+                       fracRegions = 0)
+
+#Iterate over thresholds
+for(i in 1:length(thresholds)){
+  
+  #Compute the number of regions for which the proportion of latent spaces non-positive is at least as large as the current thresholds
+  dfTemp <- dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+    summarise(nRegions = sum(PropNonPos >= thresholds[i]),
+              fracRegions = nRegions/n())
+  dfPropNonPos[i,"nRegions"] <- dfTemp$nRegions
+  dfPropNonPos[i,"fracRegions"] <- dfTemp$fracRegions
+}
+
+#Plot the ROC-type curve
+ggplot(dfPropNonPos, aes(x = thresholds, y = fracRegions)) + 
+  geom_point(size = 0.5) + 
+  coord_equal(xlim = c(0,1),
+              ylim = c(0,1)) +
+  labs(x = "Proportion of latent spaces",
+       y = "Proportion of regions showing improvement") + 
+  theme_bw()
+```
+
+```{r results2-fig4-supp-2}
+#Calculate the AUC for the ROC-type curve
+x <- dfPropNonPos$thresholds
+y <- dfPropNonPos$fracRegions
+AUC <- sum(diff(x)*zoo::rollmean(y, k = 2))
+AUC
 ```
 
