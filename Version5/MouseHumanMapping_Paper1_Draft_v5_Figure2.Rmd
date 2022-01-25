@@ -843,7 +843,6 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
   as.ggplot()
 ```
 
-
 ```{r results2-fig2-panelC-heatmap-matrix}
 #Convert the pheatmap plot to grob and force the gTree
 fig2_heatmap_main_grob <- ggplotGrob(fig2_heatmap_ggplot) %>% grid.force()
