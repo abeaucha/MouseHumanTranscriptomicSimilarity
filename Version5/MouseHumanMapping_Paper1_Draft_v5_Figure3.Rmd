@@ -499,7 +499,7 @@ fig3_ss_legend_grob <- gTree(children = gList(fig3_ss_legend_scale_grob,
                                               fig3_ss_legend_text_grob))
 
 #Plot title for panel C
-fig3_ss_title_grob <- textGrob("Proportion of latent spaces with non-positive rank differences",
+fig3_ss_title_grob <- textGrob("Proportion of latent spaces featuring improved rank",
                                x = 0, y = 0.5,
                                just = "left")
 ```

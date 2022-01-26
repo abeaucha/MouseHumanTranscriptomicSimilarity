@@ -394,7 +394,8 @@ pruneAnatTree(treeMouse_67,
 
 #Create a mouse atlas with 67 regions
 atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
-dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
+dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67) %>% 
+  mutate(Structure = ifelse(Structure == "Superior colliculus, sensory related", "Superior colliculus", Structure))
 
 #Compute the proportion of rank differences non-positive
 dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
@@ -447,7 +448,7 @@ fig4_ss_legend_grob <- gTree(children = gList(fig4_ss_legend_scale_grob,
                                               fig4_ss_legend_text_grob))
 
 #Plot title for panel B
-fig4_ss_title_grob <- textGrob("Proportion of latent spaces with\nnon-positive rank differences",
+fig4_ss_title_grob <- textGrob("Proportion of latent spaces\nfeaturing improved rank",
                                x = 0, y = 0.5,
                                just = "left",
                                gp = gpar(lineheight = 1))
