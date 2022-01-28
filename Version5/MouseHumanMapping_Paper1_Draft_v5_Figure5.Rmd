@@ -2,7 +2,7 @@
 title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 3, Figure 5"
 author: "Antoine Beauchamp"
-date: 'January 25th, 2022'
+date: 'January 28th, 2022'
 output: html_document
 ---
 
@@ -157,11 +157,11 @@ computeSimilarityProfiles <- function(similarity, scale = FALSE){
     temp <- similarity[, seed] %>% 
       enframe(name = "Target",
               value = "Similarity") 
-      
-      if(scale){
-        temp <- temp %>% 
-          mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
-      }
+    
+    if(scale){
+      temp <- temp %>% 
+        mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+    }
     
     temp <- temp %>% 
       mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
@@ -236,11 +236,11 @@ colPalette_CxType <- c(brewer.pal(n = 9, name = "Blues")[4],
 
 #Plot of regional maximal correlation distributions
 fig5_regionaldist <- ggplot(dfSimilarityProfiles_Cx_MaxSim_Summary, 
-       aes(x = Seed, 
-           y = SimilarityMean,
-           ymin = SimilaritySdLower,
-           ymax = SimilaritySdUpper,
-           col = CortexType)) + 
+                            aes(x = Seed, 
+                                y = SimilarityMean,
+                                ymin = SimilaritySdLower,
+                                ymax = SimilaritySdUpper,
+                                col = CortexType)) + 
   geom_pointrange(size = 0.3) + 
   coord_flip() +
   scale_y_continuous(breaks = seq(0.5, 1, by = 0.05)) + 
@@ -292,7 +292,7 @@ set.seed(123)
 
 #Plot
 fig5_cortexdist <- ggplot(dfSimilarityProfiles_Cx_MaxSim_Compare,
-       aes(x = CortexType, y = SimilarityMean, col = CortexType)) + 
+                          aes(x = CortexType, y = SimilarityMean, col = CortexType)) + 
   geom_line(aes(group = Data),
             col = "grey70",
             size = 0.5,
@@ -588,27 +588,27 @@ hcHuman_AllGenes <- hclust(dist(matSim_Cx_AllGenes))
 
 #Data frame containing wcss values for average latent space mouse clusters
 dfWCSS_Mouse_MLP <- tibble(k = 1:ncol(matSim_Cx_MLP),
-                          wcss = computeWCSS(x = matSim_Cx_MLP, hcMouse_MLP),
-                          data = "MLP",
-                          axis = "Mouse")
+                           wcss = computeWCSS(x = matSim_Cx_MLP, hcMouse_MLP),
+                           data = "MLP",
+                           axis = "Mouse")
 
 #Data frame containing wcss values for initial gene space mouse clusters
 dfWCSS_Mouse_AllGenes <- tibble(k = 1:ncol(matSim_Cx_AllGenes),
-                               wcss = computeWCSS(x = matSim_Cx_AllGenes, hcMouse_AllGenes),
-                               data = "AllGenes",
-                               axis = "Mouse")
+                                wcss = computeWCSS(x = matSim_Cx_AllGenes, hcMouse_AllGenes),
+                                data = "AllGenes",
+                                axis = "Mouse")
 
 #Data frame containing wcss values for average latent space human clusters
 dfWCSS_Human_MLP <- tibble(k = 1:nrow(matSim_Cx_MLP),
-                          wcss = computeWCSS(x = t(matSim_Cx_MLP), hcHuman_MLP),
-                          data = "MLP",
-                          axis = "Human")
+                           wcss = computeWCSS(x = t(matSim_Cx_MLP), hcHuman_MLP),
+                           data = "MLP",
+                           axis = "Human")
 
 #Data frame containing wcss values for initial gene space human clusters
 dfWCSS_Human_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes),
-                               wcss = computeWCSS(x = t(matSim_Cx_AllGenes), hcHuman_AllGenes),
-                               data = "AllGenes",
-                               axis = "Human")
+                                wcss = computeWCSS(x = t(matSim_Cx_AllGenes), hcHuman_AllGenes),
+                                data = "AllGenes",
+                                axis = "Human")
 
 #Combine wcss data frames into one
 dfWCSS <- bind_rows(dfWCSS_Mouse_MLP, 
@@ -622,8 +622,8 @@ dfWCSS <- bind_rows(dfWCSS_Mouse_MLP,
 fig5_wcss <- ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) + 
   geom_line(aes(linetype = axis)) + 
   geom_point() + 
-    coord_cartesian(xlim = c(1, 10),
-                    ylim = c(0, 1)) +
+  coord_cartesian(xlim = c(1, 10),
+                  ylim = c(0, 1)) +
   scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
   scale_color_manual(labels = c("Initial gene expression space", "Latent gene expression space"), 
                      values = c("#B27700", "#00325C"),
@@ -660,7 +660,7 @@ fig5_wcss_title_grob <- textGrob("Mouse and human scree plots",
 
 
 ## Figure 5 grob
-  
+
 ```{r results3-fig5-grob, fig.width=10, fig.height=7.6}
 #Grob for main plots in figure 5
 # gTree(children = gList(rectGrob(), 
@@ -787,18 +787,11 @@ dfSimilarityProfiles_Cx_Avg %>%
 
 # Supplementary
 
+## Top cortical matches
 
-I'm not sure what to look at here. I feel like this is a mess. 
+For each mouse seed in the isocortex, what is the human cortical region that occurs as the top match with the highest proportion?
 
-Anterior-posterior gradient?
-Sensory vs supramodal?
-Random?
-
-How do I parse this out?
-
-First let's look at highest proportion for each mouse seed
-
-```{r}
+```{r results3-supp-topmatches-table}
 #Identify maximal similarity values for every seed and data set
 dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
   group_by(Data, Seed) %>% 
@@ -850,18 +843,15 @@ dfCortex_MaxSim_Summary <- dfCortex_MaxSim_Summary %>%
   ungroup() %>% 
   mutate(IsMaxProp = factor(IsMaxProp),
          Seed = factor(Seed, levels = lvlsCortexMouse))
-```
 
-For every mouse isocortical region, what is the human match that occurs in the highest proportion of latent spaces? 
-
-```{r}
+#For every mouse isocortical region, what is the human match that occurs in the highest proportion of latent spaces? 
 dfCortex_MaxSim_Summary %>% 
   filter(IsMaxProp == 1) %>% 
   select(Seed, Target, prop) %>% 
   arrange(desc(Seed))
 ```
 
-```{r fig.width = 10}
+```{r results3-supp-topmatches-sankey-prop, fig.width = 10, fig.height = 5}
 #Isolate those pairs with the highest proportions
 dfCortex_MaxSim_Summary_MaxProp <- dfCortex_MaxSim_Summary %>% 
   filter(IsMaxProp == 1) %>% 
@@ -885,9 +875,9 @@ pruneAnatTree(treeHuman_16,
 dfColoursHuman <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf) %>%
   enframe(name = "Region16",
           value = "color_hex_triplet") %>% 
-    right_join(dfColoursHuman,
-               by = "Region16") %>% 
-    mutate(color_hex_triplet = ifelse(Region16 == "Not cortical", "black", color_hex_triplet))
+  right_join(dfColoursHuman,
+             by = "Region16") %>% 
+  mutate(color_hex_triplet = ifelse(Region16 == "Not cortical", "black", color_hex_triplet))
 
 #Add colours to max prop data frame
 dfCortex_MaxSim_Summary_MaxProp <- dfCortex_MaxSim_Summary_MaxProp %>% 
@@ -907,7 +897,7 @@ coloursHuman <- dfCortex_MaxSim_Summary_MaxProp %>%
 
 library(ggalluvial)
 plotCxAlluvial_prop <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
-       aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
+                              aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = prop),
                 col = "grey50") + 
   geom_stratum() + 
@@ -930,9 +920,11 @@ plotCxAlluvial_prop <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
 plotCxAlluvial_prop
 ```
 
-```{r fig.width=10}
+What is the average correlation over latent spaces of the most frequently occurring maximal pair?
+
+```{r results3-supp-topmatches-sankey-avg, fig.width=10, fig.height = 5}
 plotCxAlluvial_avgSim <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
-       aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
+                                aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = avgSimilarity),
                 col = "grey50") + 
   geom_stratum() + 
@@ -955,8 +947,9 @@ plotCxAlluvial_avgSim <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
 plotCxAlluvial_avgSim
 ```
 
+In what proportion of latent spaces are mouse isocortical areas top matched with human cortical areas?
 
-```{r fig.width=10}
+```{r results3-supp-topmatches-grid-prop, fig.width=12, fig.height = 6}
 #Include colours to max similarity summary data frame
 dfCortex_MaxSim_Summary_wColours <- dfCortex_MaxSim_Summary %>% 
   left_join(dfLabelsHuman %>% 
@@ -990,20 +983,21 @@ plotCx_Dotmap_prop <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target, y
   scale_fill_manual(values = coloursHuman) + 
   scale_size_continuous(range = c(0, 4)) + 
   scale_color_manual(values = c("grey50", "black")) + 
-    labs(x = "Human cortical target",
-         y = "Mouse isocortical seed",
-         fill = "Human cerebral lobes",
-         col = "Highest proportion?",
-         size = "Proportion of latent spaces",
-         caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically\nColumns sum to 1",
-         title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
+  labs(x = "Human cortical target",
+       y = "Mouse isocortical seed",
+       fill = "Human cerebral lobes",
+       col = "Highest proportion?",
+       size = "Proportion of latent spaces",
+       caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically\nColumns sum to 1",
+       title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 plotCx_Dotmap_prop
 ```
+What are the average correlation values for the top matches?
 
-```{r fig.width=10}
+```{r results3-supp-topmatches-grid-avg, fig.width=12, fig.height=6}
 plotCx_Dotmap_avgSim <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target, y = Seed)) + 
   geom_tile(aes(fill = Region16),
             col = "grey50",
@@ -1013,29 +1007,28 @@ plotCx_Dotmap_avgSim <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target,
   scale_fill_manual(values = coloursHuman) + 
   scale_size_continuous(range = c(0, 4)) + 
   scale_color_manual(values = c("grey50", "black")) + 
-    labs(x = "Human cortical target",
-         y = "Mouse isocortical seed",
-         fill = "Human cerebral lobes",
-         col = "Highest proportion?",
-         size = "Average correlation",
-         caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically",
-         title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
+  labs(x = "Human cortical target",
+       y = "Mouse isocortical seed",
+       fill = "Human cerebral lobes",
+       col = "Highest proportion?",
+       size = "Average correlation",
+       caption = "Mouse regions ordered using average maximal correlation\nHuman regions ordered anatomically",
+       title = "Proportion of latent spaces in which mouse isocortical regions are\nmaximally similar to human target regions") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 plotCx_Dotmap_avgSim
 ```
+What are the top matches to the mouse primary somatosensory area?
 
-
-```{r}
+```{r results3-supp-topmatches-S1-table}
 dfCortex_MaxSim_Summary_wColours %>% 
   filter(Seed == "Primary somatosensory area") %>% 
   filter(prop != 0) %>% 
   select(Seed, Target, Proportion = prop, AvgCorrelation = avgSimilarity) %>% 
   arrange(desc(Proportion))
 ```
-
-```{r fig.width = 10, fig.height = 5}
+```{r results3-supp-topmatches-S1-plot, fig.width = 12, fig.height = 6}
 #Create a data frame containing average correlation between mouse S1 and human cortical regions
 dfSimilarity_S1_Summary <- dfSimilarityProfiles_Cx %>% 
   filter(Seed == "Primary somatosensory area") %>% 
@@ -1046,10 +1039,11 @@ dfSimilarity_S1_Summary <- dfSimilarityProfiles_Cx %>%
             SimilarityLower = SimilarityMean - 2*SimilaritySd) %>% 
   ungroup() %>% 
   inner_join(dfColoursHuman,
-            by = c("Target" = "Region88")) %>% 
+             by = c("Target" = "Region88")) %>% 
   mutate(Target = factor(Target, levels = Target[order(SimilarityMean)]),
          Region16 = factor(Region16, levels = structsHuman_Cx_16))
 
+#Correlations of mouse S1 to different human cortical regions
 ggplot(dfSimilarity_S1_Summary, aes(x = fct_rev(Target), col = Region16)) + 
   geom_pointrange(aes(y = SimilarityMean, ymin = SimilarityLower, ymax = SimilarityUpper)) + 
   scale_color_manual(values = coloursHuman) + 
@@ -1061,148 +1055,48 @@ ggplot(dfSimilarity_S1_Summary, aes(x = fct_rev(Target), col = Region16)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+## Cortical clustering
 
-```{r}
-#Compute aggregated expression matrix for all mouse regions
-matExprMouse_scaled <- dfExprMouse_scaled %>% 
-  select(Region67, genes) %>% 
-  group_by(Region67) %>% 
-  summarise_all(.funs = mean) %>% 
-  ungroup() %>% 
-  column_to_rownames("Region67") %>% 
-  as.matrix() %>% 
-  t()
-
-#Compute aggregated expression matrix for all human regions
-matExprHuman_scaled <- dfExprHuman_scaled %>% 
-  select(Region88, genes) %>% 
-  group_by(Region88) %>% 
-  summarise_all(.funs = mean) %>% 
-  ungroup() %>% 
-  column_to_rownames("Region88") %>% 
-  as.matrix() %>% 
-  t()
-
-#Compute similarity matrix in homologous gene space
-matSim_AllGenes <- buildSimilarityMatrix(x1 = matExprHuman_scaled,
-                                         x2 = matExprMouse_scaled)
+```{r results3-supp-clustering-heatmap-mlp, fig.width = 12, fig.height = 6}
+#Clustering of isocortical similarity in latent gene space
+clusteredHeatmap_MLP <- pheatmap(t(matSim_Cx_MLP), cluster_cols = T, cluster_rows  = T)
 ```
 
-What are the top matches to the mouse S1 in the original gene space?
-
-```{r}
-matSim_AllGenes[,"Primary somatosensory area"] %>% 
-  enframe(name = "HumanRegion",
-          value = "Correlation") %>% 
-  inner_join(dfColoursHuman,
-             by = c("HumanRegion" = "Region88")) %>% 
-  mutate(HumanRegion = factor(HumanRegion, levels = HumanRegion[order(Correlation)])) %>% 
-  arrange(desc(HumanRegion))
+```{r results3-supp-clustering-heatmap-allgenes, fig.width = 12, fig.height = 6}
+#Clustering of isocortical similarity in initial gene space
+clusteredHeatmap_AllGenes <- pheatmap(t(matSim_Cx_AllGenes), cluster_cols = T, cluster_rows  = T)
 ```
 
-```{r}
-matSim_Cx_MLP <- dfSimilarityProfiles_Cx %>% 
-  filter(Seed %in% structsMouse_Cx,
-         Target %in% structsHuman_Cx) %>% 
-  group_by(Seed, Target) %>% 
-  summarise(SimilarityMean = mean(Similarity)) %>% 
-  ungroup() %>% 
-  pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
-  column_to_rownames("Target") %>% 
-  as.matrix()
-
-matSim_Cx_AllGenes <- matSim_AllGenes[rownames(matSim_AllGenes) %in% structsHuman_Cx, colnames(matSim_AllGenes) %in% structsMouse_Cx]
-```
-
-```{r fig.width = 10, fig.height = 8}
-# matSim_Cx_MLP_norm <- matSim_Cx_MLP/max(matSim_Cx_MLP)
-clusteredHeatmap_MLP <- pheatmap(matSim_Cx_MLP, cluster_cols = T, cluster_rows  = T)
-```
-
-```{r fig.width = 10, fig.height = 8}
-# matSim_Cx_AllGenes_norm <- matSim_Cx_AllGenes/max(matSim_Cx_AllGenes)
-clusteredHeatmap_AllGenes <- pheatmap(matSim_Cx_AllGenes, cluster_cols = T, cluster_rows  = T)
-```
-
-```{r}
-computeWCSS <- function(x, hc_tree){
-  wcss_tot <- numeric(ncol(x))
-  for(k in 1:ncol(x)){
-    labs <- cutree(hc_tree, k = k)
-    wcss_k <- numeric(k)
-    for(c in 1:k){
-      x_clust <- as.matrix(x[,labs == c])
-      wcss_k[c] <- sum(colSums((x_clust - rowMeans(x_clust))^2))/ncol(x_clust)
-    }
-    wcss_tot[k] <- mean(wcss_k)
-  }
-  return(wcss_tot)
-}
-
-dfWCSS_Cols_MLP <- tibble(k = 1:ncol(matSim_Cx_MLP),
-                          wcss = computeWCSS(x = matSim_Cx_MLP, clusteredHeatmap_MLP$tree_col),
-                          data = "MLP",
-                          axis = "Mouse")
-dfWCSS_Cols_AllGenes <- tibble(k = 1:ncol(matSim_Cx_AllGenes),
-                               wcss = computeWCSS(x = matSim_Cx_AllGenes, clusteredHeatmap_AllGenes$tree_col),
-                               data = "AllGenes",
-                               axis = "Mouse")
-
-dfWCSS_Rows_MLP <- tibble(k = 1:nrow(matSim_Cx_MLP),
-                          wcss = computeWCSS(x = t(matSim_Cx_MLP), clusteredHeatmap_MLP$tree_row),
-                          data = "MLP",
-                          axis = "Human")
-dfWCSS_Rows_AllGenes <- tibble(k = 1:nrow(matSim_Cx_AllGenes),
-                               wcss = computeWCSS(x = t(matSim_Cx_AllGenes), clusteredHeatmap_AllGenes$tree_row),
-                               data = "AllGenes",
-                               axis = "Human")
-
-dfWCSS <- bind_rows(dfWCSS_Cols_MLP, dfWCSS_Cols_AllGenes, dfWCSS_Rows_AllGenes, dfWCSS_Rows_MLP)
-```
-
-```{r}
-ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) + 
-  geom_line() + 
-  geom_point() + 
-  # facet_grid(data~axis, scales = "free_y") + 
-  facet_wrap(~axis, nrow = 2, scales = "free_y") +
-  coord_cartesian(xlim = c(1, 10),
-                  ylim = c(0, 1)) + 
-  scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
-  scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
-  labs(y = "Within-cluster sum of squared distances",
-       col = "Data",
-       title = "Hierarchical clustering of cerebral correlation values",
-       caption = "Human: 40 clusters total; Mouse: 19 clusters total") + 
-  theme_bw() + 
-  theme(legend.position = "bottom")
-```
-
-```{r}
+```{r results3-supp-clustering-screeplot}
+#Normalized scree plot
 dfWCSS %>% 
   group_by(data, axis) %>% 
   mutate(wcss = wcss/max(wcss)) %>% 
   ungroup() %>% 
   ggplot(aes(x = k, y = wcss, col = data)) + 
-  geom_line() + 
+  geom_line(aes(linetype = axis)) + 
   geom_point() + 
-  # facet_grid(data~axis, scales = "free_y") + 
-  facet_wrap(~axis, nrow = 2) +
-  coord_cartesian(xlim = c(1, 14),
-                  ylim = c(0, 1)) + 
+  coord_cartesian(xlim = c(1, 10),
+                  ylim = c(0, 1)) +
   scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
-  scale_color_discrete(labels = c("Homologous genes", "Average latent space")) + 
-  labs(y = "Within-cluster sum of squared distances (normalized)",
-       col = "Data",
-       title = "Hierarchical clustering of cerebral correlation values",
-       caption = "Human: 40 clusters total; Mouse: 19 clusters total") + 
+  scale_color_manual(labels = c("Initial gene expression space", "Latent gene expression space"), 
+                     values = c("#B27700", "#00325C"),
+                     name = NULL) + 
+  scale_linetype_discrete(name = NULL) + 
+  labs(x = "Number of clusters",
+       y = "Within-cluster sum of squared distances") + 
   theme_bw() + 
   theme(legend.position = "bottom",
+        legend.direction = "vertical",
+        axis.title.y = element_text(size = 10),
         panel.grid.minor.x = element_blank())
 ```
 
 
-```{r}
+```{r results3-supp-clustering-overlap-human, fig.width = 10, fig.height = 5}
+library(mclustcomp)
+
+#Function to get cluster labels for different k
 getClusterLabels <- function(x, hc_tree){
   labels <- matrix(0, ncol = ncol(x), nrow = ncol(x))
   for(k in 1:ncol(x)){
@@ -1213,56 +1107,23 @@ getClusterLabels <- function(x, hc_tree){
   return(labels)
 }
 
-dfClustLabels_Cols_MLP <- getClusterLabels(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col) 
-dfClustLabels_Cols_AllGenes <- getClusterLabels(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_col) 
-dfClustLabels_Rows_MLP <- getClusterLabels(x = t(matSim_Cx_MLP), hc_tree = clusteredHeatmap_MLP$tree_row) 
-dfClustLabels_Rows_AllGenes <- getClusterLabels(x = t(matSim_Cx_AllGenes), hc_tree = clusteredHeatmap_AllGenes$tree_row) 
-```
+#Create data frames containing cluster labels for mouse and human regions for varying k
+dfClustLabels_Human_MLP <- getClusterLabels(x = t(matSim_Cx_MLP), hc_tree = clusteredHeatmap_MLP$tree_col) 
+dfClustLabels_Human_AllGenes <- getClusterLabels(x = t(matSim_Cx_AllGenes), hc_tree = clusteredHeatmap_AllGenes$tree_col) 
+dfClustLabels_Mouse_MLP <- getClusterLabels(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_row) 
+dfClustLabels_Mouse_AllGenes <- getClusterLabels(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_row) 
 
-```{r}
-library(mclustcomp)
-for(nk in 1:ncol(dfClustLabels_Cols_MLP)){
+#Create a matrix containing cluster overlap scores for human regions
+for(nk in 1:ncol(dfClustLabels_Human_MLP)){
   if (nk == 1){
-    metrics <- as.character(mclustcomp(x = dfClustLabels_Cols_MLP[,nk], y = dfClustLabels_Cols_AllGenes[,nk])$types)
-    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Cols_AllGenes),
-                           dimnames = list(metrics, colnames(dfClustLabels_Cols_AllGenes)))
+    metrics <- as.character(mclustcomp(x = dfClustLabels_Human_MLP[,nk], y = dfClustLabels_Human_AllGenes[,nk])$types)
+    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Human_AllGenes),
+                           dimnames = list(metrics, colnames(dfClustLabels_Human_AllGenes)))
   }
-  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Cols_MLP[,nk], y = dfClustLabels_Cols_AllGenes[,nk])$scores
-}
-```
-
-```{r fig.width = 10, fig.height = 5}
-dfClustComp <- matClustComp %>% 
-  as_tibble(rownames = "metric") %>% 
-  pivot_longer(cols = -metric, names_to = "nk", values_to = "score") %>% 
-  mutate(nk = as.numeric(str_remove(nk, "k")))
-
-dfClustComp %>% 
-  filter(metric %in% c("sdc", "jaccard")) %>% 
-  mutate(metric = ifelse(metric == "sdc", "dice", metric)) %>% 
-  ggplot(aes(x = nk, y = score, col = metric)) +
-  geom_line() + 
-  geom_point() + 
-  coord_cartesian(xlim = c(1, 19)) + 
-  scale_x_continuous(breaks = seq(1, 30, 1)) + 
-  labs(x = "Number of clusters",
-       y = "Metric score",
-       col = "Metric",
-       title = "Mouse cortical cluster overlap between homologous genes and average latent space") + 
-  theme_bw() + 
-  theme(panel.grid.minor.x = element_blank())
-```
-
-```{r fig.width = 10, fig.height = 5}
-for(nk in 1:ncol(dfClustLabels_Rows_MLP)){
-  if (nk == 1){
-    metrics <- as.character(mclustcomp(x = dfClustLabels_Rows_MLP[,nk], y = dfClustLabels_Rows_AllGenes[,nk])$types)
-    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Rows_AllGenes),
-                           dimnames = list(metrics, colnames(dfClustLabels_Rows_AllGenes)))
-  }
-  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Rows_MLP[,nk], y = dfClustLabels_Rows_AllGenes[,nk])$scores
+  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Human_MLP[,nk], y = dfClustLabels_Human_AllGenes[,nk])$scores
 }
 
+#Convert to data frame
 dfClustComp <- matClustComp %>% 
   as_tibble(rownames = "metric") %>% 
   pivot_longer(cols = -metric, names_to = "nk", values_to = "score") %>% 
@@ -1286,50 +1147,76 @@ dfClustComp %>%
   theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r fig.width = 10, fig.height = 8}
-clusterOrder_cols <- names(sort(dfClustLabels_Cols_MLP[,"k3"]))
-clusterOrder_rows <- names(sort(dfClustLabels_Rows_MLP[,"k3"]))
+```{r results3-supp-clustering-overlap-mouse, fig.width = 10, fig.height = 5}
+#Repeat the process for mouse regions
 
-matSim_Cx_MLP_ordered <- matSim_Cx_MLP[match(clusterOrder_rows, rownames(matSim_Cx_MLP)),
-                                       match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
+for(nk in 1:ncol(dfClustLabels_Mouse_MLP)){
+  if (nk == 1){
+    metrics <- as.character(mclustcomp(x = dfClustLabels_Mouse_MLP[,nk], y = dfClustLabels_Mouse_AllGenes[,nk])$types)
+    matClustComp <- matrix(0, nrow = length(metrics), ncol = ncol(dfClustLabels_Mouse_AllGenes),
+                           dimnames = list(metrics, colnames(dfClustLabels_Mouse_AllGenes)))
+  }
+  matClustComp[,nk] <- mclustcomp(x = dfClustLabels_Mouse_MLP[,nk], y = dfClustLabels_Mouse_AllGenes[,nk])$scores
+}
 
-dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Cols_MLP[,"k3"],
+dfClustComp <- matClustComp %>% 
+  as_tibble(rownames = "metric") %>% 
+  pivot_longer(cols = -metric, names_to = "nk", values_to = "score") %>% 
+  mutate(nk = as.numeric(str_remove(nk, "k")))
+
+dfClustComp %>% 
+  filter(metric %in% c("sdc", "jaccard")) %>% 
+  mutate(metric = ifelse(metric == "sdc", "dice", metric)) %>% 
+  ggplot(aes(x = nk, y = score, col = metric)) +
+  geom_line() + 
+  geom_point() + 
+  coord_cartesian(xlim = c(1, 19)) + 
+  scale_x_continuous(breaks = seq(1, 30, 1)) + 
+  labs(x = "Number of clusters",
+       y = "Metric score",
+       col = "Metric",
+       title = "Mouse cortical cluster overlap between homologous genes and average latent space") + 
+  theme_bw() + 
+  theme(panel.grid.minor.x = element_blank())
+```
+
+```{r results3-supp-clustering-overlap-heatmap, fig.width = 14, fig.height = 8}
+#Data frame to annotate mouse regions with cluster labels in initial and latent spaces
+dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Mouse_MLP[,"k3"],
                                          name = "MouseRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Cols_AllGenes[,"k3"],
+                                 enframe(dfClustLabels_Mouse_AllGenes[,"k3"],
                                          name = "MouseRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "MouseRegion") %>% 
+  mutate(Cluster_MLP = factor(Cluster_MLP),
+         Cluster_AllGenes = factor(Cluster_AllGenes)) %>% 
   column_to_rownames("MouseRegion")
-dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Rows_MLP[,"k3"],
+
+#Data frame to annotate human regions with cluster labels in initial and latent spaces
+dfAnnotationsHuman <- inner_join(enframe(dfClustLabels_Human_MLP[,"k3"],
                                          name = "HumanRegion",
                                          value = "Cluster_MLP"),
-                                 enframe(dfClustLabels_Rows_AllGenes[,"k3"],
+                                 enframe(dfClustLabels_Human_AllGenes[,"k3"],
                                          name = "HumanRegion",
                                          value = "Cluster_AllGenes"),
                                  by = "HumanRegion") %>% 
+  mutate(Cluster_MLP = factor(Cluster_MLP),
+         Cluster_AllGenes = factor(Cluster_AllGenes)) %>% 
   column_to_rownames("HumanRegion")
 
-pheatmap(matSim_Cx_MLP_ordered,
-         cluster_cols = T, cluster_rows = F,
-         annotation_col = dfAnnotationsMouse,
-         annotation_row = dfAnnotationsHuman)
+#Heatmap with cluster annotations
+pheatmap(t(matSim_Cx_MLP),
+         cluster_cols = T, cluster_rows = T,
+         annotation_col = dfAnnotationsHuman,
+         annotation_row = dfAnnotationsMouse)
 ```
-
-```{r fig.width = 10, fig.height = 8}
-pheatmap(matSim_Cx_MLP_ordered,
-         cluster_cols = T, cluster_rows = F,
-         annotation_col = select(dfAnnotationsMouse, -Cluster_AllGenes),
-         annotation_row = select(dfAnnotationsHuman, -Cluster_AllGenes),
-         annotation_legend = F, annotation_names_col = F, annotation_names_row = F,
-         legend = F)
-```
-
 
 
 What are the distances between the centroids of different clusters? 
 
-```{r}
+```{r results3-supp-clustering-clusterdist-mouse, fig.width = 10, fig.height = 5}
+#Function to compute cluster centroids
 computeClusterCentroids <- function(x, hc_tree, nk = 1){
   centroids <- matrix(0, nrow = nrow(x), ncol = nk,
                       dimnames = list(rownames(x), str_c("k", 1:nk)))
@@ -1340,28 +1227,7 @@ computeClusterCentroids <- function(x, hc_tree, nk = 1){
   return(centroids)
 }
 
-clusterCentroids_Mouse_MLP <- computeClusterCentroids(x = matSim_Cx_MLP, 
-                                                      hc_tree = clusteredHeatmap_MLP$tree_col,
-                                                      nk = 3)
-clusterCentroids_Mouse_AllGenes <- computeClusterCentroids(x = matSim_Cx_AllGenes,
-                                                           hc_tree = clusteredHeatmap_AllGenes$tree_col,
-                                                           nk = 3)
-clusterCentroids_Human_MLP <- computeClusterCentroids(x = t(matSim_Cx_MLP), 
-                                                      hc_tree = clusteredHeatmap_MLP$tree_row,
-                                                      nk = 3)
-clusterCentroids_Human_AllGenes <- computeClusterCentroids(x = t(matSim_Cx_AllGenes), 
-                                                      hc_tree = clusteredHeatmap_AllGenes$tree_row,
-                                                      nk = 3)
-
-
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/MetricTools.R")
-centroidDist_Mouse_MLP <- buildSimilarityMatrix(x1 = clusterCentroids_Mouse_MLP, x2 = clusterCentroids_Mouse_MLP, method = "euclidean")
-centroidDist_Mouse_AllGenes <- buildSimilarityMatrix(x1 = clusterCentroids_Mouse_AllGenes, x2 = clusterCentroids_Mouse_AllGenes, method = "euclidean")
-centroidDist_Human_MLP <- buildSimilarityMatrix(x1 = clusterCentroids_Human_MLP, x2 = clusterCentroids_Human_MLP, method = "euclidean")
-centroidDist_Human_AllGenes <- buildSimilarityMatrix(x1 = clusterCentroids_Human_AllGenes, x2 = clusterCentroids_Human_AllGenes, method = "euclidean")
-```
-
-```{r}
+#Function to compute distances between cluster centroids
 computeCentroidDistances <- function(x, hc_tree){
   df_centroids_dist <- tibble()
   for(nk in 2:ncol(x)){
@@ -1381,16 +1247,18 @@ computeCentroidDistances <- function(x, hc_tree){
   return(df_centroids_dist)
 }
 
-dfCentroidDist_Mouse_MLP <- computeCentroidDistances(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_col)
-dfCentroidDist_Mouse_AllGenes <- computeCentroidDistances(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_col)
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/MetricTools.R")
 
+#Compute cluster centroids for all k for mouse regions in initial gene space and latent space
+dfCentroidDist_Mouse_MLP <- computeCentroidDistances(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_row)
+dfCentroidDist_Mouse_AllGenes <- computeCentroidDistances(x = matSim_Cx_AllGenes, hc_tree = clusteredHeatmap_AllGenes$tree_row)
+
+#Bind distance data frames together
 dfCentroidDist_Mouse <- bind_rows(dfCentroidDist_Mouse_MLP %>% 
                                     mutate(Data = "MLP"),
                                   dfCentroidDist_Mouse_AllGenes %>% 
                                     mutate(Data = "AllGenes"))
-```
 
-```{r fig.width = 10, fig.height = 5}
 ggplot(dfCentroidDist_Mouse, aes(x = nk, y = dist, col = Data)) + 
   geom_jitter(width = 0.2,
               size = 1,
