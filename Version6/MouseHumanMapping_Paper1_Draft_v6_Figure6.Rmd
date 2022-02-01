@@ -567,8 +567,8 @@ for(j in 1:ncol(dfSimStriatumMean_HumanTargets)){
 #Paths and commands to resample to 50um
 outfiles_mean <- str_c("Figure6_ss_mean_", str_remove(names(listArrayHumanTargets_Mean_200um), " "), "_200um.mnc")
 outfiles_prop <- str_c("Figure6_ss_prop_", str_remove(names(listArrayHumanTargets_Prop_200um), " "), "_200um.mnc")
-outpaths_mean <- str_c(pathHome, "Draft/", "Version5/", outfiles_mean)
-outpaths_prop <- str_c(pathHome, "Draft/", "Version5/", outfiles_prop)
+outpaths_mean <- str_c(pathHome, "Draft/", "Version6/", outfiles_mean)
+outpaths_prop <- str_c(pathHome, "Draft/", "Version6/", outfiles_prop)
 anatomy50um <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um.mnc"
 newpaths_mean <- str_replace(outpaths_mean, "200um", "50um")
 newpaths_prop <- str_replace(outpaths_prop, "200um", "50um")
@@ -841,7 +841,7 @@ grid.draw(fig6_grob)
 ```
 
 ```{r fig6-export}
-fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure6.RData")
+fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure6.RData")
 save(fig6_grob,
      fig6_width,
      fig6_height,

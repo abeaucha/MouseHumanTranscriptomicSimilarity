@@ -182,7 +182,7 @@ grid.draw(sliceAMBALegend_grob)
 
 ```{r write}
 #Save the grob for the slice
-fileout <- str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData")
+fileout <- str_c(pathHome, "Draft/", "Version6/", "AMBALegendSlice.RData")
 save(sliceAMBALegend_grob,
      sliceAMBA_asp,
      file = fileout)

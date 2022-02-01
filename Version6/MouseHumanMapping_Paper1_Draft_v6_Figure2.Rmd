@@ -1157,7 +1157,7 @@ grid.draw(fig2_grob)
 
 ```{r results2-fig2-write}
 #Save figure 2 grob
-fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure2.RData")
+fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure2.RData")
 save(fig2_grob,
      fig2_width,
      fig2_height,

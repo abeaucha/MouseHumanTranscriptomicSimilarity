@@ -546,7 +546,7 @@ fig3_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 fig3_border_grob <- rectGrob(gp = gpar(fill = NA))
 
 #Import AMBA legend slice
-load(str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData"))
+load(str_c(pathHome, "Draft/", "Version6/", "AMBALegendSlice.RData"))
 
 #Width and height for the atlas legend slice
 sliceAMBA_width <- 0.9
@@ -571,7 +571,7 @@ grid.draw(fig3_grob)
 ```
 
 ```{r results2-fig3-write}
-fileout <- str_c(pathHome, "Draft/", "Version5/", "Figure3.RData")
+fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure3.RData")
 save(fig3_grob,
      fig3_width,
      fig3_height,
