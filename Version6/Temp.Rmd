@@ -5,6 +5,9 @@ date: "November 10, 2021"
 output: html_document
 ---
 
+
+This notebook looks at overall distributions of maximal correlation values over latent spaces for the mouse and human brain
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
