@@ -10,7 +10,7 @@
 #
 # Antoine Beauchamp
 # Created: August 20th, 2021
-# Edited: February 2nd, 2022
+# Edited: February 10th, 2022
 
 
 # Libraries -----------------------------------------------------------------------------
@@ -45,8 +45,8 @@ if (!(args[["verbose"]] %in% c("true","false"))){
 # Paths ---------------------------------------------------------------------------------
 
 #Set paths to AHBA directories
-pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/"
-pathData <- str_c(pathAHBA, "Data/MicroarrayData/")
+pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenHumanBrainAtlas/"
+pathData <- str_c(pathAHBA, "Data/microarray/")
 donorDirectories <- list.files(pathData)
 
 
