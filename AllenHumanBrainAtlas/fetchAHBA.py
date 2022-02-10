@@ -1,4 +1,4 @@
-# downloadMicroarrayData.py 
+# fetchAHBA.py 
 #
 # Download AHBA microarray data from the web API
 # 
@@ -9,6 +9,8 @@
 #Packages
 import os
 import abagen
+import requests
+import json
 
 #Directory to store the data
 data_dir = os.getcwd()+'/Data/microarray'
@@ -18,8 +20,12 @@ data_dir = os.getcwd()+'/Data/microarray'
 if not os.path.exists(data_dir):
     os.mkdir(data_dir)
 
+print('Fetching AHBA microarray data...')
+    
 #Download microarray data
 files = abagen.fetch_microarray(donors = 'all', data_dir = data_dir)
+
+print('Fetching AHBA hierarchical ontology...')
 
 #Download AHBA hierarchical ontology as JSON
 hierarchy_url = "http://api.brain-map.org/api/v2/structure_graph_download/10.json"
