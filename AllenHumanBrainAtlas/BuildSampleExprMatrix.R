@@ -84,11 +84,11 @@ listData <- processingPipeline(listImport,
 message("Writing to file...")
 
 #Write gene expression matrix
-exprfile <- str_c(pathAHBA, "Data/", "HumanExpressionMatrix_Samples_v", args[["version"]], ".csv")
+exprfile <- str_c(pathAHBA, "Data/", "HumanExpressionMatrix_Samples_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["GeneExpression"]],
           file = exprfile)
 
 #Write sample information
-samplefile <- str_c(pathAHBA, "Data/", "SampleInformation_v", args[["version"]], ".csv")
+samplefile <- str_c(pathAHBA, "Data/", "SampleInformation_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["SampleInfo"]],
           file = samplefile)

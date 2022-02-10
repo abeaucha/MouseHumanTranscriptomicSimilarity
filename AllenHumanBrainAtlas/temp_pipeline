@@ -1,0 +1,20 @@
+
+# Create Python virtual environment if needed
+if [ ! -d "AHBAEnv" ]
+then
+	echo "Initializing Python virtual environment..."
+	source initializeVirtualEnv
+fi
+
+# Download AHBA data from the web
+echo "Downloading AHBA data..."
+source activateVirtualEnv
+python3 fetchAHBA.py
+deactivate
+
+# Build sample expression matrix 
+echo "Building gene-by-sample expression matrix..."
+module load StdEnv
+Rscript BuildSampleExprMatrix.R --version 1 --verbose true
+
+# Build sample tree

@@ -1,10 +1,14 @@
 
+echo "Creating Python virtual environment..."
+
 #On MICe machines: Remove loaded modules
 #Comment out if unnecessary
 module purge
 
 #Create the virtual environment
 python3 -m venv AHBAEnv
+
+echo "Installing Python packages..."
 
 #Activate the virtual environment
 source AHBAEnv/bin/activate
