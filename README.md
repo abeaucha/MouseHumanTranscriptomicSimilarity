@@ -1,4 +1,4 @@
-# MouseHumanDescriptivePaper
+# Transcriptomic similarity in the mouse and human brain
 
 The body of the paper is in "MouseHumanMapping_Paper1_Draft_v\[0-9\].Rmd".
 
