@@ -9,4 +9,138 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+library(data.tree)
+```
+
+```{r}
+source("/projects/abeauchamp/Functions/TreeTools.R")
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+```
+
+
+```{r import}
+#Set path
+pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
+
+#Import data
+dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
+dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+
+#Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
+load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+
+#Import MICe data tree
+load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+treeMouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+#Remove white matter and ventricles
+pruneAnatTree(treeMouse, 
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Import AHBA data tree
+load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+treeHuman <- Clone(treeHumanExpr)
+rm(treeHumanExpr)
+
+#Fix human colour names (need to start with #)
+treeHuman$Do(function(node){
+  node$color_hex_triplet <- str_c("#", node$color_hex_triplet)
+})
+
+#Remove white matter and ventricles
+pruneAnatTree(treeHuman,
+              nodes = c("white matter", "sulci & spaces"),
+              method = "AtNode")
+```
+
+```{r}
+#Extract labels from data frames
+dfLabelsMouse <- dfExprMouse %>% 
+  select(contains("Region")) %>% 
+  mutate(VoxelID = str_c("V", 1:nrow(.)))
+dfLabelsHuman <- dfExprHuman %>% 
+  select(contains("Region")) %>% 
+  mutate(SampleID = str_c("S", 1:nrow(.)))
+```
+
+```{r}
+#Path to MLP files
+pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes")
+
+structPFC <- c("cingulate gyrus, frontal part",
+               "subcallosal cingulate gyrus",
+               "superior frontal gyrus",
+               "frontal pole")
+
+runSimMat <- TRUE
+if(runSimMat){
+  
+  filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseVoxelTx", full.names = T)
+  filesMLP_Human <- list.files(pathMLP, pattern = "HumanVoxelTx", full.names = T)
+  
+  computeSimilarityMatrix <- function(mouse, human){
+    
+    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+      select(-Region) %>% 
+      mutate(SampleID = str_c("S", 1:nrow(.))) %>% 
+      inner_join(dfLabelsHuman %>% 
+                   select(SampleID, Region166),
+                 by = "SampleID") %>% 
+      select(-SampleID) %>%
+      rename(Region = Region166) %>% 
+      filter(Region %in% structPFC) %>% 
+      group_by(Region) %>% 
+      summarise_all(mean) %>% 
+      ungroup() %>% 
+      column_to_rownames("Region") %>% 
+      as.matrix() %>% 
+      t()
+    
+    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+      select(-Region) %>% 
+      mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
+      inner_join(dfLabelsMouse %>% 
+                   select(VoxelID, Region11, Region67),
+                 by = "VoxelID") %>% 
+      filter(Region11 == "Isocortex") %>% 
+      rename(Region = Region67) %>% 
+      select(-VoxelID, -Region11) %>% 
+      group_by(Region) %>% 
+      summarise_all(mean) %>% 
+      ungroup() %>% 
+      column_to_rownames("Region") %>% 
+      as.matrix() %>% 
+      t()
+    
+    matSim <- buildSimilarityMatrix(x1 = matHuman,
+                                    x2 = matMouse,
+                                    method = "correlation")
+    
+    return(matSim)
+    
+  }
+  
+  ti <- Sys.time()
+  listSimCortex <- map2(.x = filesMLP_Mouse,
+                        .y = filesMLP_Human,
+                        .f = computeSimilarityMatrix)
+  names(listSimCortex) <- str_c("MLP", 1:length(listSimCortex))
+  
+  save(listSimCortex,
+       file = str_c(pathHome, "Data/", "CortexSimilarityMatrices.RData"))
+  
+  tf <- Sys.time()  
+  
+  print(tf-ti)
+} else {
+  load(str_c(pathHome, "Data/", "CortexSimilarityMatrices.RData"))
+}
+```
+
+
+
 
