@@ -76,7 +76,8 @@ structPFC <- c("cingulate gyrus, frontal part",
                "superior frontal gyrus",
                "frontal pole")
 
-runSimMat <- TRUE
+#Takes about 30 minutes to run
+runSimMat <- FALSE
 if(runSimMat){
   
   filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseVoxelTx", full.names = T)
@@ -139,6 +140,153 @@ if(runSimMat){
 } else {
   load(str_c(pathHome, "Data/", "CortexSimilarityMatrices.RData"))
 }
+```
+
+
+```{r}
+#' Compute scaled similarity profiles for every column in a similarity matrix
+#'
+#' @param similarity A similarity matrix
+#' @param scale A logical value indicating whether to scale the similarity profiles
+#'
+#' @return A tibble containing the scaled similarity profiles
+computeSimilarityProfiles <- function(similarity, scale = FALSE){
+  
+  profiles <- tibble()
+  for(seed in colnames(similarity)){
+    temp <- similarity[, seed] %>% 
+      enframe(name = "Target",
+              value = "Similarity") 
+    
+    if(scale){
+      temp <- temp %>% 
+        mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+    }
+    
+    temp <- temp %>% 
+      mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
+             Seed = seed)
+    profiles <- bind_rows(profiles, temp)
+  }
+  return(profiles)
+}
+
+dfSimilarityProfiles <- map(.x = listSimCortex,
+                            .f = t) %>% 
+  map_dfr(.f = computeSimilarityProfiles,
+          .id = "Data")
+```
+
+```{r}
+head(dfSimilarityProfiles)
+```
+
+```{r}
+structsHuman_Cx_agranular <- c("cingulate gyrus, frontal part",
+                               "subcallosal cingulate gyrus")
+structsHuman_Cx_granular <- structPFC[!(structPFC %in% structsHuman_Cx_agranular)]
+
+```
+
+```{r}
+dfSimilarityProfiles_PFC_MaxSim <- dfSimilarityProfiles %>% 
+  group_by(Data, Seed) %>% 
+  filter(Similarity == max(Similarity)) %>% 
+  ungroup()
+
+dfSimilarityProfiles_PFC_MaxSim_Summary <- dfSimilarityProfiles_PFC_MaxSim %>% 
+  group_by(Seed) %>% 
+  summarise(SimilarityMean = mean(Similarity),
+            SimilaritySdLower = SimilarityMean - 2*sd(Similarity),
+            SimilaritySdUpper = SimilarityMean + 2*sd(Similarity)) %>% 
+  ungroup() %>% 
+  mutate(Seed = factor(Seed, levels = Seed[order(SimilarityMean)]),
+         CortexType = ifelse(Seed %in% structsHuman_Cx_agranular, "Agranular", "Granular"))
+
+ggplot(dfSimilarityProfiles_PFC_MaxSim_Summary,
+       aes(x = Seed,
+           y = SimilarityMean,
+           ymin = SimilaritySdLower,
+           ymax = SimilaritySdUpper,
+           col = CortexType)) + 
+  geom_pointrange(size = 0.3) + 
+  coord_flip() + 
+  labs(x = "Human prefrontal cortical regions",
+       y = "Maximal correlation",
+       col = "Type of cortex") + 
+  theme_bw()
+```
+
+```{r}
+dfSimilarityProfiles_PFC_MaxSim_Compare <- dfSimilarityProfiles_PFC_MaxSim %>% 
+  mutate(CortexType = ifelse(Seed %in% structsHuman_Cx_agranular, "Agranular", "Granular")) %>% 
+  group_by(Data, CortexType) %>% 
+  summarise(SimilarityMean = mean(Similarity)) %>% 
+  ungroup()
+
+ggplot(dfSimilarityProfiles_PFC_MaxSim_Compare, aes(x = CortexType, y = SimilarityMean, col = CortexType)) + 
+  geom_line(aes(group = Data),
+            col = "grey70",
+            size = 0.5,
+            alpha = 0.05) + 
+  geom_boxplot(outlier.size = 0.5,
+               alpha = 0.6) + 
+  labs(x = "Type of cortex",
+       y = "Average maximal correlation") + 
+  theme_bw()
+```
+
+```{r}
+library(lme4)
+modelCx <- lmer(SimilarityMean ~ CortexType + (1|Data), data = dfSimilarityProfiles_PFC_MaxSim_Compare)
+summary(modelCx)
+```
+
+
+
+
+```{r}
+matSim_MLP <- dfSimilarityProfiles %>% 
+  group_by(Seed, Target) %>% 
+  summarise(SimilarityMean = mean(Similarity)) %>% 
+  ungroup() %>% 
+  pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
+  column_to_rownames("Target") %>% 
+  as.matrix()
+
+mouseOrder <- c("Infralimbic area",
+                "Perirhinal area",
+                "Agranular insular area",
+                "Ectorhinal area",
+                "Orbital area",
+                "Prelimbic area",
+                "Frontal pole, cerebral cortex",
+                "Temporal association areas",
+                "Retrosplenial area",
+                "Primary somatosensory area",
+                "Posterior parietal association areas",
+                "Visual areas",
+                "Dorsal auditory area",
+                "Primary motor area",
+                "Supplemental somatosensory area",
+                "Ventral auditory area",
+                "Anterior cingulate area",
+                "Primary auditory area",
+                "Secondary motor area")
+
+matSim_MLP <- matSim_MLP[match(mouseOrder, rownames(matSim_MLP)),] 
+
+library(viridis)
+heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35)
+
+```
+
+```{r fig.height = 8, fig.width = 6}
+library(pheatmap)
+pheatmap(matSim_MLP,
+         cluster_rows = F,
+         color = heatmapPalette,
+         legend = T)
 ```
 
 

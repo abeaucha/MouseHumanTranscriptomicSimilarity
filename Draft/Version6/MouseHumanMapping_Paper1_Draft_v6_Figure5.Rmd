@@ -371,6 +371,8 @@ dfAnnotations <- dfSimilarityProfiles_Cx %>%
 clusterOrder_cols <- names(sort(clusterLabels_Mouse_4))
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[,match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 ```
+
+
 ```{r results3-fig5-panelC-heatmap-base}
 #Palette for heatmap fill
 heatmapPalette <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
