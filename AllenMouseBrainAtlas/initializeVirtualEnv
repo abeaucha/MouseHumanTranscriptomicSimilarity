@@ -6,7 +6,7 @@ echo "Creating Python virtual environment..."
 module purge
 
 #Create the virtual environment
-python3 -m venv AHBAEnv
+python3 -m venv AMBAEnv
 
 echo "Installing Python packages..."
 

@@ -44,3 +44,4 @@ AllenHumanBrainAtlas/.ipynb_checkpoints
 AllenHumanBrainAtlas/AtlasMappings/
 AllenHumanBrainAtlas/Data/HumanExpressionMatrix_Samples_pipeline_v1.csv
 AllenHumanBrainAtlas/Data/SampleInformation_pipeline_v1.csv
+AllenMouseBrainAtlas/AMBAEnv/
