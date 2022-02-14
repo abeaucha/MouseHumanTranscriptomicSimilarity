@@ -11,7 +11,7 @@ python3 -m venv AHBAEnv
 echo "Installing Python packages..."
 
 #Activate the virtual environment
-source AHBAEnv/bin/activate
+source AMBAEnv/bin/activate
 
 #Installed necessary python packages
 pip3 install -r PythonRequirements.txt
