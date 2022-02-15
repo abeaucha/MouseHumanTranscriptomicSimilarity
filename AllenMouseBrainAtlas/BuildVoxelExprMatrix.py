@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-
 # BuildVoxelExprMatrix.py --------------------------------------------
 #
 #
 #
 # Antoine Beauchamp
 # Created: June 19th, 2020
-# Edited: August 23rd, 2021
+# Edited: February 15th, 2022
 # --------------------------------------------------------------------
 
 # Packages -----------------------------------------------------------
@@ -92,7 +90,7 @@ def main():
         
     
     #Paths
-    pathAMBA = "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/"
+    pathAMBA = "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenMouseBrainAtlas/
     
     #If dataset is sagittal, use only those genes that are also in the coronal set
     if dataset == "sagittal":
