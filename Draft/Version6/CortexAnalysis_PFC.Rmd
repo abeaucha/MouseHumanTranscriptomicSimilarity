@@ -306,6 +306,62 @@ pheatmap(matSim_MLP,
          color = heatmapPalette,
          legend = T)
 ```
+```{r fig.height = 3, fig.width = 3}
+nMLP <- length(listSimCortex)
+
+temp <- dfSimilarityProfiles %>% 
+  filter(Seed %in% structsHuman_PFC) %>% 
+  group_by(Data, Seed) %>% 
+  mutate(IsMaximal = ifelse(Similarity == max(Similarity), 1, 0)) %>% 
+  group_by(Seed, Target) %>% 
+  summarise(prop = sum(IsMaximal)/nMLP) %>% 
+  ungroup() %>% 
+  rename(Human = Seed,
+         Mouse = Target)
+
+temp <- temp %>% 
+  mutate(Mouse = factor(Mouse, levels = rev(mouseOrder)),
+         Human = factor(Human, levels = structsHuman_PFC))
+
+ggplot(temp, aes(x = Human, y = Mouse, fill = prop)) + 
+  geom_tile(col = "grey50") + 
+  scale_x_discrete(expand = expansion()) + 
+  scale_y_discrete(expand = expansion()) + 
+  scale_fill_gradient(low = "white", high = "black") + 
+  labs(x = "Human region",
+       y = "Mouse region",
+       fill = "Proportion of\nlatent spaces") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
+```{r fig.width = 6, fig.height = 3}
+matSim_MLP <- dfSimilarityProfiles %>% 
+  group_by(Seed, Target) %>% 
+  summarise(SimilarityMean = mean(Similarity)) %>% 
+  ungroup() %>% 
+  pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
+  column_to_rownames("Target") %>% 
+  as.matrix()
+
+pheatmap(matSim_MLP,
+         color = heatmapPalette,
+         cutree_rows = 4,
+         cutree_cols = 5)
+```
+```{r}
+dfLabelsHuman %>% 
+  filter(Region16 %in% structsHuman_Cx_16) %>% 
+  select(Region88, Region166) %>% 
+  distinct() %>% 
+  group_by(Region88) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  arrange(Region88)
+```
+
+
 
 ```{r}
 source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
