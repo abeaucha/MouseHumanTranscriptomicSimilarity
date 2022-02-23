@@ -74,7 +74,7 @@ pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes")
 structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
 
 #Takes about 30 minutes to run
-runSimMat <- TRUE
+runSimMat <- FALSE
 if(runSimMat){
   
   filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseVoxelTx", full.names = T)
@@ -229,7 +229,7 @@ ggplot(dfSimilarityProfiles_PFC_MaxSim_Summary,
 
 ```{r}
 dfSimilarityProfiles_PFC_MaxSim_Compare <- dfSimilarityProfiles_PFC_MaxSim %>% 
-  mutate(CortexType = ifelse(Seed %in% structsHuman_Cx_agranular, "Agranular", "Granular")) %>% 
+  mutate(CortexType = ifelse(Seed %in% structsHuman_PFC_agranular, "Agranular", "Granular")) %>% 
   group_by(Data, CortexType) %>% 
   summarise(SimilarityMean = mean(Similarity)) %>% 
   ungroup()
@@ -306,7 +306,204 @@ pheatmap(matSim_MLP,
          color = heatmapPalette,
          legend = T)
 ```
+```{r fig.height = 3, fig.width = 3}
+nMLP <- length(listSimCortex)
+
+temp <- dfSimilarityProfiles %>% 
+  filter(Seed %in% structsHuman_PFC) %>% 
+  group_by(Data, Seed) %>% 
+  mutate(IsMaximal = ifelse(Similarity == max(Similarity), 1, 0)) %>% 
+  group_by(Seed, Target) %>% 
+  summarise(prop = sum(IsMaximal)/nMLP) %>% 
+  ungroup() %>% 
+  rename(Human = Seed,
+         Mouse = Target)
+
+temp <- temp %>% 
+  mutate(Mouse = factor(Mouse, levels = rev(mouseOrder)),
+         Human = factor(Human, levels = structsHuman_PFC))
+
+ggplot(temp, aes(x = Human, y = Mouse, fill = prop)) + 
+  geom_tile(col = "grey50") + 
+  scale_x_discrete(expand = expansion()) + 
+  scale_y_discrete(expand = expansion()) + 
+  scale_fill_gradient(low = "white", high = "black") + 
+  labs(x = "Human region",
+       y = "Mouse region",
+       fill = "Proportion of\nlatent spaces") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
+```{r fig.width = 6, fig.height = 3}
+matSim_MLP <- dfSimilarityProfiles %>% 
+  group_by(Seed, Target) %>% 
+  summarise(SimilarityMean = mean(Similarity)) %>% 
+  ungroup() %>% 
+  pivot_wider(id_cols = Target, names_from = Seed, values_from = SimilarityMean) %>% 
+  column_to_rownames("Target") %>% 
+  as.matrix()
+
+pheatmap(matSim_MLP,
+         color = heatmapPalette,
+         cutree_rows = 4,
+         cutree_cols = 5)
+```
+```{r}
+dfLabelsHuman %>% 
+  filter(Region16 %in% structsHuman_Cx_16) %>% 
+  select(Region88, Region166) %>% 
+  distinct() %>% 
+  group_by(Region88) %>% 
+  filter(n() > 1) %>% 
+  ungroup() %>% 
+  arrange(Region88)
+```
 
 
 
+```{r}
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
 
+#Normalize mouse data
+dfExprMouse_scaled <- dfExprMouse %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsMouse)
+
+#Normalize human data
+dfExprHuman_scaled <- dfExprHuman %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsHuman)
+
+genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), "Region|VoxelID")]
+```
+
+
+```{r}
+matHumanExpr <- dfExprHuman_scaled %>% 
+  filter(Region16 %in% structsHuman_Cx_16,
+             !(Region88 %in% c("claustrum", "dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field", "subiculum"))) %>%
+  select(all_of(genes),
+         Region = Region166) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+matMouseExpr <- dfExprMouse_scaled %>% 
+  filter(Region11 == "Isocortex") %>% 
+  select(all_of(genes),
+         Region = Region67) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+matSim_AllGenes <- buildSimilarityMatrix(x1 = matHumanExpr,
+                                         x2 = matMouseExpr,
+                                         method = "correlation") %>% 
+  t()
+
+matSim_AllGenes <- matSim_AllGenes[match(mouseOrder, rownames(matSim_AllGenes)),] 
+
+
+```
+
+
+```{r}
+dfSim_AllGenes <- matSim_AllGenes %>% 
+  as_tibble(rownames = "MouseRegion") %>% 
+  pivot_longer(cols = -MouseRegion, names_to = "HumanRegion", values_to = "Correlation")
+
+dfSim_AllGenes_MaxSim <- dfSim_AllGenes %>% 
+  group_by(HumanRegion) %>% 
+  filter(Correlation == max(Correlation)) %>% 
+  ungroup() %>% 
+  select(HumanRegion, MouseRegion, Correlation) %>% 
+  arrange(desc(Correlation))
+```
+
+```{r fig.height = 3, fig.width = 4}
+dfSim_AllGenes_MaxSim %>% 
+  mutate(HumanRegion = factor(HumanRegion, levels = HumanRegion[order(Correlation)]),
+         CortexType = case_when(HumanRegion %in% structsHuman_PFC_agranular ~ "Agranular",
+                                HumanRegion %in% structsHuman_PFC_granular ~ "Granular",
+                                !(HumanRegion %in% structsHuman_PFC) ~ "Other")) %>% 
+  ggplot(aes(x = HumanRegion, y = Correlation, col = CortexType)) + 
+  geom_segment(aes(xend = HumanRegion,
+                   yend = 0)) + 
+  geom_point() + 
+  coord_flip() + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + 
+  scale_color_manual(labels = c("Agranular", "Granular", "Not annotated"),
+                     values = c(RColorBrewer::brewer.pal(3, name = "Set1")[1:2], "grey70")) + 
+  theme_bw()
+```
+
+```{r fig.height = 3, fig.width = 3}
+temp <- dfSim_AllGenes %>% 
+  group_by(HumanRegion) %>% 
+  mutate(IsMaximal = ifelse(Correlation == max(Correlation), TRUE, FALSE)) %>% 
+  ungroup() %>% 
+  filter(HumanRegion %in% structsHuman_PFC) %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = rev(mouseOrder)),
+         HumanRegion = factor(HumanRegion, levels = structsHuman_PFC),
+         IsMaximalLabel = ifelse(IsMaximal == TRUE, "*", ""))
+
+ggplot(temp, aes(x = HumanRegion, y = MouseRegion, fill = Correlation)) + 
+  geom_tile(col = "grey50") + 
+  geom_text(aes(label = IsMaximalLabel),
+            size = 6, nudge_y = -0.3) + 
+  scale_x_discrete(expand = expansion(mult = 0)) + 
+  scale_y_discrete(expand = expansion(mult = 0)) + 
+  scale_fill_viridis_c(option = "magma", begin = 0.35) + 
+  labs(x = "Human region",
+       y = "Mouse region") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+```{r fig.width = 6, fig.height = 3}
+p <- pheatmap(matSim_AllGenes,
+         color = heatmapPalette,
+         cutree_rows = 4,
+         cutree_cols = 4)
+```
+
+```{r fig.height = 3, fig.width = 8}
+humanOrder <- p$tree_col$labels[p$tree_col$order]
+mouseOrder <- p$tree_row$labels[p$tree_row$order]
+
+temp <- dfSim_AllGenes %>% 
+  group_by(HumanRegion) %>% 
+  mutate(IsMaximal = ifelse(Correlation == max(Correlation), TRUE, FALSE)) %>% 
+  ungroup() %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = rev(mouseOrder)),
+         HumanRegion = factor(HumanRegion, levels = humanOrder),
+         IsMaximalLabel = ifelse(IsMaximal == TRUE, "*", ""))
+
+ggplot(temp, aes(x = HumanRegion, y = MouseRegion, fill = Correlation)) + 
+  geom_tile(col = "grey50") + 
+  geom_text(aes(label = IsMaximalLabel),
+            size = 6, nudge_y = -0.3) + 
+  scale_x_discrete(expand = expansion(mult = 0)) + 
+  scale_y_discrete(expand = expansion(mult = 0)) + 
+  scale_fill_viridis_c(option = "magma", begin = 0.35) + 
+  labs(x = "Human region",
+       y = "Mouse region") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```

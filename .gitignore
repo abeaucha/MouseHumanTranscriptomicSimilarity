@@ -46,4 +46,8 @@ AllenHumanBrainAtlas/Data/HumanExpressionMatrix_Samples_pipeline_v1.csv
 AllenHumanBrainAtlas/Data/SampleInformation_pipeline_v1.csv
 AllenMouseBrainAtlas/AMBAEnv/
 AllenMouseBrainAtlas/ResampleDSURQE_to_Allen
+<<<<<<< HEAD
 Draft/Version6/.DS_Store
+=======
+AllenMouseBrainAtlas/.ipynb_checkpoints/
+>>>>>>> 61f1b48cc491e2effa99fcdbf90742e892087570
