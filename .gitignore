@@ -47,3 +47,6 @@ AllenHumanBrainAtlas/Data/SampleInformation_pipeline_v1.csv
 AllenMouseBrainAtlas/AMBAEnv/
 AllenMouseBrainAtlas/ResampleDSURQE_to_Allen
 AllenMouseBrainAtlas/.ipynb_checkpoints/
+AllenMouseBrainAtlas/Data/AMBA_metadata_coronal.csv
+AllenMouseBrainAtlas/Data/AMBA_metadata_sagittal.csv
+AllenMouseBrainAtlas/Data/Expression/
