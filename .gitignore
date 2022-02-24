@@ -50,3 +50,4 @@ AllenMouseBrainAtlas/.ipynb_checkpoints/
 AllenMouseBrainAtlas/Data/AMBA_metadata_coronal.csv
 AllenMouseBrainAtlas/Data/AMBA_metadata_sagittal.csv
 AllenMouseBrainAtlas/Data/Expression/
+AllenMouseBrainAtlas/.envrc
