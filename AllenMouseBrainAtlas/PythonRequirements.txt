@@ -4,3 +4,4 @@ sklearn
 pandas
 jupyter
 requests
+pyminc
