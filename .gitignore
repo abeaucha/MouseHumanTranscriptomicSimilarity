@@ -52,3 +52,5 @@ AllenMouseBrainAtlas/Data/AMBA_metadata_sagittal.csv
 AllenMouseBrainAtlas/Data/Expression/
 AllenMouseBrainAtlas/.envrc
 AllenMouseBrainAtlas/amba_env/
+AllenMouseBrainAtlas/data/expression/coronal/
+AllenMouseBrainAtlas/data/expression/sagittal/
