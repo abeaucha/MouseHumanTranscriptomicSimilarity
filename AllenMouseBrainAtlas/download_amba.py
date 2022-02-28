@@ -32,14 +32,19 @@ def parse_args():
 
 
 
-def fetch_metadata(dataset = 'coronal', outdir='./'):
+def fetch_metadata(dataset = 'coronal', outdir='./', outfile = None):
 
     """ """
 
-    metadata_file = outdir+'AMBA_metadata_{}.csv'.format(dataset)
+    if outfile is None:
+        outfile = 'AMBA_metadata_{}.csv'.format(dataset)
+        outfile = outdir+outfile
+    else:
+        outfile = outdir+outfile
+            
 
-    if os.path.isfile(metadata_file):
-        metadata = pd.read_csv(metadata_file, index_col = None)
+    if os.path.isfile(outfile):
+        metadata = pd.read_csv(outfile, index_col = None)
     else:
         abi_query_metadata = "http://api.brain-map.org/api/v2/data/SectionDataSet/query.csv?"+\
 "criteria=[failed$eqfalse],plane_of_section[name$eq{}],products[abbreviation$eqMouse],treatments[name$eqISH],genes&".format(dataset)+\
@@ -49,9 +54,9 @@ def fetch_metadata(dataset = 'coronal', outdir='./'):
 "start_row=0&num_rows=all"
 
         metadata = pd.read_csv(abi_query_metadata)
-        metadata.to_csv(metadata_file, index=False)
+        metadata.to_csv(outfile, index=False)
 
-    return metadata
+    return metadata, outfile
 
 
 
@@ -71,12 +76,17 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
         file.write(amba_request.content)
 
     with ZipFile(tmpfile, 'r') as file:
-        file.extract('energy.raw', path = outdir)
-
-    os.rename(outdir+'energy.raw', outdir+str(experiment_id)+'.raw')
+        try:
+            file.extract('energy.raw', path = outdir)
+            os.rename(outdir+'energy.raw', outdir+str(experiment_id)+'.raw')
+            success = 1
+        except KeyError as err:
+            print('Error for experiment {}: {}'.format(experiment_id, err))
+            success = 0
+            
     os.remove(tmpfile)
-
-    return
+ 
+    return success
 
 
 def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
@@ -181,45 +191,52 @@ def main():
     dataset = args['dataset']
     datadir = args['datadir']
 
-
-    dfMetadata = fetch_metadata(dataset = dataset, 
-                                outdir = datadir)
+    dfMetadata, metadatafile = fetch_metadata(dataset = dataset, 
+                                              outdir = datadir)
+    
+    print(metadatafile)
+    
+    dfMetadata['success'] = 0
 
     dfTemp = dfMetadata.loc[:5]
-    for i, row in dfTemp.iterrows():
+    for index, row in dfTemp.iterrows():
 
         experiment_id = row['experiment_id']
 
         outdir = datadir+'{}/'.format(dataset)
-        fetch_expression(experiment_id = experiment_id, 
-                         outdir = outdir)
+        success = fetch_expression(experiment_id = experiment_id, 
+                                   outdir = outdir)
 
         
-        infile = outdir+'{}.raw'.format(experiment_id)
-        outfile = outdir+'{}_tmp.mnc'.format(experiment_id)
+        if bool(success):
+            
+            dfMetadata.loc[index,'success'] = 1
+        
+            infile = outdir+'{}.raw'.format(experiment_id)
+            outfile = outdir+'{}_tmp.mnc'.format(experiment_id)
 
-        cmd = 'cat {} | rawtominc {} -signed -float -ounsigned -oshort -xstep 0.2 -ystep 0.2 -zstep 0.2 -clobber 58 41 67'.format(infile, outfile)
+            cmd = 'cat {} | rawtominc {} -signed -float -ounsigned -oshort -xstep 0.2 -ystep 0.2 -zstep 0.2 -clobber 58 41 67'.format(infile, outfile)
 
-        os.system(cmd)
-        os.remove(infile)
+            os.system(cmd)
+            os.remove(infile)
 
-        infile = outfile
-        outfile = outdir+'{}_tmp2.mnc'.format(experiment_id)
-        transform_space(infile = infile,
-                        outfile = outfile,
-                        voxel_orientation = 'RAS',
-                        world_space = 'MICe',
-                        expansion_factor = 1.0)
-        os.remove(infile)
+            infile = outfile
+            outfile = outdir+'{}_tmp2.mnc'.format(experiment_id)
+            transform_space(infile = infile,
+                            outfile = outfile,
+                            voxel_orientation = 'RAS',
+                            world_space = 'MICe',
+                            expansion_factor = 1.0)
+            os.remove(infile)
+    
+    
+            gene_id = row['gene']
+    
+            infile = outfile
+            outfile = outdir+'{}_{}.mnc'.format(gene_id, experiment_id)
+            os.rename(infile, outfile)
 
-
-        gene_id = row['gene']
-
-        infile = outfile
-        outfile = outdir+'{}_{}.mnc'.format(gene_id, experiment_id)
-        os.rename(infile, outfile)
-
-
+    dfMetadata.to_csv(metadatafile)
 
 
 if __name__ == '__main__':
