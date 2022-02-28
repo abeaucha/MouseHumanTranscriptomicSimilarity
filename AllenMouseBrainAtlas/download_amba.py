@@ -194,7 +194,6 @@ def main():
     dfMetadata, metadatafile = fetch_metadata(dataset = dataset, 
                                               outdir = datadir)
     
-    print(metadatafile)
     
     dfMetadata['success'] = 0
 
