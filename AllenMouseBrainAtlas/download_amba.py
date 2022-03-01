@@ -5,6 +5,8 @@ import pandas as pd
 import requests
 from pyminc.volumes.factory import *
 from zipfile import ZipFile
+from multiprocessing import Pool
+from functools import partial
 
 
 def parse_args():
@@ -25,39 +27,35 @@ def parse_args():
         default = 'data/expression/',
         help = 'Path to directory in which to download the data'
     )
+    
+    parser.add_argument(
+        '--metadata',
+        type = str,
+        default = 'AMBA_metadata.csv',
+        help = 'File containing AMBA metadata'
+    )
 
     args = vars(parser.parse_args())
 
     return args
 
 
+def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.csv'):
 
-def fetch_metadata(dataset = 'coronal', outdir='./', outfile = None):
+    """ """        
 
-    """ """
-
-    if outfile is None:
-        outfile = 'AMBA_metadata_{}.csv'.format(dataset)
-        outfile = outdir+outfile
-    else:
-        outfile = outdir+outfile
-            
-
-    if os.path.isfile(outfile):
-        metadata = pd.read_csv(outfile, index_col = None)
-    else:
-        abi_query_metadata = "http://api.brain-map.org/api/v2/data/SectionDataSet/query.csv?"+\
+    abi_query_metadata = "http://api.brain-map.org/api/v2/data/SectionDataSet/query.csv?"+\
 "criteria=[failed$eqfalse],plane_of_section[name$eq{}],products[abbreviation$eqMouse],treatments[name$eqISH],genes&".format(dataset)+\
 "tabular=data_sets.id+as+experiment_id,data_sets.section_thickness,data_sets.specimen_id,"+\
 "plane_of_sections.name+as+plane,"+\
 "genes.acronym+as+gene,genes.name+as+gene_name,genes.chromosome_id,genes.entrez_id,genes.genomic_reference_update_id,genes.homologene_id,genes.organism_id&"+\
 "start_row=0&num_rows=all"
 
-        metadata = pd.read_csv(abi_query_metadata)
-        metadata.to_csv(outfile, index=False)
+    pd.read_csv(abi_query_metadata).to_csv(outdir+outfile, index=False)
 
-    return metadata, outfile
-
+    print('Metadata downloaded at: {}'.format(outdir+outfile))
+    
+    return 
 
 
 def fetch_expression(experiment_id, outdir = './tmp/'):
@@ -182,34 +180,23 @@ def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'M
     outvol.writeFile()
     outvol.closeVolume()
 
-
     
-def main():
-
-    args = parse_args()
-
-    dataset = args['dataset']
-    datadir = args['datadir']
-
-    dfMetadata, metadatafile = fetch_metadata(dataset = dataset, 
-                                              outdir = datadir)
+def download_data(metadata, outdir):
     
+    """ """
     
-    dfMetadata['success'] = 0
-
-    dfTemp = dfMetadata.loc[:5]
-    for index, row in dfTemp.iterrows():
-
+    metadata['success'] = 0
+    
+    for index, row in metadata.iterrows():
+        
         experiment_id = row['experiment_id']
-
-        outdir = datadir+'{}/'.format(dataset)
+        
         success = fetch_expression(experiment_id = experiment_id, 
                                    outdir = outdir)
-
         
         if bool(success):
             
-            dfMetadata.loc[index,'success'] = 1
+            metadata.loc[index,'success'] = 1
         
             infile = outdir+'{}.raw'.format(experiment_id)
             outfile = outdir+'{}_tmp.mnc'.format(experiment_id)
@@ -234,8 +221,56 @@ def main():
             infile = outfile
             outfile = outdir+'{}_{}.mnc'.format(gene_id, experiment_id)
             os.rename(infile, outfile)
+            
+    return metadata
 
-    dfMetadata.to_csv(metadatafile)
+
+    
+def main():
+
+    args = parse_args()
+
+    dataset = args['dataset']
+    datadir = args['datadir']
+    metadata = args['metadata']
+    
+    if os.path.isfile(datadir+metadata) == False:
+        print('AMBA metadata file {} not found in {}. Fetching from API.'.format(metadata,datadir))
+        fetch_metadata(dataset = dataset,
+                       outdir = datadir,
+                       outfile = metadata)
+
+    dfMetadata = pd.read_csv(datadir+metadata, index_col=None)
+    
+
+    dfTemp = dfMetadata.loc[:50].copy()
+
+    outdir = datadir+dataset+'/'
+    
+    nproc = 4
+    
+    nrows = dfTemp.shape[0]
+    
+    chunksize = int(nrows/nproc)
+    
+
+    
+    metadata_chunks = [dfTemp.iloc[dfTemp.index[i:i+chunksize]] for i in range(0, nrows, chunksize)]
+    
+    
+    pool = Pool(processes = nproc)
+    
+    download_data_partial = partial(download_data, outdir = outdir)
+    
+#     download_data_partial(dfTemp)
+    
+    result = pool.map(download_data_partial, metadata_chunks[:4])
+    
+    
+#     dfTempOut = download_data(metadata = dfTemp, outdir = outdir)
+    
+ 
+    
 
 
 if __name__ == '__main__':
