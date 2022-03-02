@@ -61,28 +61,31 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.cs
 def fetch_expression(experiment_id, outdir = './tmp/'):
 
     """ """
-
+    
     if not os.path.exists(outdir):
         os.mkdir(outdir)
 
+    tmpdir = outdir+str(experiment_id)+'/' 
+    os.mkdir(tmpdir)
+        
     abi_query_expr = 'http://api.brain-map.org/grid_data/download/{}'.format(experiment_id)
-
     amba_request = requests.get(abi_query_expr)
 
-    tmpfile = outdir+str(experiment_id)+'.zip'
+    tmpfile = tmpdir+str(experiment_id)+'.zip'
     with open(tmpfile, 'wb') as file:
         file.write(amba_request.content)
 
     with ZipFile(tmpfile, 'r') as file:
         try:
-            file.extract('energy.raw', path = outdir)
-            os.rename(outdir+'energy.raw', outdir+str(experiment_id)+'.raw')
+            file.extract('energy.raw', path = tmpdir)
+            os.rename(tmpdir+'energy.raw', outdir+str(experiment_id)+'.raw')
             success = 1
         except KeyError as err:
             print('Error for experiment {}: {}'.format(experiment_id, err))
             success = 0
             
     os.remove(tmpfile)
+    os.rmdir(tmpdir)
  
     return success
 
@@ -239,32 +242,48 @@ def main():
         fetch_metadata(dataset = dataset,
                        outdir = datadir,
                        outfile = metadata)
-
+        
     dfMetadata = pd.read_csv(datadir+metadata, index_col=None)
     
-
-    dfTemp = dfMetadata.loc[:50].copy()
-
-    outdir = datadir+dataset+'/'
+    experiment_ids = [dfMetadata.loc[i, 'experiment_id'] for i in range(0, dfMetadata.shape[0])]
+    
     
     nproc = 4
     
-    nrows = dfTemp.shape[0]
+    pool = Pool(nproc)
     
-    chunksize = int(nrows/nproc)
+    
+    outdir = datadir+dataset+'/'
+    fetch_expression_partial = partial(fetch_expression, outdir = outdir)
+    
+    results = pool.map(fetch_expression_partial, experiment_ids[:50])
+    
+    pool.close()
+    pool.join()
+    
+    
+#     dfTemp = dfMetadata.loc[:50].copy()
+
+#     outdir = datadir+dataset+'/'
+    
+#     nproc = 4
+    
+#     nrows = dfTemp.shape[0]
+    
+#     chunksize = int(nrows/nproc)
     
 
     
-    metadata_chunks = [dfTemp.iloc[dfTemp.index[i:i+chunksize]] for i in range(0, nrows, chunksize)]
+#     metadata_chunks = [dfTemp.iloc[dfTemp.index[i:i+chunksize]] for i in range(0, nrows, chunksize)]
     
     
-    pool = Pool(processes = nproc)
+#     pool = Pool(processes = nproc)
     
-    download_data_partial = partial(download_data, outdir = outdir)
+#     download_data_partial = partial(download_data, outdir = outdir)
     
-#     download_data_partial(dfTemp)
+# #     download_data_partial(dfTemp)
     
-    result = pool.map(download_data_partial, metadata_chunks[:4])
+#     result = pool.map(download_data_partial, metadata_chunks[:4])
     
     
 #     dfTempOut = download_data(metadata = dfTemp, outdir = outdir)
