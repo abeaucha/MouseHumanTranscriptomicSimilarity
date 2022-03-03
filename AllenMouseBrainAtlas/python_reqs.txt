@@ -5,3 +5,4 @@ pandas
 jupyter
 requests
 pyminc
+tqdm

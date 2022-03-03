@@ -1,14 +1,21 @@
+
+# Packages ------------------------------------------------------
+
 import os
 import argparse
 import numpy as np
 import pandas as pd
 import requests
+import multiprocessing as mp
 from pyminc.volumes.factory import *
 from zipfile import ZipFile
-from multiprocessing import Pool
 from functools import partial
 from itertools import starmap
+from tqdm import tqdm
 
+
+
+# Functions ------------------------------------------------------
 
 def parse_args():
 
@@ -23,9 +30,9 @@ def parse_args():
     )
 
     parser.add_argument(
-        '--datadir',
+        '--outdir',
         type = str,
-        default = 'data/expression/',
+        default = 'expression/',
         help = 'Path to directory in which to download the data'
     )
     
@@ -47,13 +54,14 @@ def parse_args():
     parser.add_argument(
         '--nproc',
         type = int,
-        default = 1
+        default = mp.cpu_count(),
         help = 'Number of CPUs to use in parallel'
     )
 
     args = vars(parser.parse_args())
 
     return args
+
 
 
 def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.csv'):
@@ -72,6 +80,7 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.cs
     print('Metadata downloaded at: {}'.format(outdir+outfile))
     
     return 
+
 
 
 def fetch_expression(experiment_id, outdir = './tmp/'):
@@ -107,6 +116,7 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
     return outfile, success
 
 
+
 def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     
     """ """
@@ -128,8 +138,11 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     return outfile, success
 
 
+
 def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
 
+    """ """
+    
     def reorient_to_standard(dat):
         dat = np.rot90(dat, k=1, axes=(0, 2))
         dat = np.rot90(dat, k=1, axes=(0, 1))
@@ -233,7 +246,13 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_spa
     return outfile
 
     
-def download_data(experiment_id, gene, outdir):
+
+def download_data(experiments, outdir):
+    
+    """ """
+    
+    experiment_id = experiments[0]
+    gene = experiments[1]
     
     rawfile, success = fetch_expression(experiment_id, outdir = outdir)
 
@@ -245,62 +264,66 @@ def download_data(experiment_id, gene, outdir):
     
     return
 
-
+    
     
 def main():
 
+    #Get command line arguments
     args = parse_args()
     dataset = args['dataset']
-    datadir = args['datadir']
+    outdir = args['outdir']
     metadata = args['metadata']
-    parallel = if args['parallel'] == True
-    
-    if os.path.isfile(datadir+metadata) == False:
-        print('AMBA metadata file {} not found in {}. Fetching from API.'.format(metadata,datadir))
+    parallel = True if args['parallel'] == 'true' else False
+   
+    #If outdir does not exist, create it
+    if os.path.exists(outdir) == False:
+        print('Output directory {} not found. Creating it...'.format(outdir))
+        os.mkdir(outdir)
+        
+    #If AMBA metadata file not found, download it from the web
+    if os.path.isfile(outdir+metadata) == False:
+        print('AMBA metadata file {} not found in {}. Fetching from API...'.format(metadata, outdir))
         fetch_metadata(dataset = dataset,
-                       outdir = datadir,
+                       outdir = outdir,
                        outfile = metadata)
         
-    dfMetadata = pd.read_csv(datadir+metadata, index_col=None)
+    #Import AMBA metadata
+    dfMetadata = pd.read_csv(outdir+metadata, index_col=None)
     
-    experiment_ids = [dfMetadata.loc[i, 'experiment_id'] for i in range(0, dfMetadata.shape[0])]
-    genes = [dfMetadata.loc[i, 'gene'] for i in range(0, dfMetadata.shape[0])]
-    
+    #Extract experiment IDs and gene names from metadata
     experiments = [(dfMetadata.loc[i, 'experiment_id'], dfMetadata.loc[i, 'gene']) for i in range(0, dfMetadata.shape[0])]
     
-    outdir = datadir+dataset+'/'
+    #Create output sub-directory based on data set specified
+    outdir = outdir+dataset+'/'
+    if os.path.exists(outdir) == False:
+        os.mkdir(outdir)
+
+    #Partial version of function for iteration
     download_data_partial = partial(download_data, outdir = outdir)
 
-    nproc = 4
-    parallel = True
+    print('Downloading {} AMBA dataset to: {}'.format(dataset, outdir))
     if parallel:
-        pool = Pool(nproc)
-        results = pool.starmap(download_data_partial, experiments[:20])
+        
+        nproc = args['nproc']
+        pool = mp.Pool(nproc)
+        
+        print('Running in parallel on {} CPUs...'.format(nproc))
+        
+        #Download data in parallel. Show progress bar.
+        results_tqdm = []
+        for result in tqdm(pool.imap(download_data_partial, experiments), total = len(experiments)):
+            results_tqdm.append(result)
+            
         pool.close()
         pool.join()
+        
     else:
-        results = list(starmap(download_data_partial, experiments[:5]))
+        
+        experiments_tqdm = tqdm(experiments)
+        results = list(map(download_data_partial, experiments_tqdm))
+        
+    return
     
-    
-#     experiment_id = experiment_ids[0]
-#     gene = genes[0]
-    
-#     rawfile, success = fetch_expression(experiment_id, outdir = outdir)
-
-#     mincfile, success = rawtominc_wrapper(infile = rawfile)
-    
-#     outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
-    
-#     os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
-
-#     nproc = 4
-#     pool = Pool(nproc)
-#     results = pool.starmap(download_data_partial, zip(experiment_ids[:20], genes[:20]))
-#     pool.close()
-#     pool.join()
- 
-    
-
 
 if __name__ == '__main__':
     main()
