@@ -7,6 +7,7 @@ from pyminc.volumes.factory import *
 from zipfile import ZipFile
 from multiprocessing import Pool
 from functools import partial
+from itertools import starmap
 
 
 def parse_args():
@@ -33,6 +34,21 @@ def parse_args():
         type = str,
         default = 'AMBA_metadata.csv',
         help = 'File containing AMBA metadata'
+    )
+    
+    parser.add_argument(
+        '--parallel',
+        type = str,
+        default = 'false',
+        choices = ['true', 'false'],
+        help = 'Run in parallel'
+    )
+    
+    parser.add_argument(
+        '--nproc',
+        type = int,
+        default = 1
+        help = 'Number of CPUs to use in parallel'
     )
 
     args = vars(parser.parse_args())
@@ -75,10 +91,11 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
     with open(tmpfile, 'wb') as file:
         file.write(amba_request.content)
 
+    outfile = outdir+str(experiment_id)+'.raw'
     with ZipFile(tmpfile, 'r') as file:
         try:
             file.extract('energy.raw', path = tmpdir)
-            os.rename(tmpdir+'energy.raw', outdir+str(experiment_id)+'.raw')
+            os.rename(tmpdir+'energy.raw', outfile)
             success = 1
         except KeyError as err:
             print('Error for experiment {}: {}'.format(experiment_id, err))
@@ -87,10 +104,31 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
     os.remove(tmpfile)
     os.rmdir(tmpdir)
  
-    return success
+    return outfile, success
 
 
-def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
+def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
+    
+    """ """
+    
+    if outfile is None:
+        outfile = infile.replace('.raw', '.mnc')
+    
+    try: 
+        rawtominc = 'cat {} | rawtominc {} -signed -float -ounsigned -oshort -xstep 0.2 -ystep 0.2 -zstep 0.2 -clobber 58 41 67'.format(infile, outfile)
+        success = 1
+    except: 
+        success = 0
+    
+    os.system(rawtominc)
+    
+    if keep_raw is not True:
+        os.remove(infile)
+        
+    return outfile, success
+
+
+def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
 
     def reorient_to_standard(dat):
         dat = np.rot90(dat, k=1, axes=(0, 2))
@@ -142,7 +180,7 @@ def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'M
                        size_50: 50,
                        size_100: 100,
                        size_200: 200}
-
+    
     vol = volumeFromFile(infile)
 
     res = map_resolutions[vol.data.size]
@@ -166,8 +204,14 @@ def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'M
     vtype = vol.volumeType if volume_type is None else volume_type
     dtype = vol.dtype if data_type is None else data_type
     labels = vol.labels if labels is None else labels
+    
+    if outfile is None:
+        outfile = infile
+        tmpfile = infile.replace('.mnc', '')+'_tmp.mnc'
+    else:
+        tmpfile = outfile
 
-    outvol = volumeFromDescription(outputFilename=outfile,
+    outvol = volumeFromDescription(outputFilename=tmpfile,
                                    dimnames=["zspace", "yspace", "xspace"],
                                    sizes=new_data.shape,
                                    starts=[-c for c in reversed(centers)],
@@ -182,60 +226,34 @@ def transform_space(infile, outfile, voxel_orientation = 'RAS', world_space = 'M
     outvol.data = new_data
     outvol.writeFile()
     outvol.closeVolume()
+    
+    if outfile == infile:
+        os.rename(tmpfile, infile)
+        
+    return outfile
 
     
-def download_data(metadata, outdir):
+def download_data(experiment_id, gene, outdir):
     
-    """ """
-    
-    metadata['success'] = 0
-    
-    for index, row in metadata.iterrows():
-        
-        experiment_id = row['experiment_id']
-        
-        success = fetch_expression(experiment_id = experiment_id, 
-                                   outdir = outdir)
-        
-        if bool(success):
-            
-            metadata.loc[index,'success'] = 1
-        
-            infile = outdir+'{}.raw'.format(experiment_id)
-            outfile = outdir+'{}_tmp.mnc'.format(experiment_id)
+    rawfile, success = fetch_expression(experiment_id, outdir = outdir)
 
-            cmd = 'cat {} | rawtominc {} -signed -float -ounsigned -oshort -xstep 0.2 -ystep 0.2 -zstep 0.2 -clobber 58 41 67'.format(infile, outfile)
-
-            os.system(cmd)
-            os.remove(infile)
-
-            infile = outfile
-            outfile = outdir+'{}_tmp2.mnc'.format(experiment_id)
-            transform_space(infile = infile,
-                            outfile = outfile,
-                            voxel_orientation = 'RAS',
-                            world_space = 'MICe',
-                            expansion_factor = 1.0)
-            os.remove(infile)
+    mincfile, success = rawtominc_wrapper(infile = rawfile)
     
+    outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
     
-            gene_id = row['gene']
+    os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
     
-            infile = outfile
-            outfile = outdir+'{}_{}.mnc'.format(gene_id, experiment_id)
-            os.rename(infile, outfile)
-            
-    return metadata
+    return
 
 
     
 def main():
 
     args = parse_args()
-
     dataset = args['dataset']
     datadir = args['datadir']
     metadata = args['metadata']
+    parallel = if args['parallel'] == True
     
     if os.path.isfile(datadir+metadata) == False:
         print('AMBA metadata file {} not found in {}. Fetching from API.'.format(metadata,datadir))
@@ -246,48 +264,40 @@ def main():
     dfMetadata = pd.read_csv(datadir+metadata, index_col=None)
     
     experiment_ids = [dfMetadata.loc[i, 'experiment_id'] for i in range(0, dfMetadata.shape[0])]
+    genes = [dfMetadata.loc[i, 'gene'] for i in range(0, dfMetadata.shape[0])]
     
-    
-    nproc = 4
-    
-    pool = Pool(nproc)
-    
+    experiments = [(dfMetadata.loc[i, 'experiment_id'], dfMetadata.loc[i, 'gene']) for i in range(0, dfMetadata.shape[0])]
     
     outdir = datadir+dataset+'/'
-    fetch_expression_partial = partial(fetch_expression, outdir = outdir)
-    
-    results = pool.map(fetch_expression_partial, experiment_ids[:50])
-    
-    pool.close()
-    pool.join()
-    
-    
-#     dfTemp = dfMetadata.loc[:50].copy()
+    download_data_partial = partial(download_data, outdir = outdir)
 
-#     outdir = datadir+dataset+'/'
+    nproc = 4
+    parallel = True
+    if parallel:
+        pool = Pool(nproc)
+        results = pool.starmap(download_data_partial, experiments[:20])
+        pool.close()
+        pool.join()
+    else:
+        results = list(starmap(download_data_partial, experiments[:5]))
     
+    
+#     experiment_id = experiment_ids[0]
+#     gene = genes[0]
+    
+#     rawfile, success = fetch_expression(experiment_id, outdir = outdir)
+
+#     mincfile, success = rawtominc_wrapper(infile = rawfile)
+    
+#     outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
+    
+#     os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
+
 #     nproc = 4
-    
-#     nrows = dfTemp.shape[0]
-    
-#     chunksize = int(nrows/nproc)
-    
-
-    
-#     metadata_chunks = [dfTemp.iloc[dfTemp.index[i:i+chunksize]] for i in range(0, nrows, chunksize)]
-    
-    
-#     pool = Pool(processes = nproc)
-    
-#     download_data_partial = partial(download_data, outdir = outdir)
-    
-# #     download_data_partial(dfTemp)
-    
-#     result = pool.map(download_data_partial, metadata_chunks[:4])
-    
-    
-#     dfTempOut = download_data(metadata = dfTemp, outdir = outdir)
-    
+#     pool = Pool(nproc)
+#     results = pool.starmap(download_data_partial, zip(experiment_ids[:20], genes[:20]))
+#     pool.close()
+#     pool.join()
  
     
 
