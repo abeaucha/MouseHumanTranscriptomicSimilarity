@@ -107,7 +107,7 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
             os.rename(tmpdir+'energy.raw', outfile)
             success = 1
         except KeyError as err:
-            print('Error for experiment {}: {}'.format(experiment_id, err))
+            print('Error for experiment {}: {}. Ignoring.'.format(experiment_id, err))
             success = 0
             
     os.remove(tmpfile)
@@ -247,20 +247,21 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_spa
 
     
 
-def download_data(experiments, outdir):
+def download_data(experiment, outdir):
     
     """ """
     
-    experiment_id = experiments[0]
-    gene = experiments[1]
+    experiment_id = experiment[0]
+    gene = experiment[1]
     
     rawfile, success = fetch_expression(experiment_id, outdir = outdir)
 
-    mincfile, success = rawtominc_wrapper(infile = rawfile)
+    if success == 1:
+        mincfile, success = rawtominc_wrapper(infile = rawfile)
     
-    outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
+        outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
     
-    os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
+        os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
     
     return
 
@@ -275,6 +276,9 @@ def main():
     metadata = args['metadata']
     parallel = True if args['parallel'] == 'true' else False
    
+    #Format the path properly
+    outdir = os.path.join(outdir, '')
+
     #If outdir does not exist, create it
     if os.path.exists(outdir) == False:
         print('Output directory {} not found. Creating it...'.format(outdir))
@@ -294,7 +298,7 @@ def main():
     experiments = [(dfMetadata.loc[i, 'experiment_id'], dfMetadata.loc[i, 'gene']) for i in range(0, dfMetadata.shape[0])]
     
     #Create output sub-directory based on data set specified
-    outdir = outdir+dataset+'/'
+    outdir = os.path.join(outdir, dataset, '')
     if os.path.exists(outdir) == False:
         os.mkdir(outdir)
 
