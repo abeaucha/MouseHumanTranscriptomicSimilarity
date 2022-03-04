@@ -49,4 +49,4 @@ AllenMouseBrainAtlas/ResampleDSURQE_to_Allen
 AllenMouseBrainAtlas/.envrc
 AllenMouseBrainAtlas/.ipynb_checkpoints/
 AllenMouseBrainAtlas/amba_env/
-AllenMouseBrainAtlas/data/
+AllenMouseBrainAtlas/data/expression/
