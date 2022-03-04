@@ -4,9 +4,8 @@ This directory contains MRI data related to the Allen Mouse Brain Atlas (AMBA).
 
 ## Files
 
-**average_template_200um.mnc**: MRI average template at 200um in AMBA space.
-
-**average_template_200um_mask.mnc**: Mask for the 200um MRI average. 
+- **average_template_200um.mnc**: MRI average template at 200um in AMBA space.
+- **average_template_200um_mask.mnc**: Mask for the 200um MRI average. 
 
 **DSURQE_Allen_average.mnc**: DSURQE atlas consensus average resampled to 200um AMBA space.
 
