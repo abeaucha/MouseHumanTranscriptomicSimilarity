@@ -286,7 +286,7 @@ def main():
         
     #If AMBA metadata file not found, download it from the web
     if os.path.isfile(outdir+metadata) == False:
-        print('AMBA metadata file {} not found in {}. Fetching from API...'.format(metadata, outdir))
+        print('Metadata file {} not found in {}. Fetching from API...'.format(metadata, outdir))
         fetch_metadata(dataset = dataset,
                        outdir = outdir,
                        outfile = metadata)
@@ -304,7 +304,21 @@ def main():
 
     #Partial version of function for iteration
     download_data_partial = partial(download_data, outdir = outdir)
+    
 
+    size = 1.0 if dataset == 'coronal' else 3.0
+
+    response_flag = 0
+    while response_flag != 1:
+        response = input('Download will take up approximately {}GB of space. Proceed? (y/n) '.format(size))
+        if response == 'y':
+            response_flag = 1
+        elif response == 'n':
+            print('Aborting.')
+            quit()
+        else:
+            print('Input not recognized (y/n): {}'.format(response))
+        
     print('Downloading {} AMBA dataset to: {}'.format(dataset, outdir))
     if parallel:
         
