@@ -1,8 +1,5 @@
-# imaging
 
-This directory contains MRI data related to the Allen Mouse Brain Atlas (AMBA).
-
-## Files
+Imaging files for the Allen Mouse Brain Atlas (AMBA).
 
 - average_template_200um_mask.mnc: MRI mask in CCFv3 space at 200um resolution
 - average_template_200um.mnc: MRI template in CCFv3 space at 200um resolution
