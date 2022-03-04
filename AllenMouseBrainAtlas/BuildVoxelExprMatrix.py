@@ -69,6 +69,70 @@ def parse_args():
     
     
 
+def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
+    
+    """ """
+    
+    #Load expression data
+    dfExpression = loadExpressionData(paths, mask)
+
+    #Transform to log2 and normalize by experiment
+    dfExpression = np.log2(dfExpression)
+    
+    #Replace index with gene acronyms
+    dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
+    dfExpression.index.name = 'Gene'
+    
+    #Aggregate experiments per gene if flag is set
+    if groupExperiments == True:
+        print("Aggregating multiple experiments per gene...")
+        dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
+    
+    #Remove genes where a threshold of voxels aren't expressing
+    fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
+    dfExpression = dfExpression[fracVoxelsNA < threshold]
+    
+    return dfExpression
+    
+
+    
+def loadExpressionData(paths, mask):
+
+    """ """
+
+    #Number of files and number of voxels per file
+    nFiles = len(paths)
+    nVoxels = int(np.sum(mask))
+
+    #Initialize matrix
+    matExpr = np.empty((nFiles, nVoxels), dtype = 'float')
+
+    #Iterate over files
+    for i, path in enumerate(paths):
+
+        if (i%100 == 0):
+            print('On file {} of {}'.format(i, len(paths)))
+
+        #Read ISH data to numpy array
+        exprVol = volumeFromFile(path)
+        exprArray = np.array(exprVol.data.flatten())
+        exprVol.closeVolume()
+
+        #Apply mask and convert -1 to NaN
+        exprArrayMasked = exprArray[mask == 1]
+        exprArrayMasked[exprArrayMasked == -1] = np.nan
+        exprArrayMasked[exprArrayMasked == 0] = np.nan
+
+        #Write expression data to matrix
+        matExpr[i,] = exprArrayMasked
+        
+    #Convert matrix to df, using file names as index
+    dfExpression = pd.DataFrame(matExpr, index = [basename(path) for path in paths])
+
+    return dfExpression
+
+
+
 def main():
 
     #Load command line arguments
@@ -176,71 +240,9 @@ def main():
     
     
     dfExpression.to_csv(pathAMBA+'Data/'+outfile)
+
+    return
     
-    
-
-def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
-    
-    """ """
-    
-    #Load expression data
-    dfExpression = loadExpressionData(paths, mask)
-
-    #Transform to log2 and normalize by experiment
-    dfExpression = np.log2(dfExpression)
-    
-    #Replace index with gene acronyms
-    dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
-    dfExpression.index.name = 'Gene'
-    
-    #Aggregate experiments per gene if flag is set
-    if groupExperiments == True:
-        print("Aggregating multiple experiments per gene...")
-        dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
-    
-    #Remove genes where a threshold of voxels aren't expressing
-    fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
-    dfExpression = dfExpression[fracVoxelsNA < threshold]
-    
-    return dfExpression
-    
-
-    
-def loadExpressionData(paths, mask):
-
-    """ """
-
-    #Number of files and number of voxels per file
-    nFiles = len(paths)
-    nVoxels = int(np.sum(mask))
-
-    #Initialize matrix
-    matExpr = np.empty((nFiles, nVoxels), dtype = 'float')
-
-    #Iterate over files
-    for i, path in enumerate(paths):
-
-        if (i%100 == 0):
-            print('On file {} of {}'.format(i, len(paths)))
-
-        #Read ISH data to numpy array
-        exprVol = volumeFromFile(path)
-        exprArray = np.array(exprVol.data.flatten())
-        exprVol.closeVolume()
-
-        #Apply mask and convert -1 to NaN
-        exprArrayMasked = exprArray[mask == 1]
-        exprArrayMasked[exprArrayMasked == -1] = np.nan
-        exprArrayMasked[exprArrayMasked == 0] = np.nan
-
-        #Write expression data to matrix
-        matExpr[i,] = exprArrayMasked
-        
-    #Convert matrix to df, using file names as index
-    dfExpression = pd.DataFrame(matExpr, index = [basename(path) for path in paths])
-
-    return dfExpression
-
 
 if __name__ == '__main__':
     main()
