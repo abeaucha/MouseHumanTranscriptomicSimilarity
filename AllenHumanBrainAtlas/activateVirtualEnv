@@ -1,7 +1,0 @@
-
-#On MICe machines: Remove loaded modules
-#Comment out if unnecessary
-module purge
-
-#Activate the virtual environment
-source AHBAEnv/bin/activate
