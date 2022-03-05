@@ -51,7 +51,7 @@ donorDirectories <- list.files(pathData)
 
 # Functions -----------------------------------------------------------------------------
 
-source("functions/ProcessingToolsAHBA.R")
+source("functions/processing_tools.R")
 
 
 # Import --------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ source("functions/ProcessingToolsAHBA.R")
 message("Importing data...")
 
 #Import donor information and naming conventions
-dfDonorInfo <- suppressMessages(read_csv(str_c(pathAHBA, "Data/DonorIDCorrespondence.csv"))) %>% 
+dfDonorInfo <- suppressMessages(read_csv("data/donors.csv"))) %>% 
   inner_join(tibble(donorFileID = str_remove(donorDirectories, "normalized_microarray_"),
                     donorPath = str_c(pathData, donorDirectories, "/")),
              by = "donorFileID") %>% 
