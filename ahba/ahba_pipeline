@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source activate_venv
+
+# Download AHBA data from the web
+echo "Downloading AHBA data..."
+python3 download_ahba.py
+
+# Build sample expression matrix 
+echo "Building gene-by-sample expression matrix..."
+Rscript build_sample_matrix.R --version 1 --verbose true
+
+# Build sample tree

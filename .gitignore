@@ -47,3 +47,8 @@ AllenMouseBrainAtlas/.envrc
 AllenMouseBrainAtlas/.ipynb_checkpoints/
 AllenMouseBrainAtlas/amba_env/
 AllenMouseBrainAtlas/data/expression/
+ahba/.envrc
+ahba/.ipynb_checkpoints/
+ahba/ahba_env/
+ahba/atlas_mappings/
+ahba/data/microarray/

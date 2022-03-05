@@ -1,0 +1,7 @@
+numpy
+scipy
+sklearn
+pandas
+jupyter
+abagen
+requests
