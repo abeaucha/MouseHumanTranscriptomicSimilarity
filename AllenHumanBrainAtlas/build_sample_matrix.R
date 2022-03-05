@@ -59,7 +59,7 @@ source("functions/processing_tools.R")
 message("Importing data...")
 
 #Import donor information and naming conventions
-dfDonorInfo <- suppressMessages(read_csv("data/donors.csv"))) %>% 
+dfDonorInfo <- suppressMessages(read_csv("data/donors.csv")) %>% 
   inner_join(tibble(donorFileID = str_remove(donorDirectories, "normalized_microarray_"),
                     donorPath = str_c(pathData, donorDirectories, "/")),
              by = "donorFileID") %>% 
