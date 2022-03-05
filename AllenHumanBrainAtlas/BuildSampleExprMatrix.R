@@ -10,7 +10,7 @@
 #
 # Antoine Beauchamp
 # Created: August 20th, 2021
-# Edited: February 10th, 2022
+# Edited: March 5th, 2022
 
 
 # Libraries -----------------------------------------------------------------------------
@@ -45,14 +45,14 @@ if (!(args[["verbose"]] %in% c("true","false"))){
 # Paths ---------------------------------------------------------------------------------
 
 #Set paths to AHBA directories
-pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenHumanBrainAtlas/"
-pathData <- str_c(pathAHBA, "Data/microarray/")
+# pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenHumanBrainAtlas/"
+pathData <- "data/microarray/"
 donorDirectories <- list.files(pathData)
 
 
 # Functions -----------------------------------------------------------------------------
 
-source(str_c(pathAHBA, "Functions/ProcessingToolsAHBA.R"))
+source("functions/ProcessingToolsAHBA.R")
 
 
 # Import --------------------------------------------------------------------------------
@@ -84,11 +84,11 @@ listData <- processingPipeline(listImport,
 message("Writing to file...")
 
 #Write gene expression matrix
-exprfile <- str_c(pathAHBA, "Data/", "HumanExpressionMatrix_Samples_pipeline_v", args[["version"]], ".csv")
+exprfile <- str_c("data/", "HumanExpressionMatrix_Samples_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["GeneExpression"]],
           file = exprfile)
 
 #Write sample information
-samplefile <- str_c(pathAHBA, "Data/", "SampleInformation_pipeline_v", args[["version"]], ".csv")
+samplefile <- str_c("data/", "SampleInformation_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["SampleInfo"]],
           file = samplefile)
