@@ -52,3 +52,7 @@ ahba/.ipynb_checkpoints/
 ahba/ahba_env/
 ahba/atlas_mappings/
 ahba/data/microarray/
+amba/.envrc
+amba/.ipynb_checkpoints/
+amba/amba_env/
+amba/data/expression/
