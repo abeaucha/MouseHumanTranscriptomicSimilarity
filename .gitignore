@@ -42,7 +42,7 @@ AllenHumanBrainAtlas/.envrc
 AllenHumanBrainAtlas/.ipynb_checkpoints/
 AllenHumanBrainAtlas/ahba_env/
 AllenHumanBrainAtlas/atlas_mappings/
-AllenHumanBrainAtlas/data/
+AllenHumanBrainAtlas/data/microarray/
 AllenMouseBrainAtlas/.envrc
 AllenMouseBrainAtlas/.ipynb_checkpoints/
 AllenMouseBrainAtlas/amba_env/
