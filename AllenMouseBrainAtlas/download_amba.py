@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument(
         '--metadata',
         type = str,
-        default = 'AMBA_metadata.csv',
+        default = 'metadata.csv',
         help = 'File containing AMBA metadata'
     )
     
@@ -64,7 +64,7 @@ def parse_args():
 
 
 
-def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.csv'):
+def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
 
     """ """        
 
@@ -75,7 +75,7 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'AMBA_metadata.cs
 "genes.acronym+as+gene,genes.name+as+gene_name,genes.chromosome_id,genes.entrez_id,genes.genomic_reference_update_id,genes.homologene_id,genes.organism_id&"+\
 "start_row=0&num_rows=all"
 
-    pd.read_csv(abi_query_metadata).to_csv(outdir+outfile, index=False)
+    pd.read_csv(abi_query_metadata).drop_duplicates().to_csv(outdir+outfile, index=False)
 
     print('Metadata downloaded at: {}'.format(outdir+outfile))
     
