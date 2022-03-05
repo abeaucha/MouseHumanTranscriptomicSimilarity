@@ -6,6 +6,6 @@ python3 download_ahba.py
 
 # Build sample expression matrix 
 echo "Building gene-by-sample expression matrix..."
-Rscript BuildSampleExprMatrix.R --version 1 --verbose true
+Rscript build_sample_matrix.R --version 1 --verbose true
 
 # Build sample tree

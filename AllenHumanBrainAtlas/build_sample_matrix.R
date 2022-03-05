@@ -45,7 +45,6 @@ if (!(args[["verbose"]] %in% c("true","false"))){
 # Paths ---------------------------------------------------------------------------------
 
 #Set paths to AHBA directories
-# pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenHumanBrainAtlas/"
 pathData <- "data/microarray/"
 donorDirectories <- list.files(pathData)
 
