@@ -7,7 +7,10 @@ echo "Downloading AHBA data..."
 python3 download_AHBA.py
 
 # Build sample expression matrix 
-echo "Building gene-by-sample expression matrix..."
+echo "Building human gene-by-sample expression matrix..."
 Rscript build_sample_matrix.R --version 1 --verbose true
 
 # Build sample tree
+echo "Building human neuroanatomical tree..."
+Rscript build_human_tree.R
+

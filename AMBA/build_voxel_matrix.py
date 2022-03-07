@@ -1,10 +1,10 @@
-# BuildVoxelExprMatrix.py --------------------------------------------
+# build_voxel_matrix.py --------------------------------------------
 #
 #
 #
 # Antoine Beauchamp
 # Created: June 19th, 2020
-# Edited: February 15th, 2022
+# Edited: March 7th, 2022
 # --------------------------------------------------------------------
 
 # Packages -----------------------------------------------------------
@@ -68,33 +68,6 @@ def parse_args():
     return args
     
     
-
-def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
-    
-    """ """
-    
-    #Load expression data
-    dfExpression = loadExpressionData(paths, mask)
-
-    #Transform to log2 and normalize by experiment
-    dfExpression = np.log2(dfExpression)
-    
-    #Replace index with gene acronyms
-    dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
-    dfExpression.index.name = 'Gene'
-    
-    #Aggregate experiments per gene if flag is set
-    if groupExperiments == True:
-        print("Aggregating multiple experiments per gene...")
-        dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
-    
-    #Remove genes where a threshold of voxels aren't expressing
-    fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
-    dfExpression = dfExpression[fracVoxelsNA < threshold]
-    
-    return dfExpression
-    
-
     
 def loadExpressionData(paths, mask):
 
@@ -130,7 +103,34 @@ def loadExpressionData(paths, mask):
     dfExpression = pd.DataFrame(matExpr, index = [basename(path) for path in paths])
 
     return dfExpression
+    
+    
 
+def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
+    
+    """ """
+    
+    #Load expression data
+    dfExpression = loadExpressionData(paths, mask)
+
+    #Transform to log2
+    dfExpression = np.log2(dfExpression)
+    
+    dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
+        
+    dfExpression.index.name = 'Gene'
+    
+    #Aggregate experiments per gene if flag is set
+    if groupExperiments == True:
+        print("Aggregating multiple experiments per gene...")
+        dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
+    
+    #Remove genes where a threshold of voxels aren't expressing
+    fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
+    dfExpression = dfExpression[fracVoxelsNA < threshold]
+    
+    return dfExpression
+    
 
 
 def main():
@@ -153,15 +153,12 @@ def main():
         warnings.warn("Running with sagittal dataset and coronal mask is not ideal. Proceed with caution.")
         
     
-    #Paths
-    pathAMBA = "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/AllenMouseBrainAtlas/
-    
     #If dataset is sagittal, use only those genes that are also in the coronal set
     if dataset == "sagittal":
         
         #Paths to sagittal and coronal data set directories
-        pathGeneDir_Sagittal = "/projects/yyee/tools/Allen_brain/data/expression/P56/sagittal/"
-        pathGeneDir_Coronal = "/projects/yyee/tools/Allen_brain/data/expression/P56/coronal/"
+        pathGeneDir_Sagittal = "data/expression/sagittal/"
+        pathGeneDir_Coronal = "data/expression/coronal/"
     
         #Build paths to all files in the directories
         pathGeneFiles_Sagittal = np.array(glob(pathGeneDir_Sagittal + "*.mnc"))
@@ -180,15 +177,17 @@ def main():
         pathGeneFiles = pathGeneFiles_Sagittal[isInCoronal]
         
     else:
-        pathGeneDir = "/projects/yyee/tools/Allen_brain/data/expression/P56/coronal/"
+        pathGeneDir = "data/expression/coronal/"
         pathGeneFiles = np.array(glob(pathGeneDir + "*.mnc"))
 
 
     #Load image mask and convert to numpy array
     if maskFlag == "sagittal":
-        maskVol = volumeFromFile(pathAMBA+'Data/MRI/sagittal_200um_coverage_bin0.8.mnc')        
+        maskfile = "data/imaging/sagittal_200um_coverage_bin0.8.mnc"
+        maskVol = volumeFromFile(maskfile)        
     else: 
-        maskVol = volumeFromFile(pathAMBA+'Data/MRI/coronal_200um_coverage_bin0.8.mnc')
+        maskfile = "data/imaging/coronal_200um_coverage_bin0.8.mnc"
+        maskVol = volumeFromFile(maskfile)
         
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
@@ -199,6 +198,7 @@ def main():
     #Build expression data frame
     dfExpression = buildVoxelExprMatrix(pathGeneFiles, mask = maskArray, groupExperiments = groupExperiments)
 
+    quit()
     
     #Switch to impute missing values
     if impute == True:
@@ -236,10 +236,8 @@ def main():
     else:
         wDups = ''
     
-    outfile = 'MouseExpressionMatrix_Voxel_'+dataset+'_mask'+maskFlag+wDups+imputed+'.csv'
-    
-    
-    dfExpression.to_csv(pathAMBA+'Data/'+outfile)
+    outfile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+maskFlag+wDups+imputed+'.csv'
+    dfExpression.to_csv('data/'+outfile)
 
     return
     

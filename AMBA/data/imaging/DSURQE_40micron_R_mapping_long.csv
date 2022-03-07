@@ -1,0 +1,338 @@
+Structure,hierarchy,tissue type,ABI,IsMidline,Hemisphere,Label
+right amygdala,NA,GM,Cortical subplate,FALSE,right,51
+right anterior commissure: pars anterior,NA,WM,"anterior commissure, olfactory limb",FALSE,right,115
+right anterior commissure: pars posterior,NA,WM,"anterior commissure, temporal limb",FALSE,right,23
+right basal forebrain,NA,GM,"Pallidum, ventral region",FALSE,right,52
+right bed nucleus of stria terminalis,NA,GM,Bed nuclei of the stria terminalis,FALSE,right,176
+right cerebellar peduncle: inferior,NA,WM,inferior cerebellar peduncle,FALSE,right,123
+right cerebellar peduncle: middle,NA,WM,middle cerebellar peduncle,FALSE,right,45
+right cerebellar peduncle: superior,NA,WM,superior cerebelar peduncles,FALSE,right,242
+ cerebral aqueduct,NA,CSF,cerebral aqueduct,TRUE,,119
+right cerebral peduncle,NA,WM,cerebal peduncle,FALSE,right,114
+right colliculus: inferior,NA,GM,Inferior colliculus,FALSE,right,143
+right colliculus: superior,NA,GM,"Superior colliculus, sensory related",FALSE,right,9
+right corpus callosum,NA,WM,corpus callosum,FALSE,right,8
+right corticospinal tract/pyramids,NA,WM,corticospinal tract,FALSE,right,218
+right cuneate nucleus,NA,GM,Cuneate nucleus,FALSE,right,166
+right facial nerve (cranial nerve 7),NA,GM,facial nerve,FALSE,right,19
+right fasciculus retroflexus,NA,WM,fasciculus retroflexus,FALSE,right,25
+right fimbria,NA,WM,fimbria,FALSE,right,211
+right fornix,NA,WM,dorsal fornix,FALSE,right,122
+ fourth ventricle,NA,CSF,fourth ventricle,TRUE,,118
+right fundus of striatum,NA,GM,Fundus of striatum,FALSE,right,54
+right globus pallidus,NA,GM,"Pallidum, dorsal region",FALSE,right,44
+right habenular commissure,NA,WM,habenular commissure,FALSE,right,99
+right hypothalamus,NA,GM,Hypothalamus,FALSE,right,250
+right inferior olivary complex,NA,GM,Inferior olivary complex,FALSE,right,113
+right internal capsule,NA,WM,internal capsule,FALSE,right,112
+ interpedunclar nucleus,NA,GM,Interpeduncular nucleus,TRUE,,157
+right lateral olfactory tract,NA,WM,"lateral olfactory tract, general",FALSE,right,101
+right lateral septum,NA,NA,Lateral septal complex,FALSE,right,207
+right lateral ventricle,NA,CSF,lateral ventricle,FALSE,right,57
+right mammillary bodies,NA,GM,Mammillary body,FALSE,right,161
+right mammilothalamic tract,NA,WM,mammilothalmic tract,FALSE,right,210
+right medial lemniscus/medial longitudinal fasciculus,NA,WM,medial lemniscus,FALSE,right,20
+right medial septum,NA,NA,Medial septal complex,FALSE,right,53
+ medulla,NA,NA,Medulla,TRUE,,174
+ midbrain,NA,NA,Midbrain,TRUE,,194
+right nucleus accumbens,NA,GM,Nucleus accumbens,FALSE,right,55
+right olfactory peduncle,Olfactory bulbs,GM,Olfactory areas,FALSE,right,5
+right olfactory tubercle,NA,GM,Olfactory tubercle,FALSE,right,95
+right optic tract,NA,WM,optic tract,FALSE,right,216
+ periaqueductal grey,NA,GM,Periaqueductal gray,TRUE,,10
+ pons,NA,GM,Pons,TRUE,,187
+right pontine nucleus,NA,GM,Pontine reticular nucleus,FALSE,right,85
+ posterior commissure,NA,WM,posterior commissure,TRUE,,100
+right pre-para subiculum,NA,GM,Subiculum,FALSE,right,133
+right stria medullaris,NA,GM,stria medullaris,FALSE,right,225
+right stria terminalis,NA,GM,stria terminalis,FALSE,right,59
+right striatum,NA,GM,Caudoputamen,FALSE,right,7
+right subependymale zone / rhinocele,NA,GM,subependymal zone,FALSE,right,240
+right superior olivary complex,NA,GM,Superior olivary complex,FALSE,right,124
+right thalamus,NA,GM,Thalamus,FALSE,right,204
+ third ventricle,NA,CSF,third ventricle,TRUE,,146
+ ventral tegmental decussation,NA,WM,ventral tegmental decussation,TRUE,,156
+ lobules 1-2: lingula and central lobule (ventral),cerebellar vermis,GM,Lingula (I),TRUE,,32
+ lobule 3: central lobule (dorsal),cerebellar vermis,GM,Central lobule,TRUE,,233
+ lobules 4-5: culmen (ventral and dorsal),cerebellar vermis,GM,Culmen,TRUE,,34
+ lobule 6: declive,cerebellar vermis,GM,Declive (VI),TRUE,,36
+ lobule 7: tuber (or folium),cerebellar vermis,GM,Folium-tuber vermis (VII),TRUE,,237
+ lobule 8: pyramis,cerebellar vermis,GM,Pyramus (VIII),TRUE,,38
+ lobule 9: uvula,cerebellar vermis,GM,Uvula (IX),TRUE,,239
+ lobule 10: nodulus,cerebellar vermis,GM,Nodulus (X),TRUE,,40
+right anterior lobule  (lobules 4-5),cerebellar paravermis,GM,Lobules IV-V,FALSE,right,90
+right simple lobule (lobule 6),cerebellar hemisphere,GM,Simple lobule,FALSE,right,191
+right crus 1: ansiform lobule (lobule 6),cerebellar hemisphere,GM,Crus 1,FALSE,right,92
+right crus 2: ansiform lobule (lobule 7),cerebellar hemisphere,GM,Crus 2,FALSE,right,193
+right paramedian lobule (lobule 7),cerebellar hemisphere,GM,Paramedian lobule,FALSE,right,94
+right copula: pyramis (lobule 8),cerebellar hemisphere,GM,Copula pyramidis,FALSE,right,196
+right flocculus (FL),cerebellar flocculonodular lobe,GM,Flocculus,FALSE,right,97
+right paraflocculus (PFL),cerebellar flocculonodular lobe,GM,Paraflocculus,FALSE,right,198
+ trunk of arbor vita,cerebellar white matter,WM,arbor vitae,TRUE,,47
+ lobule 1-2 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,232
+ lobule 3 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,33
+ trunk of lobules 1-3 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,253
+ lobules 4-5 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,234
+ lobules 6-7 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,236
+ lobule 8 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,238
+ trunk of lobules 6-8 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,254
+ lobule 9 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,139
+ lobule 10 white matter,cerebellar vermis white matter,WM,arbor vitae,TRUE,,252
+right anterior lobule white matter,cerebellar paravermis white matter,NA,arbor vitae,FALSE,right,21
+right simple lobule white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,241
+right crus 1 white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,220
+right trunk of simple and crus 1 white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,226
+right crus 2 white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,229
+right paramedian lobule,cerebellar white matter,WM,arbor vitae,FALSE,right,228
+right trunk of crus 2 and paramedian white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,175
+right copula white matter,cerebellar white matter,WM,arbor vitae,FALSE,right,224
+right paraflocculus white matter,cerebellar flocculonodular lobe white matter,WM,arbor vitae,FALSE,right,183
+right flocculus white matter,cerebellar flocculonodular lobe white matter,WM,arbor vitae,FALSE,right,167
+right dentate nucleus,deep cerebellar nuclei,GM,Dentate nucleus,FALSE,right,1
+right nucleus interpositus,deep cerebellar nuclei,GM,Interposed nucleus,FALSE,right,203
+right fastigial nucleus,deep cerebellar nuclei,GM,Fastigial nucleus,FALSE,right,15
+right Cingulate cortex: area 24a,Cingulate region,GM,"Anterior cingulate area, ventral part",FALSE,right,24
+right Cingulate cortex: area 24a',Cingulate region,GM,"Anterior cingulate area, ventral part",FALSE,right,26
+right Cingulate cortex: area 24b,Cingulate region,GM,"Anterior cingulate area, dorsal part",FALSE,right,27
+right Cingulate cortex: area 24b',Cingulate region,GM,"Anterior cingulate area, dorsal part",FALSE,right,28
+right Cingulate cortex: area 25,Cingulate region,GM,Infralimbic area,FALSE,right,29
+right Cingulate cortex: area 29a,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,right,30
+right Cingulate cortex: area 29b,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,right,35
+right Cingulate cortex: area 29c,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,right,37
+right Cingulate cortex: area 30,Cingulate region,GM,"Retrosplenial area, dorsal part",FALSE,right,39
+right Cingulate cortex: area 32,Cingulate region,GM,Prelimbic area,FALSE,right,41
+right Amygdalopiriform transition area,Piriform cortex area,GM,Postpiriform transition area,FALSE,right,42
+right Primary auditory cortex,Temporal region,GM,Primary auditory area,FALSE,right,46
+right Secondary auditory cortex: dorsal area,Temporal region,GM,Dorsal auditory area,FALSE,right,48
+right Secondary auditory cortex: ventral area,Temporal region,GM,Ventral auditory area,FALSE,right,49
+right Caudomedial entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, medial part, dorsal zone",FALSE,right,50
+right Cingulum,Fiber Groups,WM,cingulum bundle,FALSE,right,56
+right Claustrum,Insular claustrum,GM,Claustrum,FALSE,right,58
+right Cortex-amygdala transition zones,Piriform cortex area,GM,Piriform area,FALSE,right,60
+right Claustrum: dorsal part,Insular claustrum,GM,Claustrum,FALSE,right,62
+right Dorsal nucleus of the endopiriform,Endopiriform claustrum,GM,"Endopiriform nucleus, dorsal part",FALSE,right,65
+right Dorsal intermediate entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,right,67
+right Dorsolateral entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,right,69
+right Dorsolateral orbital cortex,Frontal region,GM,"Agranular insular area, dorsal part",FALSE,right,70
+right Dorsal tenia tecta,Entorhinal cortex,GM,"Taenia tecta, dorsal part",FALSE,right,71
+right Ectorhinal cortex,Insular region,GM,Ectorhinal area,FALSE,right,72
+right Frontal cortex: area 3,Frontal region,GM,Primary motor area,FALSE,right,73
+right Frontal association cortex,Frontal region,GM,"Frontal pole, cerebral cortex",FALSE,right,74
+right Intermediate nucleus of the endopiriform claustrum,Endopiriform claustrum,GM,"Endopiriform nucleus, dorsal part",FALSE,right,75
+right Insular region: not subdivided,Insular region,GM,Ectorhinal area,FALSE,right,78
+right Lateral orbital cortex,Frontal region,GM,"Orbital area, lateral part",FALSE,right,79
+right Lateral parietal association cortex,Parietal region,GM,Posterior parietal association areas,FALSE,right,80
+right Primary motor cortex,Frontal region,GM,Primary motor area,FALSE,right,81
+right Secondary motor cortex,Frontal region,GM,Secondary motor area,FALSE,right,82
+right Medial entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, medial part, ventral zone",FALSE,right,83
+right Medial orbital cortex,Frontal region,GM,"Orbital area, medial part",FALSE,right,84
+right Medial parietal association cortex,Parietal region,GM,Posterior parietal association areas,FALSE,right,86
+right Piriform cortex,Piriform cortex area,GM,Piriform area,FALSE,right,87
+right Posterolateral cortical amygdaloid area,Piriform cortex area,GM,"Cortical amygdalar area, posterior part, lateral zone",FALSE,right,88
+right Posteromedial cortical amygdaloid area,Piriform cortex area,GM,"Cortical amygdalar area, posterior part, medial zone",FALSE,right,89
+right Perirhinal cortex,Insular region,GM,Perirhinal area,FALSE,right,104
+right Parietal cortex: posterior area: rostral part,Parietal region,GM,Posterior parietal association areas,FALSE,right,108
+right Rostral amygdalopiriform area,Piriform cortex area,GM,Piriform-amygdalar area,FALSE,right,110
+right Primary somatosensory cortex,Parietal region,GM,Primary somatosensory area,FALSE,right,111
+right Primary somatosensory cortex: barrel field,Parietal region,GM,"Primary somatosensory area, barrel field",FALSE,right,117
+right Primary somatosensory cortex: dysgranular zone,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,right,121
+right Primary somatosensory cortex: forelimb region,Parietal region,GM,"Primary somatosensory area, upper limb",FALSE,right,126
+right Primary somatosensory cortex: hindlimb region,Parietal region,GM,"Primary somatosensory area, lower limb",FALSE,right,127
+right Primary somatosensory cortex: jaw region,Parietal region,GM,"Primary somatosensory area, mouth",FALSE,right,128
+right Primary somatosensory cortex: shoulder region,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,right,129
+right Primary somatosensory cortex: trunk region,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,right,132
+right Primary somatosensory cortex: upper lip region,Parietal region,GM,"Primary somatosensory area, nose",FALSE,right,134
+right Secondary somatosensory cortex,Parietal region,GM,Supplemental somatosensory area,FALSE,right,135
+right Temporal association area,Temporal region,GM,Temporal association areas,FALSE,right,136
+right Primary visual cortex,Occipital region,GM,Primary visual area,FALSE,right,137
+right Primary visual cortex: binocular area,Occipital region,GM,Lateral visual area,FALSE,right,138
+right Primary visual cortex: monocular area,Occipital region,GM,posteromedial visual area,FALSE,right,141
+right Secondary visual cortex: lateral area,Occipital region,GM,Anterolateral visual area,FALSE,right,142
+right Secondary visual cortex: mediolateral area,Occipital region,GM,Anteromedial visual area,FALSE,right,147
+right Secondary visual cortex: mediomedial area,Occipital region,GM,Posterior parietal association areas,FALSE,right,149
+right Claustrum: ventral part,Insular claustrum,GM,Claustrum,FALSE,right,158
+right Ventral nucleus of the endopiriform claustrum,Endopiriform claustrum,GM,"Endopiriform nucleus, ventral part",FALSE,right,160
+right Ventral intermediate entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,right,162
+right Ventral orbital cortex,Frontal region,GM,"Orbital area, ventrolateral part",FALSE,right,163
+right Ventral tenia tecta,Entorhinal cortex,GM,"Taenia tecta, ventral part",FALSE,right,165
+right CA10r,Hippocampal region,GM,"Field CA1, stratum oriens",FALSE,right,336
+right LMol,Hippocampal region,GM,"Field CA1, stratum lacunosum-moleculare",FALSE,right,306
+right CA1Rad,Hippocampal region,GM,"Field CA1, stratum radiatum",FALSE,right,308
+right CA2Py,Hippocampal region,GM,"Field CA2, pyramidal layer",FALSE,right,310
+right CA20r,Hippocampal region,GM,"Field CA2, stratum oriens",FALSE,right,312
+right CA2Rad,Hippocampal region,GM,"Field CA2, stratum radiatum",FALSE,right,314
+right CA3Py Inner,Hippocampal region,GM,"Field CA3, pyramidal layer",FALSE,right,316
+right CA3Py Outer,Hippocampal region,GM,"Field CA3, pyramidal layer",FALSE,right,318
+right CA30r,Hippocampal region,GM,"Field CA3, stratum oriens",FALSE,right,320
+right CA3Rad,Hippocampal region,GM,"Field CA3, stratum radiatum",FALSE,right,322
+right SLu,Hippocampal region,GM,"Field CA3, stratum lucidum",FALSE,right,324
+right MoDG,Hippocampal region,GM,"Dentate gyrus, molecular layer",FALSE,right,326
+right GrDG,Hippocampal region,GM,"Dentate gyrus, granule cell layer",FALSE,right,328
+right PoDG,Hippocampal region,GM,"Dentate gyrus, granule cell layer",FALSE,right,330
+right CA1Py,Hippocampal region,GM,"Field CA1, pyramidal layer",FALSE,right,334
+right Olfactory bulb: glomerular layer,Olfactory bulbs,GM,"Main olfactory bulb, glomerular layer",FALSE,right,337
+right Olfactory bulb: external plexiform layer,Olfactory bulbs,GM,"Main olfactory bulb, outer plexiform layer",FALSE,right,338
+right Olfactory bulb: mitral cell layer,Olfactory bulbs,GM,"Main olfactory bulb, mitral layer",FALSE,right,339
+right Olfactory bulb: internal plexiform layer,Olfactory bulbs,GM,"Main olfactory bulb, inner plexiform layer",FALSE,right,340
+right Olfactory bulb: granule cell layer,Olfactory bulbs,GM,"Main olfactory bulb, granule layer",FALSE,right,341
+"right Accessory olfactory bulb: glomerular, external plexiform and mitral cell layer",Olfactory bulbs,GM,"Accessory olfactory bulb, glomerular layer",FALSE,right,342
+right Accessory olfactory bulb: granule cell layer,Olfactory bulbs,GM,"Accessory olfactory bulb, granular layer",FALSE,right,343
+right Anterior olfactory nucleus,Olfactory bulbs,GM,Anterior olfactory nucleus,FALSE,right,344
+right subiculum,NA,GM,Subiculum,FALSE,right,332
+right Medial amygdala,NA,GM,Medial amygdalar nucleus,FALSE,right,353
+right Medial preoptic nucleus,NA,GM,Medial preoptic nucleus,FALSE,right,354
+left amygdala,NA,GM,Cortical subplate,FALSE,left,151
+left anterior commissure: pars anterior,NA,WM,"anterior commissure, olfactory limb",FALSE,left,215
+left anterior commissure: pars posterior,NA,WM,"anterior commissure, temporal limb",FALSE,left,103
+left basal forebrain,NA,GM,"Pallidum, ventral region",FALSE,left,152
+left bed nucleus of stria terminalis,NA,GM,Bed nuclei of the stria terminalis,FALSE,left,76
+left cerebellar peduncle: inferior,NA,WM,inferior cerebellar peduncle,FALSE,left,223
+left cerebellar peduncle: middle,NA,WM,middle cerebellar peduncle,FALSE,left,245
+left cerebellar peduncle: superior,NA,WM,superior cerebelar peduncles,FALSE,left,222
+left cerebral peduncle,NA,WM,cerebal peduncle,FALSE,left,14
+left colliculus: inferior,NA,GM,Inferior colliculus,FALSE,left,43
+left colliculus: superior,NA,GM,"Superior colliculus, sensory related",FALSE,left,109
+left corpus callosum,NA,WM,corpus callosum,FALSE,left,68
+left corticospinal tract/pyramids,NA,WM,corticospinal tract,FALSE,left,18
+left cuneate nucleus,NA,GM,Cuneate nucleus,FALSE,left,168
+left facial nerve (cranial nerve 7),NA,GM,facial nerve,FALSE,left,219
+left fasciculus retroflexus,NA,WM,fasciculus retroflexus,FALSE,left,125
+left fimbria,NA,WM,fimbria,FALSE,left,11
+left fornix,NA,WM,dorsal fornix,FALSE,left,22
+left fundus of striatum,NA,GM,Fundus of striatum,FALSE,left,154
+left globus pallidus,NA,GM,"Pallidum, dorsal region",FALSE,left,144
+left habenular commissure,NA,WM,habenular commissure,FALSE,left,199
+left hypothalamus,NA,GM,Hypothalamus,FALSE,left,150
+left inferior olivary complex,NA,GM,Inferior olivary complex,FALSE,left,213
+left internal capsule,NA,WM,internal capsule,FALSE,left,12
+left lateral olfactory tract,NA,WM,"lateral olfactory tract, general",FALSE,left,102
+left lateral septum,NA,NA,Lateral septal complex,FALSE,left,107
+left lateral ventricle,NA,CSF,lateral ventricle,FALSE,left,77
+left mammillary bodies,NA,GM,Mammillary body,FALSE,left,61
+left mammilothalamic tract,NA,WM,mammilothalmic tract,FALSE,left,212
+left medial lemniscus/medial longitudinal fasciculus,NA,WM,medial lemniscus,FALSE,left,120
+left medial septum,NA,NA,Medial septal complex,FALSE,left,153
+left nucleus accumbens,NA,GM,Nucleus accumbens,FALSE,left,155
+left olfactory peduncle,Olfactory bulbs,GM,Olfactory areas,FALSE,left,105
+left olfactory tubercle,NA,GM,Olfactory tubercle,FALSE,left,145
+left optic tract,NA,WM,optic tract,FALSE,left,116
+left pontine nucleus,NA,GM,Pontine reticular nucleus,FALSE,left,185
+left pre-para subiculum,NA,GM,Subiculum,FALSE,left,131
+left stria medullaris,NA,GM,stria medullaris,FALSE,left,205
+left stria terminalis,NA,GM,stria terminalis,FALSE,left,159
+left striatum,NA,GM,Caudoputamen,FALSE,left,17
+left subependymale zone / rhinocele,NA,GM,subependymal zone,FALSE,left,140
+left superior olivary complex,NA,GM,Superior olivary complex,FALSE,left,214
+left thalamus,NA,GM,Thalamus,FALSE,left,4
+left anterior lobule  (lobules 4-5),cerebellar paravermis,GM,Lobules IV-V,FALSE,left,148
+left simple lobule (lobule 6),cerebellar hemisphere,GM,Simple lobule,FALSE,left,91
+left crus 1: ansiform lobule (lobule 6),cerebellar hemisphere,GM,Crus 1,FALSE,left,192
+left crus 2: ansiform lobule (lobule 7),cerebellar hemisphere,GM,Crus 2,FALSE,left,93
+left paramedian lobule (lobule 7),cerebellar hemisphere,GM,Paramedian lobule,FALSE,left,200
+left copula: pyramis (lobule 8),cerebellar hemisphere,GM,Copula pyramidis,FALSE,left,96
+left flocculus (FL),cerebellar flocculonodular lobe,GM,Flocculus,FALSE,left,197
+left paraflocculus (PFL),cerebellar flocculonodular lobe,GM,Paraflocculus,FALSE,left,98
+left anterior lobule white matter,cerebellar paravermis white matter,NA,arbor vitae,FALSE,left,31
+left simple lobule white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,251
+left crus 1 white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,170
+left trunk of simple and crus 1 white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,246
+left crus 2 white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,249
+left paramedian lobule,cerebellar white matter,WM,arbor vitae,FALSE,left,248
+left trunk of crus 2 and paramedian white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,195
+left copula white matter,cerebellar white matter,WM,arbor vitae,FALSE,left,244
+left paraflocculus white matter,cerebellar flocculonodular lobe white matter,WM,arbor vitae,FALSE,left,243
+left flocculus white matter,cerebellar flocculonodular lobe white matter,WM,arbor vitae,FALSE,left,177
+left dentate nucleus,deep cerebellar nuclei,GM,Dentate nucleus,FALSE,left,201
+left nucleus interpositus,deep cerebellar nuclei,GM,Interposed nucleus,FALSE,left,3
+left fastigial nucleus,deep cerebellar nuclei,GM,Fastigial nucleus,FALSE,left,206
+left Cingulate cortex: area 24a,Cingulate region,GM,"Anterior cingulate area, ventral part",FALSE,left,169
+left Cingulate cortex: area 24a',Cingulate region,GM,"Anterior cingulate area, ventral part",FALSE,left,171
+left Cingulate cortex: area 24b,Cingulate region,GM,"Anterior cingulate area, dorsal part",FALSE,left,172
+left Cingulate cortex: area 24b',Cingulate region,GM,"Anterior cingulate area, dorsal part",FALSE,left,173
+left Cingulate cortex: area 25,Cingulate region,GM,Infralimbic area,FALSE,left,178
+left Cingulate cortex: area 29a,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,left,179
+left Cingulate cortex: area 29b,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,left,182
+left Cingulate cortex: area 29c,Cingulate region,GM,"Retrosplenial area, ventral part",FALSE,left,184
+left Cingulate cortex: area 30,Cingulate region,GM,"Retrosplenial area, dorsal part",FALSE,left,186
+left Cingulate cortex: area 32,Cingulate region,GM,Prelimbic area,FALSE,left,188
+left Amygdalopiriform transition area,Piriform cortex area,GM,Postpiriform transition area,FALSE,left,189
+left Primary auditory cortex,Temporal region,GM,Primary auditory area,FALSE,left,208
+left Secondary auditory cortex: dorsal area,Temporal region,GM,Dorsal auditory area,FALSE,left,217
+left Secondary auditory cortex: ventral area,Temporal region,GM,Ventral auditory area,FALSE,left,221
+left Caudomedial entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, medial part, dorsal zone",FALSE,left,227
+left Cingulum,Fiber Groups,WM,cingulum bundle,FALSE,left,231
+left Claustrum,Insular claustrum,GM,Claustrum,FALSE,left,235
+left Cortex-amygdala transition zones,Piriform cortex area,GM,Piriform area,FALSE,left,255
+left Claustrum: dorsal part,Insular claustrum,GM,Claustrum,FALSE,left,256
+left Dorsal nucleus of the endopiriform,Endopiriform claustrum,GM,"Endopiriform nucleus, dorsal part",FALSE,left,257
+left Dorsal intermediate entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,left,258
+left Dorsolateral entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,left,259
+left Dorsolateral orbital cortex,Frontal region,GM,"Agranular insular area, dorsal part",FALSE,left,260
+left Dorsal tenia tecta,Entorhinal cortex,GM,"Taenia tecta, dorsal part",FALSE,left,261
+left Ectorhinal cortex,Insular region,GM,Ectorhinal area,FALSE,left,262
+left Frontal cortex: area 3,Frontal region,GM,Primary motor area,FALSE,left,263
+left Frontal association cortex,Frontal region,GM,"Frontal pole, cerebral cortex",FALSE,left,264
+left Intermediate nucleus of the endopiriform claustrum,Endopiriform claustrum,GM,"Endopiriform nucleus, dorsal part",FALSE,left,265
+left Insular region: not subdivided,Insular region,GM,Ectorhinal area,FALSE,left,266
+left Lateral orbital cortex,Frontal region,GM,"Orbital area, lateral part",FALSE,left,267
+left Lateral parietal association cortex,Parietal region,GM,Posterior parietal association areas,FALSE,left,268
+left Primary motor cortex,Frontal region,GM,Primary motor area,FALSE,left,269
+left Secondary motor cortex,Frontal region,GM,Secondary motor area,FALSE,left,270
+left Medial entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, medial part, ventral zone",FALSE,left,271
+left Medial orbital cortex,Frontal region,GM,"Orbital area, medial part",FALSE,left,272
+left Medial parietal association cortex,Parietal region,GM,Posterior parietal association areas,FALSE,left,273
+left Piriform cortex,Piriform cortex area,GM,Piriform area,FALSE,left,274
+left Posterolateral cortical amygdaloid area,Piriform cortex area,GM,"Cortical amygdalar area, posterior part, lateral zone",FALSE,left,275
+left Posteromedial cortical amygdaloid area,Piriform cortex area,GM,"Cortical amygdalar area, posterior part, medial zone",FALSE,left,276
+left Perirhinal cortex,Insular region,GM,Perirhinal area,FALSE,left,277
+left Parietal cortex: posterior area: rostral part,Parietal region,GM,Posterior parietal association areas,FALSE,left,278
+left Rostral amygdalopiriform area,Piriform cortex area,GM,Piriform-amygdalar area,FALSE,left,279
+left Primary somatosensory cortex,Parietal region,GM,Primary somatosensory area,FALSE,left,280
+left Primary somatosensory cortex: barrel field,Parietal region,GM,"Primary somatosensory area, barrel field",FALSE,left,281
+left Primary somatosensory cortex: dysgranular zone,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,left,282
+left Primary somatosensory cortex: forelimb region,Parietal region,GM,"Primary somatosensory area, upper limb",FALSE,left,283
+left Primary somatosensory cortex: hindlimb region,Parietal region,GM,"Primary somatosensory area, lower limb",FALSE,left,284
+left Primary somatosensory cortex: jaw region,Parietal region,GM,"Primary somatosensory area, mouth",FALSE,left,285
+left Primary somatosensory cortex: shoulder region,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,left,286
+left Primary somatosensory cortex: trunk region,Parietal region,GM,"Primary somatosensory area, trunk",FALSE,left,287
+left Primary somatosensory cortex: upper lip region,Parietal region,GM,"Primary somatosensory area, nose",FALSE,left,288
+left Secondary somatosensory cortex,Parietal region,GM,Supplemental somatosensory area,FALSE,left,289
+left Temporal association area,Temporal region,GM,Temporal association areas,FALSE,left,290
+left Primary visual cortex,Occipital region,GM,Primary visual area,FALSE,left,291
+left Primary visual cortex: binocular area,Occipital region,GM,Lateral visual area,FALSE,left,292
+left Primary visual cortex: monocular area,Occipital region,GM,posteromedial visual area,FALSE,left,293
+left Secondary visual cortex: lateral area,Occipital region,GM,Anterolateral visual area,FALSE,left,294
+left Secondary visual cortex: mediolateral area,Occipital region,GM,Anteromedial visual area,FALSE,left,295
+left Secondary visual cortex: mediomedial area,Occipital region,GM,Posterior parietal association areas,FALSE,left,296
+left Claustrum: ventral part,Insular claustrum,GM,Claustrum,FALSE,left,297
+left Ventral nucleus of the endopiriform claustrum,Endopiriform claustrum,GM,"Endopiriform nucleus, ventral part",FALSE,left,298
+left Ventral intermediate entorhinal cortex,Entorhinal cortex,GM,"Entorhinal area, lateral part",FALSE,left,299
+left Ventral orbital cortex,Frontal region,GM,"Orbital area, ventrolateral part",FALSE,left,300
+left Ventral tenia tecta,Entorhinal cortex,GM,"Taenia tecta, ventral part",FALSE,left,301
+left CA10r,Hippocampal region,GM,"Field CA1, stratum oriens",FALSE,left,305
+left LMol,Hippocampal region,GM,"Field CA1, stratum lacunosum-moleculare",FALSE,left,307
+left CA1Rad,Hippocampal region,GM,"Field CA1, stratum radiatum",FALSE,left,309
+left CA2Py,Hippocampal region,GM,"Field CA2, pyramidal layer",FALSE,left,311
+left CA20r,Hippocampal region,GM,"Field CA2, stratum oriens",FALSE,left,313
+left CA2Rad,Hippocampal region,GM,"Field CA2, stratum radiatum",FALSE,left,315
+left CA3Py Inner,Hippocampal region,GM,"Field CA3, pyramidal layer",FALSE,left,317
+left CA3Py Outer,Hippocampal region,GM,"Field CA3, pyramidal layer",FALSE,left,319
+left CA30r,Hippocampal region,GM,"Field CA3, stratum oriens",FALSE,left,321
+left CA3Rad,Hippocampal region,GM,"Field CA3, stratum radiatum",FALSE,left,323
+left SLu,Hippocampal region,GM,"Field CA3, stratum lucidum",FALSE,left,325
+left MoDG,Hippocampal region,GM,"Dentate gyrus, molecular layer",FALSE,left,327
+left GrDG,Hippocampal region,GM,"Dentate gyrus, granule cell layer",FALSE,left,329
+left PoDG,Hippocampal region,GM,"Dentate gyrus, granule cell layer",FALSE,left,331
+left CA1Py,Hippocampal region,GM,"Field CA1, pyramidal layer",FALSE,left,335
+left Olfactory bulb: glomerular layer,Olfactory bulbs,GM,"Main olfactory bulb, glomerular layer",FALSE,left,345
+left Olfactory bulb: external plexiform layer,Olfactory bulbs,GM,"Main olfactory bulb, outer plexiform layer",FALSE,left,346
+left Olfactory bulb: mitral cell layer,Olfactory bulbs,GM,"Main olfactory bulb, mitral layer",FALSE,left,347
+left Olfactory bulb: internal plexiform layer,Olfactory bulbs,GM,"Main olfactory bulb, inner plexiform layer",FALSE,left,348
+left Olfactory bulb: granule cell layer,Olfactory bulbs,GM,"Main olfactory bulb, granule layer",FALSE,left,349
+"left Accessory olfactory bulb: glomerular, external plexiform and mitral cell layer",Olfactory bulbs,GM,"Accessory olfactory bulb, glomerular layer",FALSE,left,350
+left Accessory olfactory bulb: granule cell layer,Olfactory bulbs,GM,"Accessory olfactory bulb, granular layer",FALSE,left,351
+left Anterior olfactory nucleus,Olfactory bulbs,GM,Anterior olfactory nucleus,FALSE,left,352
+left subiculum,NA,GM,Subiculum,FALSE,left,333
+left Medial amygdala,NA,GM,Medial amygdalar nucleus,FALSE,left,355
+left Medial preoptic nucleus,NA,GM,Medial preoptic nucleus,FALSE,left,356
+Nothing,NA,NA,NA,NA,NA,0
