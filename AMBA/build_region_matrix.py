@@ -1,18 +1,18 @@
-# BuildRegionExprMatrix.py -------------------------------------
+# build_region_matrix.py -------------------------------------
 #
 #
 #
 # Antoine Beauchamp
 # Created: January 31st, 2022
-# Edited: January 31st, 2022
+# Edited: March 7th, 2022
 # --------------------------------------------------------------
 
 # Packages -----------------------------------------------------
 
+import argparse
 import numpy as np
 import pandas as pd
 from pyminc.volumes.factory import *
-import argparse
 
 
 # Functions ---------------------------------------------------
@@ -44,19 +44,16 @@ def main():
     
     print("Using {} dataset".format(dataset))
           
-    #Path to main directory
-    pathAMBA = '/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/'
-
     
     # Import expression data --------------------------------------
     
     #File containing voxel expression matrix
-    infile = 'MouseExpressionMatrix_Voxel_'+dataset+'_mask'+dataset+'_imputed.csv'
+    infile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+dataset+'_imputed.csv'
     
     print("Importing voxel expression matrix: {} ...".format(infile))
     
     #Import voxel expression matrix
-    dfExprVoxel = pd.read_csv(pathAMBA+'Data/'+infile)
+    dfExprVoxel = pd.read_csv('data/{}'.format(infile))
     
     #Extract gene names from data frame
     genes = dfExprVoxel['Gene']
@@ -82,18 +79,18 @@ def main():
     
     print("Importing mask volume: {} ...".format(maskfile))
     
-    maskVol = volumeFromFile(pathAMBA+'Data/MRI/'+maskfile)
+    maskVol = volumeFromFile('data/imaging/{}'.format(maskfile))
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
     
     
     #File containing atlas labels
-    labelfile = 'DSURQE_Allen_labels.mnc'
+    labelfile = 'DSURQE_CCFv3_labels_200um.mnc'
     
     print("Importing DSURQE label volume: {} ...".format(labelfile))
     
     #Import DSURQE label volume, flatten, and convert to numpy array
-    labelVol = volumeFromFile(pathAMBA+'Data/MRI/'+labelfile)
+    labelVol = volumeFromFile('data/imaging/{}'.format(labelfile))
     labelArray = np.array(labelVol.data.flatten())
     labelVol.closeVolume()
 
@@ -107,7 +104,7 @@ def main():
     print("Importing DSURQE label definitions: {} ...".format(defsfile))
     
     #Import DSURQE label definitions
-    dfAtlasDefs = pd.read_csv('/projects/abeauchamp/Atlases/DSURQE/'+defsfile)
+    dfAtlasDefs = pd.read_csv('data/imaging/{}'.format(defsfile))
     
     
     
@@ -159,7 +156,9 @@ def main():
     outfile = 'MouseExpressionMatrix_ROI_DSURQE_'+dataset+'_mask'+dataset+'.csv'
     
     #Write regional expression matrix to csv
-    dfExprRegion.to_csv(pathAMBA+'Data/'+outfile)
+    dfExprRegion.to_csv('data/{}'.format(outfile))
+    
+    return
 
     
     
