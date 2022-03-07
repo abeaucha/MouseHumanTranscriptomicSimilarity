@@ -49,3 +49,4 @@ AMBA/AMBA_env/
 AMBA/data/expression/
 AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv
 AHBA/data/SampleInformation_pipeline_v1.csv
+AHBA/data/HumanExpressionTree.RData
