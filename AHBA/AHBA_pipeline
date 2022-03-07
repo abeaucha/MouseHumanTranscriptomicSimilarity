@@ -4,7 +4,7 @@ source activate_venv
 
 # Download AHBA data from the web
 echo "Downloading AHBA data..."
-python3 download_ahba.py
+python3 download_AHBA.py
 
 # Build sample expression matrix 
 echo "Building gene-by-sample expression matrix..."

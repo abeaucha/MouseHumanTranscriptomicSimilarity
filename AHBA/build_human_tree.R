@@ -1,10 +1,10 @@
-# BuildHumanExprTree --------------------------------------------------------------------
+# build_human_tree --------------------------------------------------------------------
 # 
 #
 #
 # Antoine Beauchamp
 # Created: March 9th, 2021
-# Edited: August 23rd, 2021
+# Edited: March 7th, 2022
 # ---------------------------------------------------------------------------------------
 
 # Libraries -----------------------------------------------------------------------------
@@ -16,22 +16,19 @@ library(rjson)
 
 # Functions -----------------------------------------------------------------------------
 
-source("/projects/abeauchamp/Functions/abi_parsing_funs.R")
-source("/projects/abeauchamp/Functions/TreeTools.R")
+source("../functions/abi_parsing_funs.R")
+source("../functions/tree_tools.R")
 
 
 # Map microarray samples to tree nodes --------------------------------------------------
 
 message("Mapping AHBA microarray samples to the human neuroanatomical tree...")
 
-#Paths
-pathAHBA <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/"
-
 #Load AHBA sample information
-dfSampleInfo <- suppressMessages(read_csv(str_c(pathAHBA, "Data/", "SampleInformation.csv")))
+dfSampleInfo <- suppressMessages(read_csv("data/SampleInformation_pipeline_v1.csv"))
 
 #Load the human tree definitions
-treeHumanDefs <- parse_abi_hierarchy("/projects/abeauchamp/Atlases/AHBA/human_hierarchy_definitions.json")
+treeHumanDefs <- parse_abi_hierarchy("data/AHBA_hierarchy_definitions.json")
 
 #Make cerebellar vermis names different from cerebellar hemispheres
 #Otherwise this messes with the sample assignment
@@ -76,7 +73,7 @@ Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 message("Adding gene expression data to the tree...")
 
 #Import sample expression matrix
-matHumanExpr <- suppressMessages(read_csv(str_c(pathAHBA, "Data/", "HumanExpressionMatrix_Samples.csv"))) %>% 
+matHumanExpr <- suppressMessages(read_csv(str_c("data/HumanExpressionMatrix_Samples_pipeline_v1.csv"))) %>% 
   column_to_rownames("Gene") %>% 
   as.matrix()
 
@@ -102,5 +99,5 @@ treeHumanExpr$Do(function(node){
 message("Writing data to file...")
 
 save(treeHumanExpr,
-     file = str_c(pathAHBA, "Data/", "HumanExpressionTree_Samples.RData"))
+     file = "data/HumanExpressionTree.RData")
 

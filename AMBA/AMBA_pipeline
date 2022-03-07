@@ -4,10 +4,10 @@ source activate_venv
 
 # Download AHBA data from the web
 echo "Downloading AMBA coronal in-situ hybridization data set..."
-python3 download_amba.py --dataset coronal --outdir data/expression/ --metadata AMBA_metadata_coronal.csv --parallel true --nproc 12
+python3 download_AMBA.py --dataset coronal --outdir data/expression/ --metadata AMBA_metadata_coronal.csv --parallel true --nproc 12
 
 echo "Downloading AMBA coronal in-situ hybridization data set..."
-python3 download_amba.py --dataset sagittal --outdir data/expression/ --metadata AMBA_metadata_sagittal.csv --parallel true --nproc 12
+python3 download_AMBA.py --dataset sagittal --outdir data/expression/ --metadata AMBA_metadata_sagittal.csv --parallel true --nproc 12
 
 # Build voxel expression matrix 
 echo "Building gene-by-voxel expression matrix..."

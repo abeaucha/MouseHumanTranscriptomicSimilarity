@@ -45,5 +45,8 @@ AHBA/atlas_mappings/
 AHBA/data/microarray/
 AMBA/.envrc
 AMBA/.ipynb_checkpoints/
-AMBA/amba_env/
+AMBA/AMBA_env/
 AMBA/data/expression/
+AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv
+AHBA/data/SampleInformation_pipeline_v1.csv
+AHBA/data/HumanExpressionTree.RData
