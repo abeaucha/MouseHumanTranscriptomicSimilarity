@@ -6,10 +6,11 @@ source activate_venv
 echo "Downloading AMBA coronal in-situ hybridization data set..."
 python3 download_AMBA.py --dataset coronal --outdir data/expression/ --metadata AMBA_metadata_coronal.csv --parallel true --nproc 12
 
-echo "Downloading AMBA coronal in-situ hybridization data set..."
+echo "Downloading AMBA sagittal in-situ hybridization data set..."
 python3 download_AMBA.py --dataset sagittal --outdir data/expression/ --metadata AMBA_metadata_sagittal.csv --parallel true --nproc 12
 
 # Build voxel expression matrix 
-echo "Building gene-by-voxel expression matrix..."
+echo "Building mouse gene-by-voxel expression matrix..."
+python3 build_voxel_matrix.py --dataset coronal --mask coronal --groupexp true --impute true  
 
 # Build data tree

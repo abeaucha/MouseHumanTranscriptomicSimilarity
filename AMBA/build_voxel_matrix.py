@@ -113,11 +113,11 @@ def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
     #Load expression data
     dfExpression = loadExpressionData(paths, mask)
 
-    #Transform to log2 and normalize by experiment
+    #Transform to log2
     dfExpression = np.log2(dfExpression)
     
-    #Replace index with gene acronyms
     dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
+        
     dfExpression.index.name = 'Gene'
     
     #Aggregate experiments per gene if flag is set
@@ -157,7 +157,7 @@ def main():
     if dataset == "sagittal":
         
         #Paths to sagittal and coronal data set directories
-        pathGeneDir_Sagittal = "data/expression/sagittal/
+        pathGeneDir_Sagittal = "data/expression/sagittal/"
         pathGeneDir_Coronal = "data/expression/coronal/"
     
         #Build paths to all files in the directories
@@ -198,6 +198,7 @@ def main():
     #Build expression data frame
     dfExpression = buildVoxelExprMatrix(pathGeneFiles, mask = maskArray, groupExperiments = groupExperiments)
 
+    quit()
     
     #Switch to impute missing values
     if impute == True:
