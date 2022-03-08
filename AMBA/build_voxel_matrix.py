@@ -9,17 +9,18 @@
 
 # Packages -----------------------------------------------------------
 
+import argparse
+import os
+import re
+import warnings
 import numpy as np
 import pandas as pd
-import re
-import argparse
-import sys
-import warnings
+import multiprocessing as mp
 
 from pyminc.volumes.factory import *
 from glob                   import glob
-from os.path                import basename
-
+from tqdm                   import tqdm
+from functools              import partial
 from sklearn.impute         import KNNImputer
 from sklearn.preprocessing  import FunctionTransformer
 from sklearn.pipeline       import Pipeline
@@ -30,6 +31,20 @@ from sklearn.pipeline       import Pipeline
 def parse_args():
     
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument(
+        '--datadir',
+        type = str,
+        default = 'data/expression/',
+        help = 'Directory containing expression data'
+    )
+    
+    parser.add_argument(
+        '--outdir',
+        type = str,
+        default = 'data/',
+        help = 'Directory in which to save expression matrix'
+    )
     
     parser.add_argument(
         '--dataset',
@@ -48,11 +63,26 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--log2',
+        type = str,
+        default = 'true',
+        choices = ['true', 'false'],
+        help = 'Option to transform expression data to log2'
+    )
+    
+    parser.add_argument(
         '--groupexp',
         type = str,
         default = 'true',
         choices = ['true', 'false'],
         help = 'Option to group multiple ISH experiments per gene'
+    )
+    
+    parser.add_argument(
+        '--threshold',
+        type = float,
+        default = 0.2,
+        help = ''
     )
     
     parser.add_argument(
@@ -63,65 +93,85 @@ def parse_args():
         help = 'Option to impute missing data using KNN imputation'
     )
     
+    parser.add_argument(
+        '--parallel',
+        type = str,
+        default = 'true',
+        choices = ['true', 'false'],
+        help = 'Option to import image files in parallel'
+    )
+    
+    parser.add_argument(
+        '--nproc',
+        type = int,
+        default = mp.cpu_count(),
+        help = 'Number of processors to use in parallel. Ignored if --parallel set to false.'
+    )
+    
     args = vars(parser.parse_args())
     
     return args
     
     
-    
-def loadExpressionData(paths, mask):
-
-    """ """
-
-    #Number of files and number of voxels per file
-    nFiles = len(paths)
-    nVoxels = int(np.sum(mask))
-
-    #Initialize matrix
-    matExpr = np.empty((nFiles, nVoxels), dtype = 'float')
-
-    #Iterate over files
-    for i, path in enumerate(paths):
-
-        if (i%100 == 0):
-            print('On file {} of {}'.format(i, len(paths)))
-
-        #Read ISH data to numpy array
-        exprVol = volumeFromFile(path)
-        exprArray = np.array(exprVol.data.flatten())
-        exprVol.closeVolume()
-
-        #Apply mask and convert -1 to NaN
-        exprArrayMasked = exprArray[mask == 1]
-        exprArrayMasked[exprArrayMasked == -1] = np.nan
-        exprArrayMasked[exprArrayMasked == 0] = np.nan
-
-        #Write expression data to matrix
-        matExpr[i,] = exprArrayMasked
-        
-    #Convert matrix to df, using file names as index
-    dfExpression = pd.DataFrame(matExpr, index = [basename(path) for path in paths])
-
-    return dfExpression
-    
-    
-
-def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
+def importImage(img, mask):
     
     """ """
     
-    #Load expression data
-    dfExpression = loadExpressionData(paths, mask)
+    #Import mask mask and convert to numpy array
+    maskVol = volumeFromFile(mask)
+    maskArray = np.array(maskVol.data.flatten())
+    maskVol.closeVolume()
+    
+    #Read ISH data to numpy array
+    imageVol = volumeFromFile(img)
+    imageArray = np.array(imageVol.data.flatten())
+    imageVol.closeVolume()
+    
+    #Apply mask and convert -1 to NaN
+    imageArrayMasked = imageArray[maskArray == 1]
+    imageArrayMasked[imageArrayMasked == -1] = np.nan
+    imageArrayMasked[imageArrayMasked == 0] = np.nan
+    
+    return imageArrayMasked
+
+
+def buildExpressionMatrix(files, mask, log_transform = True, group_experiments = True, threshold = 0.2, parallel = True, nproc = None):
+    
+    """ """
+    
+    importImage_partial = partial(importImage, mask = mask)
+
+    if parallel:
+
+        if nproc is None:
+            nproc = mp.cpu_count()
+
+        pool = mp.Pool(nproc)
+
+        arrays = []
+        for array in tqdm(pool.imap(importImage_partial, files), total = len(files)):
+            arrays.append(array)
+
+        pool.close()
+        pool.join()
+
+    else:
+
+        arrays = list(map(importImage_partial, tqdm(files)))
+    
+    dfExpression = pd.DataFrame(np.asarray(arrays), index = [os.path.basename(file) for file in files])
 
     #Transform to log2
-    dfExpression = np.log2(dfExpression)
+    if log_transform:
+        print("Applying log2 transform...")
+        dfExpression = np.log2(dfExpression)
     
     dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
         
     dfExpression.index.name = 'Gene'
     
     #Aggregate experiments per gene if flag is set
-    if groupExperiments == True:
+    if group_experiments:
         print("Aggregating multiple experiments per gene...")
         dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
     
@@ -132,24 +182,18 @@ def buildVoxelExprMatrix(paths, mask, threshold = 0.2, groupExperiments = True):
     return dfExpression
     
 
-
 def main():
 
     #Load command line arguments
     args = parse_args()
-    
-    print('Running with options: {}'.format(args))
-    
-    #Flags
+    datadir = args['datadir']
+    outdir = args['outdir']
     dataset = args['dataset']
-    maskFlag = args['mask']
-    groupExperiments = True if args['groupexp'] == 'true' else False
-    impute = True if args['impute'] == 'true' else False
-
+    mask = args['mask']
     
-    print("Using {} dataset with {} mask".format(dataset, maskFlag))
+    print("Importing {} dataset using {} mask".format(dataset, mask))
     
-    if (dataset == 'sagittal') and (maskFlag == 'coronal'):
+    if (dataset == 'sagittal') and (mask == 'coronal'):
         warnings.warn("Running with sagittal dataset and coronal mask is not ideal. Proceed with caution.")
         
     
@@ -157,8 +201,8 @@ def main():
     if dataset == "sagittal":
         
         #Paths to sagittal and coronal data set directories
-        pathGeneDir_Sagittal = "data/expression/sagittal/"
-        pathGeneDir_Coronal = "data/expression/coronal/"
+        pathGeneDir_Sagittal = os.path.join(datadir, dataset, '')
+        pathGeneDir_Coronal = os.path.join(datadir, 'coronal', '')
     
         #Build paths to all files in the directories
         pathGeneFiles_Sagittal = np.array(glob(pathGeneDir_Sagittal + "*.mnc"))
@@ -166,9 +210,9 @@ def main():
     
         #Extract gene names for coronal and sagittal data sets
         genes_Sagittal = np.array([re.sub(r"_[0-9]+.mnc", "", file) for file in 
-                                    [basename(path) for path in pathGeneFiles_Sagittal]])
+                                    [os.path.basename(path) for path in pathGeneFiles_Sagittal]])
         genes_Coronal = np.array([re.sub(r"_[0-9]+.mnc", "", file) for file in 
-                                    [basename(path) for path in pathGeneFiles_Coronal]])
+                                    [os.path.basename(path) for path in pathGeneFiles_Coronal]])
 
         #Identify genes from sagittal data in coronal data
         isInCoronal = np.isin(genes_Sagittal, genes_Coronal)
@@ -177,31 +221,33 @@ def main():
         pathGeneFiles = pathGeneFiles_Sagittal[isInCoronal]
         
     else:
-        pathGeneDir = "data/expression/coronal/"
-        pathGeneFiles = np.array(glob(pathGeneDir + "*.mnc"))
+        pathGeneDir = os.path.join(datadir, dataset, '')
+        pathGeneFiles = np.array(glob(pathGeneDir+"*.mnc"))
 
+    print("Building voxel expression matrix...")
 
-    #Load image mask and convert to numpy array
-    if maskFlag == "sagittal":
+    #Mask files
+    if mask == "sagittal":
         maskfile = "data/imaging/sagittal_200um_coverage_bin0.8.mnc"
-        maskVol = volumeFromFile(maskfile)        
     else: 
         maskfile = "data/imaging/coronal_200um_coverage_bin0.8.mnc"
-        maskVol = volumeFromFile(maskfile)
-        
-    maskArray = np.array(maskVol.data.flatten())
-    maskVol.closeVolume()
-
-
-    print("Building expression matrix...")
     
     #Build expression data frame
-    dfExpression = buildVoxelExprMatrix(pathGeneFiles, mask = maskArray, groupExperiments = groupExperiments)
+    log_transform = True if args['log2'] == 'true' else False
+    groupexp = True if args['groupexp'] == 'true' else False
+    parallel = True if args['parallel'] == 'true' else False
+    dfExpression = buildExpressionMatrix(files = pathGeneFiles, 
+                                         mask = maskfile,
+                                         log_transform = log_transform,
+                                         group_experiments = groupexp, 
+                                         threshold = args['threshold'], 
+                                         parallel = parallel, 
+                                         nproc = args['nproc'])
 
-    quit()
-    
-    #Switch to impute missing values
-    if impute == True:
+
+    #Impute missing values
+    impute = True if args['impute'] == 'true' else False
+    if impute:
         
         print("Imputing missing values using K-nearest neighbours...")
         
@@ -227,17 +273,23 @@ def main():
         imputed = ''
         
         
-    
+    #Write to file
     print("Writing to file...")
     
-    #Write to file
-    if groupExperiments == False:
-        wDups = '_wDups'
-    else:
-        wDups = ''
+    outfile = 'MouseExpressionMatrix_voxel_{}_mask{}'.format(dataset, mask)
     
-    outfile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+maskFlag+wDups+imputed+'.csv'
-    dfExpression.to_csv('data/'+outfile)
+    if args['log2']:
+        outfile = outfile+'_log2'
+        
+    if args['groupexp']:
+        outfile = outfile+'_grouped'
+        
+    if args['impute']:
+        outfile = outfile+'_imputed'
+    
+    outfile = outfile+'.csv'
+    
+    dfExpression.to_csv(os.path.join(outdir, outfile))
 
     return
     
