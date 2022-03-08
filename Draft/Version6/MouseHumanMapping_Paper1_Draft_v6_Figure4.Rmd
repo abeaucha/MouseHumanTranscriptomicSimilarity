@@ -509,7 +509,8 @@ grid.draw(fig4_grob)
 ```
 
 ```{r results2-fig4-write}
-fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure4.RData")
+# fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure4.RData")
+fileout <- str_c("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_TranscriptomicSimilarity/Draft/Version6/Figure4.RData")
 save(fig4_grob,
      fig4_width,
      fig4_height,
