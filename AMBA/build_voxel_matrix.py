@@ -32,6 +32,20 @@ def parse_args():
     parser = argparse.ArgumentParser()
     
     parser.add_argument(
+        '--datadir',
+        type = str,
+        default = 'data/expression/',
+        help = 'Directory containing expression data'
+    )
+    
+    parser.add_argument(
+        '--outdir',
+        type = str,
+        default = 'data/',
+        help = 'Directory in which to save expression matrix'
+    )
+    
+    parser.add_argument(
         '--dataset',
         type = str,
         default = 'coronal',
