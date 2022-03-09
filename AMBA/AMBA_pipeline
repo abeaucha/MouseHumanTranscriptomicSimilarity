@@ -26,3 +26,5 @@ echo "Building mouse gene-by-region expression matrix using the DSURQE atlas..."
 # Build mouse data tree
 echo "Building mouse neuroanatomical tree..."
 Rscript build_mouse_tree.R
+
+deactivate
