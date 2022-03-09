@@ -251,26 +251,22 @@ def main():
         
         print("Imputing missing values using K-nearest neighbours...")
         
-        #Initialize imputer and transposer
-        imputer = KNNImputer(missing_values = np.nan)
-        transposer = FunctionTransformer(np.transpose)
+#         #Initialize imputer and transposer
+#         imputer = KNNImputer(missing_values = np.nan)
+#         transposer = FunctionTransformer(np.transpose)
         
-        #Build pipeline
-        imputing_pipeline = Pipeline([('transpose1', transposer),
-                                     ('impute', imputer),
-                                     ('transpose2', transposer)])
+#         #Build pipeline
+#         imputing_pipeline = Pipeline([('transpose1', transposer),
+#                                      ('impute', imputer),
+#                                      ('transpose2', transposer)])
         
-        #Store gene names
-        genes = dfExpression.index
+#         #Store gene names
+#         genes = dfExpression.index
         
-        #Impute missing values and assign as data frame
-        dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
-                                    index = genes)
+#         #Impute missing values and assign as data frame
+#         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
+#                                     index = genes)
         
-        imputed = '_imputed'
-        
-    else:
-        imputed = ''
         
         
     #Write to file
@@ -278,16 +274,19 @@ def main():
     
     outfile = 'MouseExpressionMatrix_voxel_{}_mask{}'.format(dataset, mask)
     
-    if args['log2']:
+    if log_transform:
         outfile = outfile+'_log2'
         
-    if args['groupexp']:
+    if groupexp:
         outfile = outfile+'_grouped'
         
-    if args['impute']:
+    if impute:
         outfile = outfile+'_imputed'
     
     outfile = outfile+'.csv'
+    
+    print(outfile)
+    quit()
     
     dfExpression.to_csv(os.path.join(outdir, outfile))
 
