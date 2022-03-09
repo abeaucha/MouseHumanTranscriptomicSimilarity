@@ -4,7 +4,7 @@
 #
 # Antoine Beauchamp
 # Created: January 31st, 2022
-# Edited: March 7th, 2022
+# Edited: March 9th, 2022
 # --------------------------------------------------------------
 
 # Packages -----------------------------------------------------
@@ -32,7 +32,13 @@ def parse_args():
     parser.add_argument(
         '--infile',
         type = str,
-        help = 'CSV file containing expression matrix'
+        help = 'CSV file containing voxel-wise expression matrix'
+    )
+    
+    parser.add_argument(
+        '--outfile',
+        type = str,
+        help = 'File in which to save regional expression matrix'
     )
     
     parser.add_argument(
@@ -48,14 +54,6 @@ def parse_args():
     parser.add_argument(
         '--defs',
         type = str
-    )
-    
-    parser.add_argument(
-        '--dataset',
-        type = str,
-        default = 'coronal',
-        choices = ['coronal', 'sagittal'],
-        help = 'AMBA dataset to import'
     )
     
     args = vars(parser.parse_args())
@@ -74,16 +72,11 @@ def main():
     mask = args['mask']
     labels = args['labels']
     defs = args['defs']
-#     dataset = args['dataset']
     
-#     print("Using {} dataset".format(dataset))
-          
     
     # Import expression data --------------------------------------
     
     #File containing voxel expression matrix
-#     infile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+dataset+'_imputed.csv'
-    
     print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
     #Import voxel expression matrix
@@ -181,11 +174,8 @@ def main():
     
     print("Writing to file...")
     
-    outfile = 'MouseExpressionMatrix_ROI_DSURQE_'+dataset+'_mask'+dataset+'.csv'
-    
-    
     #Write regional expression matrix to csv
-    dfExprRegion.to_csv(os.path.join(datadir, outfile))
+    dfExprRegion.to_csv(os.path.join(datadir, args['outfile']))
     
     return
 
