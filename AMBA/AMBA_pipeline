@@ -19,4 +19,9 @@ python3 build_voxel_matrix.py --datadir data/expression/ --outdir data/ --datase
 echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
 python3 build_voxel_matrix.py --datadir data/expression/ --outdir data/ --dataset sagittal --mask sagittal --log2 true --groupexp true --threshold 0.2 --impute true --parallel true --nproc 4 
 
-# Build data tree
+# Build regional expression matrix using DSURQE
+echo "Building mouse gene-by-region expression matrix using the DSURQE atlas..."
+python3 build_region_matrix.py --datadir data/ --infile ... --mask coronal_200um_coverage_bin0.8.mnc --labels DSURQE_CCFv3_labels_200um.mnc --defs DSURQE_40micron_R_mapping_long.csv
+ 
+# Build mouse data tree
+Rscript build_mouse_tree.R
