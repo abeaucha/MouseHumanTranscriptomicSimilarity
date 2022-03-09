@@ -237,7 +237,6 @@ pruneAnatTree(treeHuman, cutAtNodes, method = "AtNode")
 treeHumanSamples <- treeHuman$`gray matter`$samples
 dfExprHuman <- dfExprHuman[,colnames(dfExprHuman) %in% treeHumanSamples]
 
-quit()
 
 # Assign regional labels ------------------------------------------------------
 
@@ -262,7 +261,7 @@ dfExprHuman <- dfExprHuman %>%
   column_to_rownames("Samples")
 
 #Load tree labels
-load(str_c(pathHome, "Paper_Descriptive/Data/TreeLabels.RData"))
+load("data/TreeLabels.RData")
 
 #Iterate over mouse parcellations
 for (l in 1:length(listLabelsMouse)){
@@ -296,13 +295,15 @@ rownames(dfExprHuman) <- NULL
 message("Writing to file...")
 
 if (args[["savemouse"]] == "true") {
-  outFileMouse <- str_c(str_remove(fileMouseMat, ".csv"), "_labelled", ".csv")  
-  outPathMouse <- str_c(pathHome, "Paper_Descriptive/", "Data/", outFileMouse)  
-  write_csv(dfExprMouse, path = outPathMouse)
+  outFileMouse <- fileMouseMat %>% 
+    basename() %>% 
+    str_replace(".csv", "_labelled.csv")
+  write_csv(dfExprMouse, file = str_c(args[["outdir"]], outFileMouse))
 }
 
 if (args[["savehuman"]] == "true"){
-  outFileHuman <- str_c(str_remove(fileHumanMat, ".csv"), "_labelled", ".csv")
-  outPathHuman <- str_c(pathHome, "Paper_Descriptive/", "Data/", outFileHuman)
-  write_csv(dfExprHuman, path = outPathHuman)
+  outFileHuman <- fileHumanMat %>% 
+    basename() %>% 
+    str_replace(".csv", "_labelled.csv")
+  write_csv(dfExprHuman, file = str_c(args[["outdir"]], outFileHuman))
 }
