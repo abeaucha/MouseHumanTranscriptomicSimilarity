@@ -1,9 +1,24 @@
 #!/bin/bash
 
 #Create atlas labels
-echo "Creating atlas labels from neuroanatomical trees..."
-Rscript create_tree_labels.R
+echo "Creating pruned atlas labels from neuroanatomical trees..."
+#Rscript create_tree_labels.R
 
 #Label expression matrices
 echo "Labelling mouse and human expression matrices..."
-Rscript label_expression_matrices.R --mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --humanmatrix AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv --mousetree AMBA/data/MouseExpressionTree_DSURQE.RData --humantree AHBA/data/HumanExpressionTree.RData --homologs data/MouseHumanGeneHomologs.csv --outdir data/ --savemouse true --savehuman true
+#Rscript label_expression_matrices.R --mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --humanmatrix AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv --mousetree AMBA/data/MouseExpressionTree_DSURQE.RData --humantree AHBA/data/HumanExpressionTree.RData --homologs data/MouseHumanGeneHomologs.csv --outdir data/ --savemouse true --savehuman true
+
+#Normalize and aggregate labelled expression matrices
+echo "Processing labelled expression matrices..."
+
+echo "Normalizing mouse voxel expression matrix..."
+Rscript process_labelled_matrices.R --infile data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv --scale true --aggregate false --outdir data/
+
+echo "Normalizing human sample expression matrix..."
+Rscript process_labelled_matrices.R --infile data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv --scale true --aggregate false --outdir data/
+
+echo "Normalizing and aggregating mouse voxel expression matrix..."
+Rscript process_labelled_matrices.R --infile data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv --scale true --aggregate true --nlabels 67 --outdir data/
+
+echo "Normalizing and aggregating human sample expression matrix..."
+Rscript process_labelled_matrices.R --infile data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv --scale true --aggregate true --nlabels 88 --outdir data/
