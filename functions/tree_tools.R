@@ -15,6 +15,26 @@ parse_abi_hierarchy <-
     tree <- recursive_build_tree(abi_list)
   }
 
+recursive_build_tree <- function(tree_list){
+  children_list <- tree_list$children
+  node_list <- tree_list[names(tree_list) != "children"]
+  
+  node <- do.call(Node$new, node_list)
+  
+  if(is.null(children_list) || length(children_list) == 0){
+    return(node)
+  } else {
+    lapply(children_list, function(cl){
+      child_node <- recursive_build_tree(cl)
+      node$AddChildNode(child_node)
+      
+      NULL
+    })
+    
+    return(node)
+  }
+}
+
 #' Attach cut points to a tree node
 #' 
 #' @description 
