@@ -251,21 +251,21 @@ def main():
         
         print("Imputing missing values using K-nearest neighbours...")
         
-#         #Initialize imputer and transposer
-#         imputer = KNNImputer(missing_values = np.nan)
-#         transposer = FunctionTransformer(np.transpose)
+        #Initialize imputer and transposer
+        imputer = KNNImputer(missing_values = np.nan)
+        transposer = FunctionTransformer(np.transpose)
         
-#         #Build pipeline
-#         imputing_pipeline = Pipeline([('transpose1', transposer),
-#                                      ('impute', imputer),
-#                                      ('transpose2', transposer)])
+        #Build pipeline
+        imputing_pipeline = Pipeline([('transpose1', transposer),
+                                     ('impute', imputer),
+                                     ('transpose2', transposer)])
         
-#         #Store gene names
-#         genes = dfExpression.index
+        #Store gene names
+        genes = dfExpression.index
         
-#         #Impute missing values and assign as data frame
-#         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
-#                                     index = genes)
+        #Impute missing values and assign as data frame
+        dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
+                                    index = genes)
         
         
         
@@ -284,9 +284,6 @@ def main():
         outfile = outfile+'_imputed'
     
     outfile = outfile+'.csv'
-    
-    print(outfile)
-    quit()
     
     dfExpression.to_csv(os.path.join(outdir, outfile))
 
