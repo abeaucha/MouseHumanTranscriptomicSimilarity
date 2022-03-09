@@ -1,3 +1,3 @@
 #!/bin/bash
 
-Rscript label_data.R --mousefile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv --humanfile HumanExpressionMatrix_Samples_pipeline_v1.csv --savemouse true --savehuman true
+Rscript label_data.R --mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --humanmatrix AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv --mousetree AMBA/data/MouseExpressionTree_DSURQE.RData --humantree AHBA/data/HumanExpressionTree.RData --homologs data/MouseHumanGeneHomologs.csv --outdir data/ --savemouse true --savehuman true
