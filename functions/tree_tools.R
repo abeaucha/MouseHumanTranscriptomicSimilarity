@@ -9,6 +9,12 @@
 isTree <- function(x){any(class(x) == "Node") & any(class(x) == "R6")}
 
 
+parse_abi_hierarchy <-
+  function(abi){
+    abi_list <- fromJSON(file = abi)$msg[[1]]
+    tree <- recursive_build_tree(abi_list)
+  }
+
 #' Attach cut points to a tree node
 #' 
 #' @description 
