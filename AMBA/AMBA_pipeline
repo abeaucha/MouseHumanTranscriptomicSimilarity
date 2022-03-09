@@ -21,7 +21,8 @@ echo "Building mouse gene-by-voxel expression matrix using sagittal data with sa
 
 # Build regional expression matrix using DSURQE
 echo "Building mouse gene-by-region expression matrix using the DSURQE atlas..."
-python3 build_region_matrix.py --datadir data/ --infile MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --outfile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv --mask coronal_200um_coverage_bin0.8.mnc --labels DSURQE_CCFv3_labels_200um.mnc --defs DSURQE_40micron_R_mapping_long.csv
+#python3 build_region_matrix.py --datadir data/ --infile MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --outfile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv --mask coronal_200um_coverage_bin0.8.mnc --labels DSURQE_CCFv3_labels_200um.mnc --defs DSURQE_40micron_R_mapping_long.csv
  
 # Build mouse data tree
-#Rscript build_mouse_tree.R
+echo "Building mouse neuroanatomical tree..."
+Rscript build_mouse_tree.R
