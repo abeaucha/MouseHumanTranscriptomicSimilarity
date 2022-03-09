@@ -19,7 +19,20 @@ from pyminc.volumes.factory import *
 
 def parse_args():
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+    
+    parser.add_argument(
+        '--datadir',
+        type = str,
+        default = 'data/',
+        help = 'Directory containing expression matrices'
+    )
+    
+    parser.add_argument(
+        '--infile',
+        type = str,
+        help = 'CSV file containing expression matrix'
+    )
     
     parser.add_argument(
         '--dataset',
@@ -40,17 +53,19 @@ def main():
     args = parse_args()
     
     #Flags
-    dataset = args['dataset']
+    datadir = args['datadir']
+    infile = args['infile']
+#     dataset = args['dataset']
     
-    print("Using {} dataset".format(dataset))
+#     print("Using {} dataset".format(dataset))
           
     
     # Import expression data --------------------------------------
     
     #File containing voxel expression matrix
-    infile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+dataset+'_imputed.csv'
+#     infile = 'MouseExpressionMatrix_voxel_'+dataset+'_mask'+dataset+'_imputed.csv'
     
-    print("Importing voxel expression matrix: {} ...".format(infile))
+    print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
     #Import voxel expression matrix
     dfExprVoxel = pd.read_csv('data/{}'.format(infile))
