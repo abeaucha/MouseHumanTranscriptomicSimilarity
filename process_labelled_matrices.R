@@ -1,77 +1,103 @@
-# ProcessLabelledData.R
+# process_labelled_matrices.R
 #
 # Antoine Beauchamp
 # Created: August 25th, 2021
-# Edited: August 25th, 2021
+# Edited: March 9th, 2022
 
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
+library(optparse)
+
+# Command line arguments 
+
+option_list <- list(
+  make_option("--infile",
+              type = "character"),
+  make_option("--scale",
+              type = "character",
+              default = "true"),
+  make_option("--aggregate",
+              type = "character",
+              default = "false"),
+  make_option("--nlabels",
+              type = "integer"),
+  make_option("--outdir",
+              default = "data/",
+              type = "character")
+)
+
 
 #Functions
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
+source("functions/processing_tools.R")
 
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
+args <- parse_args(OptionParser(option_list = option_list))
+
+args <- list(infile)
+
+if (!(args[["scale"]] %in% c("true", "false"))) {
+  stop()
+}
+
+if (!(args[["aggregate"]] %in% c("true", "false"))) {
+  stop()
+}
+
+if (args[["scale"]] == "false" & args[["aggregate"]] == "false"){
+  stop()
+}
+
 
 #Import data
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+dfExpression <- suppressMessages(read_csv(args["infile"]))
 
-#Extract labels from data frames
-dfLabelsMouse <- dfExprMouse %>% select(contains("Region"))
-dfLabelsHuman <- dfExprHuman %>% select(contains("Region"))
+#Extract genes list from data
+genes <- colnames(dfExpression)[!str_detect(colnames(dfExpression), "Region")]
 
-#Normalize mouse data
-dfExprMouse_scaled <- dfExprMouse %>% 
-  select(-contains("Region")) %>% 
-  as.matrix() %>% 
-  scaler(axis = "rows") %>% 
-  scaler(scale = FALSE, axis = "columns") %>% 
-  as_tibble() %>% 
-  bind_cols(dfLabelsMouse)
-
-#Normalize human data
-dfExprHuman_scaled <- dfExprHuman %>% 
-  select(-contains("Region")) %>% 
-  as.matrix() %>% 
-  scaler(axis = "rows") %>% 
-  scaler(scale = FALSE, axis = "columns") %>% 
-  as_tibble() %>% 
-  bind_cols(dfLabelsHuman)
-
-#Extract genes list from mouse data (same as human)
-genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), "Region")]
-
-
-mouseLabels <- "Region67"
-humanLabels <- "Region88"
-
-#Aggregate mouse expression data under label set
-dfExprMouse_scaled_means <- dfExprMouse_scaled %>% 
-  select(Region = mouseLabels, genes) %>% 
-  group_by(Region) %>% 
-  summarise_all(mean) %>% 
-  ungroup()
-
-#Aggregate human expression data under label set
-dfExprHuman_scaled_means <- dfExprHuman_scaled %>% 
-  select(Region = humanLabels, genes) %>% 
-  group_by(Region) %>% 
-  summarise_all(mean) %>% 
-  ungroup()
-
-#Write scaled mouse voxel data to file
-write_csv(dfExprMouse_scaled,
-          path = str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled_scaled.csv"))
-
-#Write scaled human sample data to file
-write_csv(dfExprHuman_scaled,
-          path = str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled_scaled.csv"))
+if (args[["scale"]] == "true") {
   
-#Write aggregated mouse data to file
-write_csv(dfExprMouse_scaled_means,
-          path = str_c(pathHome, "Data/", "MouseExpressionMatrix_ROI_", mouseLabels, ".csv"))
+  #Extract labels from data frame
+  dfLabels <- dfExpression %>% select(contains("Region"))
+  
+  #Normalize data
+  dfExpression <- dfExpression %>% 
+    select(-contains("Region")) %>% 
+    as.matrix() %>% 
+    scaler(axis = "rows") %>% 
+    scaler(scale = FALSE, axis = "columns") %>% 
+    as_tibble() %>% 
+    bind_cols(dfLabels)
+  
+  outfile <- args[["infile"]] %>% 
+    basename() %>% 
+    str_replace(".csv", "_scaled.csv")
+  
+}
 
-#Write aggregated human data to file
-write_csv(dfExprHuman_scaled_means,
-          path = str_c(pathHome, "Data/", "HumanExpressionMatrix_ROI_", humanLabels, ".csv"))
+if (args[["aggregate"]] == "true") {
+  
+  labels <- str_c("Region", args[["nlabels"]])
+  
+  if (!(labels %in% colnames(dfExpression))) {
+    stop()
+  }
+  
+  #Aggregate mouse expression data under label set
+  dfExpression <- dfExpression %>% 
+    select(Region = all_of(labels), all_of(genes)) %>% 
+    group_by(Region) %>% 
+    summarise_all(mean) %>% 
+    ungroup()
+  
+  outfile <- args[["infile"]] %>% 
+    basename() %>% 
+    str_extract("^[a-zA-Z]*") %>% 
+    str_c("_ROI_", labels, ".csv")
+  
+  if (args[["scale"]] == "true") {
+    outfile <- str_replace(outfile, ".csv", "_scaled.csv")
+  }
+  
+}
+
+write_csv(dfExpression,
+          file = str_c(args[["outdir"]],outfile))
