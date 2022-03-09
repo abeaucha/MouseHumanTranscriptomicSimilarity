@@ -10,6 +10,7 @@
 # Packages -----------------------------------------------------
 
 import argparse
+import os
 import numpy as np
 import pandas as pd
 from pyminc.volumes.factory import *
@@ -35,6 +36,21 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--mask',
+        type = str
+    )
+    
+    parser.add_argument(
+        '--labels',
+        type = str
+    )
+    
+    parser.add_argument(
+        '--defs',
+        type = str
+    )
+    
+    parser.add_argument(
         '--dataset',
         type = str,
         default = 'coronal',
@@ -55,6 +71,9 @@ def main():
     #Flags
     datadir = args['datadir']
     infile = args['infile']
+    mask = args['mask']
+    labels = args['labels']
+    defs = args['defs']
 #     dataset = args['dataset']
     
 #     print("Using {} dataset".format(dataset))
@@ -68,7 +87,7 @@ def main():
     print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
     #Import voxel expression matrix
-    dfExprVoxel = pd.read_csv('data/{}'.format(infile))
+    dfExprVoxel = pd.read_csv(os.path.join(datadir, infile))
     
     #Extract gene names from data frame
     genes = dfExprVoxel['Gene']
@@ -87,25 +106,20 @@ def main():
     # Import imaging data --------------------------------------
     
     #Import image mask, flatten and convert to numpy array
-    if dataset == 'sagittal':
-        maskfile = 'sagittal_200um_coverage_bin0.8.mnc'
-    else:
-        maskfile = 'coronal_200um_coverage_bin0.8.mnc'
-    
-    print("Importing mask volume: {} ...".format(maskfile))
-    
-    maskVol = volumeFromFile('data/imaging/{}'.format(maskfile))
+    print("Importing mask volume: {} ...".format(mask))
+
+    maskVol = volumeFromFile(os.path.join('data', 'imaging', mask))
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
     
     
     #File containing atlas labels
-    labelfile = 'DSURQE_CCFv3_labels_200um.mnc'
+#     labelfile = 'DSURQE_CCFv3_labels_200um.mnc'
     
-    print("Importing DSURQE label volume: {} ...".format(labelfile))
+    print("Importing DSURQE label volume: {} ...".format(labels))
     
     #Import DSURQE label volume, flatten, and convert to numpy array
-    labelVol = volumeFromFile('data/imaging/{}'.format(labelfile))
+    labelVol = volumeFromFile(os.path.join('data', 'imaging', labels))
     labelArray = np.array(labelVol.data.flatten())
     labelVol.closeVolume()
 
@@ -114,13 +128,12 @@ def main():
 
     
     #File containing atlas definitions
-    defsfile = 'DSURQE_40micron_R_mapping_long.csv'
+#     defsfile = 'DSURQE_40micron_R_mapping_long.csv'
     
-    print("Importing DSURQE label definitions: {} ...".format(defsfile))
+    print("Importing DSURQE label definitions: {} ...".format(defs))
     
     #Import DSURQE label definitions
-    dfAtlasDefs = pd.read_csv('data/imaging/{}'.format(defsfile))
-    
+    dfAtlasDefs = pd.read_csv(os.path.join('data', 'imaging', defs))
     
     
     # Match labels to voxels -----------------------------------------
@@ -170,8 +183,9 @@ def main():
     
     outfile = 'MouseExpressionMatrix_ROI_DSURQE_'+dataset+'_mask'+dataset+'.csv'
     
+    
     #Write regional expression matrix to csv
-    dfExprRegion.to_csv('data/{}'.format(outfile))
+    dfExprRegion.to_csv(os.path.join(datadir, outfile))
     
     return
 
