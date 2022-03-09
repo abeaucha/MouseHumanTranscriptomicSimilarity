@@ -1,0 +1,3 @@
+#!/bin/bash
+
+Rscript label_data.R --mousefile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv --humanfile HumanExpressionMatrix_Samples_pipeline_v1.csv --savemouse true --savehuman true
