@@ -1,10 +1,10 @@
-# LabelVoxelData.R ------------------------------------------------------------
+# label_data.R ------------------------------------------------------------
 #
 # 
 # 
 #
 # Antoine Beauchamp
-# Edited: August 23rd, 2021
+# Edited: March 9th, 2022
 
 # Libraries -------------------------------------------------------------------
 suppressPackageStartupMessages(library(tidyverse))
@@ -16,14 +16,22 @@ library(optparse)
 # Command line arguments ------------------------------------------------------
 
 option_list <- list(
-  make_option("--mousedata",
+  make_option("--mousematrix",
               type = "character",
-              default = "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed.csv",
-              help = "Mouse CSV file containing voxel data to label. File must exist at /projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/ [default %default]"),
-  make_option("--humandata",
+              help = "Path to CSV file containing mouse voxel expression matrix to label. [default %default]"),
+  make_option("--humanmatrix",
               type = "character",
-              default = "HumanExpressionMatrix_Samples.csv",
-              help = "Human CSV file containing sample data to label. File must exist at /projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/ [default %default]"),
+              help = "Path to CSV file containing human sample expression matrix to label. [default %default]"),
+  make_option("--mousetree",
+              type = "character"),
+  make_option("--humantree",
+              type = "character"),
+  make_option("--homologs",
+              type = "character",
+              help = "Path to CSV file containing mouse and human gene homologs"),
+  make_option("--outdir",
+              type = "character",
+              default = "data/"),
   make_option("--savemouse",
               type = "character",
               default = "true",
@@ -34,22 +42,11 @@ option_list <- list(
               help = "Option to save labelled human data to file [default %default]")
 )
 
-args = parse_args(OptionParser(option_list = option_list))
-
-if (!(args[["savemouse"]] %in% c("true", "false"))) {
-  stop(str_c("Argument --savemouse must be one of [true, false] (got ", args[["savemouse"]], ")"))
-}
-
-if (!(args[["savehuman"]] %in% c("true", "false"))) {
-  stop(str_c("Argument --savehuman must be one of [true, false] (got ", args[["savehuman"]], ")"))
-}
-
-
 
 # Functions -------------------------------------------------------------------
 
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
+source("functions/tree_tools.R")
+source("functions/processing_tools.R")
 
 #' Label voxels/samples with neuroanatomical regions
 #'
@@ -94,35 +91,57 @@ labelRegions <- function(measurements, tree, treefield){
 
 # Paths -----------------------------------------------------------------------
 
-#Set paths
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/"
-pathMouse <- str_c(pathHome, "AllenMouseBrainAtlas/Data/")
-pathHuman <- str_c(pathHome, "AllenHumanBrainAtlas/Data/")
+#Parse command line args
+args = parse_args(OptionParser(option_list = option_list))
 
-setwd(str_c(pathHome, "Paper_Descriptive"))
-
-fileMouse <- args[["mousedata"]]
-fileHuman <- args[["humandata"]]
-
-if (!(fileMouse %in% list.files(pathMouse))) {
-  stop("Mouse file ", fileMouse, " not found at ", pathMouse)
-} else if (!(fileMouse %in% str_subset(list.files(pathMouse), "^MouseExpressionMatrix_Voxel"))) {
-  stop("Mouse file ", fileMouse, " does not contain voxelwise expression data")
+if (is.null(args[["mousematrix"]])){
+  stop("No input file given to --mousematrix")
 }
 
-if(!(fileHuman %in% list.files(pathHuman))){
-  stop("Human file ", fileHuman, " not found at ", pathHuman)
-} else if (!(fileHuman %in% str_subset(list.files(pathHuman), "^HumanExpressionMatrix_Samples"))) {
-  stop("Human file ", fileHuman, " does not contain samplewise expression data")
+if (is.null(args[["humanmatrix"]])){
+  stop("No input file given to --humanmatrix")
 }
 
-message("Labelling data from mouse file: ", fileMouse)
-message("Labelling data from human file: ", fileHuman)
 
-maskFlag <- str_extract(fileMouse, "mask[a-z]+")
+if (!(args[["savemouse"]] %in% c("true", "false"))) {
+  stop(str_c("Argument --savemouse must be one of [true, false] (got ", args[["savemouse"]], ")"))
+}
 
-pathFileMouse <- str_c(pathMouse, fileMouse)
-pathFileHuman <- str_c(pathHuman, fileHuman)
+if (!(args[["savehuman"]] %in% c("true", "false"))) {
+  stop(str_c("Argument --savehuman must be one of [true, false] (got ", args[["savehuman"]], ")"))
+}
+
+
+fileMouseMat <- args[["mousematrix"]]
+fileMouseTree <- args[["mousetree"]]
+fileHumanMat <- args[["humanmatrix"]]
+fileHumanTree <- args[["humantree"]]
+homologs <- args[["homologs"]]
+
+if (!file.exists(fileMouseMat)) {
+  stop("Mouse file ", fileMouseMat, " not found")
+}
+
+if (!file.exists(fileHumanMat)) {
+  stop("Human file ", fileHumanMat, " not found")
+}
+
+if (!file.exists(fileMouseTree)) {
+  stop("Mouse tree file ", fileMouseTree, " not found")
+}
+
+if (!file.exists(fileHumanTree)) {
+  stop("Human tree file ", fileHumanTree, " not found")
+}
+
+if (!file.exists(homologs)) {
+  stop("Homologs file ", homologs, " not found")
+}
+
+message("Labelling data from mouse file: ", fileMouseMat)
+message("Labelling data from human file: ", fileHumanMat)
+
+maskFlag <- str_extract(fileMouseMat, "mask[a-z]+")
 
 
 # Importing and processing ----------------------------------------------------
@@ -130,13 +149,13 @@ pathFileHuman <- str_c(pathHuman, fileHuman)
 message("Importing data...")
 
 #Load expression data
-dfExprMouse <- suppressMessages(read_csv(pathFileMouse))
-dfExprHuman <- suppressMessages(read_csv(pathFileHuman))
+dfExprMouse <- suppressMessages(read_csv(fileMouseMat))
+dfExprHuman <- suppressMessages(read_csv(fileHumanMat))
 
 #Subset genes for mouse-human homologs
 listExpr <- intersectGeneHomologs(data = list(Mouse = dfExprMouse, 
                                               Human = dfExprHuman),
-                                  homologs = str_c(pathHome, "Paper_Descriptive/Data/MouseHumanGeneHomologs.csv"))
+                                  homologs = homologs)
 
 #Extract the data frames from list
 dfExprMouse <- listExpr$Mouse
@@ -154,18 +173,17 @@ dfExprHuman <- dfExprHuman %>% select(-Gene)
 colnames(dfExprMouse) <- str_c("V", colnames(dfExprMouse))
 
 
-
 # Build the mouse data tree ---------------------------------------------------
 
 message("Importing mouse data tree...")
 
 #Load DSURQE atlas and mask
-dsurqe <- mincGetVolume(str_c(pathMouse, "MRI/DSURQE_Allen_labels.mnc"))
+dsurqe <- mincGetVolume("AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc")
 
 if (maskFlag == "masksagittal"){
-  mask <- mincGetVolume(str_c(pathMouse, 'MRI/sagittal_200um_coverage_bin0.8.mnc'))
+  mask <- mincGetVolume("AMBA/data/imaging/sagittal_200um_coverage_bin0.8.mnc")
 } else if (maskFlag == "maskcoronal") {
-  mask <- mincGetVolume(str_c(pathMouse, 'MRI/coronal_200um_coverage_bin0.8.mnc'))
+  mask <- mincGetVolume("AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc")
 } else {
   stop(str_c("Invalid maskFlag value: ", maskFlag))
 }
@@ -174,7 +192,7 @@ if (maskFlag == "masksagittal"){
 dsurqe_masked <- dsurqe[mask == 1]
 
 #Load the mouse tree
-load(str_c(pathMouse, 'MouseExpressionTree_DSURQE.RData'))
+load(fileMouseTree)
 
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
@@ -207,7 +225,7 @@ message("Importing human data tree...")
 
 #Load human tree
 #Samples are already mapped to nodes
-load(str_c(pathHuman, "HumanExpressionTree_Samples.RData"))
+load(fileHumanTree)
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -219,7 +237,7 @@ pruneAnatTree(treeHuman, cutAtNodes, method = "AtNode")
 treeHumanSamples <- treeHuman$`gray matter`$samples
 dfExprHuman <- dfExprHuman[,colnames(dfExprHuman) %in% treeHumanSamples]
 
-
+quit()
 
 # Assign regional labels ------------------------------------------------------
 
@@ -278,13 +296,13 @@ rownames(dfExprHuman) <- NULL
 message("Writing to file...")
 
 if (args[["savemouse"]] == "true") {
-  outFileMouse <- str_c(str_remove(fileMouse, ".csv"), "_labelled", ".csv")  
+  outFileMouse <- str_c(str_remove(fileMouseMat, ".csv"), "_labelled", ".csv")  
   outPathMouse <- str_c(pathHome, "Paper_Descriptive/", "Data/", outFileMouse)  
   write_csv(dfExprMouse, path = outPathMouse)
 }
 
 if (args[["savehuman"]] == "true"){
-  outFileHuman <- str_c(str_remove(fileHuman, ".csv"), "_labelled", ".csv")
+  outFileHuman <- str_c(str_remove(fileHumanMat, ".csv"), "_labelled", ".csv")
   outPathHuman <- str_c(pathHome, "Paper_Descriptive/", "Data/", outFileHuman)
   write_csv(dfExprHuman, path = outPathHuman)
 }
