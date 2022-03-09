@@ -1,20 +1,21 @@
-# TreeLabels.R ----------------------------------------------------------------
+# create_tree_labels.R ----------------------------------------------------------------
 #
 # 
 # 
 #
 # Antoine Beauchamp
 # Created: February 16th, 2021
-# Edited: August 24th, 2021
+# Edited: March 9th, 2022
 
+library(stringr)
 library(data.tree)
 
 # Mouse labels 134 / Human labels 166 -------------------------------------------
 
-source("/projects/abeauchamp/Functions/TreeTools.R")
+source("functions/tree_tools.R")
 
 #Import AMBA tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData")
+load("AMBA/data/MouseExpressionTree_DSURQE.RData")
 
 #Remove white matter and ventricles
 pruneAnatTree(treeMouseExpr,
@@ -29,7 +30,7 @@ labelsMouse_134 <- treeMouseExpr$Get("name", filterFun = isLeaf)
 names(labelsMouse_134) <- NULL
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("AHBA/data/HumanExpressionTree.RData")
 
 #Remove white matter and ventricles
 pruneAnatTree(treeHumanExpr,
@@ -545,8 +546,8 @@ listLabelsHuman = list(Region5 = labelsHuman_5,
 listLabelsHumanReordered <- list(Region16_reordered = labelsHuman_16_reordered,
                                  Region88_reordered = labelsHuman_88_reordered)
 
-fileout <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Data/TreeLabels.RData"
-fileout_reordered <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Data/TreeLabelsReordered.RData"
+fileout <- "data/TreeLabels.RData"
+fileout_reordered <- "data/TreeLabelsReordered.RData"
 
 save(listLabelsMouse,
      listLabelsHuman,
