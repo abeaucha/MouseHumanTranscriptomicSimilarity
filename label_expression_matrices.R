@@ -92,7 +92,16 @@ labelRegions <- function(measurements, tree, treefield){
 # Paths -----------------------------------------------------------------------
 
 #Parse command line args
-args = parse_args(OptionParser(option_list = option_list))
+args <- parse_args(OptionParser(option_list = option_list))
+
+args <- list(mousematrix = "AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv",
+             humanmatrix = "AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv",
+             mousetree =  "AMBA/data/MouseExpressionTree_DSURQE.RData",
+             humantree = "AHBA/data/HumanExpressionTree.RData",
+             homologs = "data/MouseHumanGeneHomologs.csv",
+             outdir = "data/",
+             savemouse = "true",
+             savehuman = "true") 
 
 if (is.null(args[["mousematrix"]])){
   stop("No input file given to --mousematrix")
@@ -178,7 +187,7 @@ colnames(dfExprMouse) <- str_c("V", colnames(dfExprMouse))
 message("Importing mouse data tree...")
 
 #Load DSURQE atlas and mask
-dsurqe <- mincGetVolume("AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc")
+dsurqe <- mincGetVolume("AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc")
 
 if (maskFlag == "masksagittal"){
   mask <- mincGetVolume("AMBA/data/imaging/sagittal_200um_coverage_bin0.8.mnc")
@@ -193,7 +202,6 @@ dsurqe_masked <- dsurqe[mask == 1]
 
 #Load the mouse tree
 load(fileMouseTree)
-
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
