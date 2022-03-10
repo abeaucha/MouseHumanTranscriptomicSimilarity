@@ -65,3 +65,10 @@ data/MouseExpressionMatrix_ROI_Region67_scaled.csv
 data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv
 MLP_env/
 data/MLP_outcomes/
+manuscript/draft/version3/Figure1.RData
+manuscript/draft/version3/Figure2.RData
+manuscript/draft/version3/Figure3.RData
+manuscript/draft/version3/Figure4.RData
+manuscript/draft/version3/Figure5.RData
+manuscript/draft/version3/Figure6.RData
+manuscript/draft/version3/StriatumProportions.RData
