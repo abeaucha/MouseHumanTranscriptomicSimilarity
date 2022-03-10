@@ -1,16 +1,12 @@
-#! /usr/bin/env/ python3
-
-# Model_MultilayerPerceptron.py -----------------------------------------------
+# train_multilayer_perceptron.py -----------------------------------------------
 #
 # This script runs a multilayer perceptron model. 
 #
 #
 #
 # Created: December 15th, 2020
-# Edited: October 4th, 2021
+# Edited: March 10th, 2022
 # -----------------------------------------------------------------------------
-
-
 
 # Packages -------------------------------------------------------------------
 
@@ -19,6 +15,7 @@ import numpy as np
 import pickle
 import argparse
 import sys
+import os
 
 import torch
 import torch.nn.functional as F
@@ -40,6 +37,20 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 def parse_args():
     
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument(
+        "--datadir",
+        type = str,
+        default = 'data/',
+        help = "Directory containing input data"
+    )
+    
+    parser.add_argument(
+        "--outdir",
+        type = str,
+        default = 'data/MLP_outcomes/',
+        help = "Directory in which to write neural net outcomes"
+    )
     
     parser.add_argument(
         "--labels",
@@ -125,17 +136,16 @@ def main():
     
     # Import data -------------------------------------------------------------
 
-    #Paths
-    pathHome = "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-#     pathHome = "/hpf/largeprojects/MICe/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
     #Set up files for import
     #Mouse voxelwise data to train over
-    filepath_voxel = pathHome+"Data/"+"MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled_scaled.csv"
+    file_voxel = "MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv"
+    filepath_voxel = os.path.join(args['datadir'], file_voxel)
     
     #Mouse and human data to pass to network
-    filepath_mouse = pathHome+"Data/"+"MouseExpressionMatrix_ROI_"+args['mousedata'].capitalize()+".csv"
-    filepath_human = pathHome+"Data/"+"HumanExpressionMatrix_ROI_"+args['humandata'].capitalize()+".csv"
+    file_mouse = "MouseExpressionMatrix_ROI_{}_scaled.csv".format(args['mousedata'].capitalize())
+    file_human = "HumanExpressionMatrix_ROI_{}_scaled.csv".format(args['humandata'].capitalize())
+    filepath_mouse = os.path.join(args['datadir'], file_mouse)
+    filepath_human = os.path.join(args['datadir'], file_human)
 
     print("Importing data...")
 
@@ -292,7 +302,7 @@ def main():
         "_L2"+str(args['L2'])+".csv"
     
         #Write confusion matrix to file
-        dfConfusionMat.to_csv(pathHome+"Data/"+fileConfMat, index = False)
+        dfConfusionMat.to_csv(os.path.join(args['outdir'], fileConfMat), index = False)
 
 
 
@@ -331,8 +341,8 @@ def main():
     "_HumanProb_"+args['humandata'].capitalize()+'.csv'
     
     #Write probability data to file
-    dfPredictionsMouse.to_csv(pathHome+"Data/"+fileMouseProb, index = False)
-    dfPredictionsHuman.to_csv(pathHome+"Data/"+fileHumanProb, index = False)
+    dfPredictionsMouse.to_csv(os.path.join(args['outdir'], fileMouseProb), index = False)
+    dfPredictionsHuman.to_csv(os.path.join(args['outdir'], fileHumanProb), index = False)
     
     
 
@@ -364,15 +374,17 @@ def main():
     "_HumanTx_"+args['humandata'].capitalize()+'.csv'
     
     #Save new mouse and human data to file
-    dfMouseTransformed.to_csv(pathHome+"Data/"+fileMouseTx, index = False)
-    dfHumanTransformed.to_csv(pathHome+"Data/"+fileHumanTx, index = False)
+    dfMouseTransformed.to_csv(os.path.join(args['outdir'],fileMouseTx), index = False)
+    dfHumanTransformed.to_csv(os.path.join(args['outdir'],fileHumanTx), index = False)
+    
     
     if args['voxeltransform'] == 'true':
         
         dfMouseVoxelTransformed = pd.DataFrame(net.predict_proba(X))
         dfMouseVoxelTransformed['Region'] = dfLabels[labelcol]
         
-        filepath_voxel_human = pathHome+"Data/"+"HumanExpressionMatrix_Samples_labelled_scaled.csv"
+        file_voxel_human = "HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"
+        filepath_voxel_human = os.path.join(args['datadir'], file_voxel_human)
         dfExprVoxelHuman = pd.read_csv(filepath_voxel_human)
         indLabelsHuman = dfExprVoxelHuman.columns.str.match('Region')
         dfInputVoxelHuman = dfExprVoxelHuman.loc[:, ~indLabels]
@@ -391,10 +403,10 @@ def main():
         "_Units"+str(args['nunits'])+\
         "_L2"+str(args['L2'])+\
         "_HumanVoxelTx.csv"
+
+        dfMouseVoxelTransformed.to_csv(os.path.join(args['outdir'],fileMouseVoxelTx), index = False)
+        dfHumanVoxelTransformed.to_csv(os.path.join(args['outdir'],fileHumanVoxelTx), index = False)
         
-        dfMouseVoxelTransformed.to_csv(pathHome+"Data/"+fileMouseVoxelTx, index = False)
-        dfHumanVoxelTransformed.to_csv(pathHome+"Data/"+fileHumanVoxelTx, index = False)
-    
     
 if __name__ == "__main__":
     main()
