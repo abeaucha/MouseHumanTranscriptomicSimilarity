@@ -64,3 +64,4 @@ data/HumanExpressionMatrix_Samples_pipeline_v1_labelled_scaled.csv
 data/MouseExpressionMatrix_ROI_Region67_scaled.csv
 data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv
 MLP_env/
+data/MLP_outcomes/
