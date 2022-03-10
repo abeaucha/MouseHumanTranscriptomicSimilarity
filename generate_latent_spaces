@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-for i in {251..500}
+for i in {1..500}
 do
  echo "Iteration $i"
  python3 Model_MultilayerPerceptron.py --labels region67 --mousedata region67 --humandata region88 --nunits 200 --confusionmatrix true --voxeltransform true
