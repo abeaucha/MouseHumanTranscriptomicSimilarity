@@ -22,7 +22,6 @@ library(gridExtra)
 library(pheatmap)
 library(patchwork)
 library(ggplotify)
-# library(cowplot)
 library(RMINC)
 library(MRIcrotome)
 library(data.tree)
@@ -31,27 +30,23 @@ library(RColorBrewer)
 
 ```{r functions}
 #Load functions to work with data trees
-source("/projects/abeauchamp/Functions/abi_parsing_funs.R")
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Functions/mincBuildArray.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/f_ProcessingTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/f_MetricTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/mincBuildArray.R")
+source("../../../functions/processing_tools.R")
+source("../../../functions/metrics_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
 ```
 
 ```{r import}
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
 #Import data
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Load mouse/human labels (Objects: listLabelsMouse, listLabelsHuman)
-load(str_c(pathHome, "Data/", "TreeLabels.RData"))
+load(str_c("../../../data/TreeLabels.RData"))
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenGeneExpression_Mouse/Data/MouseExpressionTree_DSURQE.RData"))
+load(str_c("../../../AMBA/data/MouseExpressionTree_DSURQE.RData"))
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -61,7 +56,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenGeneExpression_Human/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -75,12 +70,11 @@ pruneAnatTree(treeHuman,
               nodes = c("white matter", "sulci & spaces"),
               method = "AtNode")
 
-load(str_c(pathHome, "Data/", "TreeLabels.RData"))
 
 #Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r normalization}
@@ -146,7 +140,7 @@ As described previously by Myers [@Myers2017] \edit{Not sure if this is the righ
 #Compute average gene expression for 67 mouse brain regions
 matExprMouse_scaled <- dfExprMouse_scaled %>% 
   select(Region = Region67,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
@@ -157,7 +151,7 @@ matExprMouse_scaled <- dfExprMouse_scaled %>%
 #Compute average gene expression for 82 human brain regions
 matExprHuman_scaled <- dfExprHuman_scaled %>% 
   select(Region = Region82,
-         genes) %>% 
+         all_of(genes)) %>% 
   group_by(Region) %>% 
   summarise_all(mean) %>% 
   ungroup() %>% 
