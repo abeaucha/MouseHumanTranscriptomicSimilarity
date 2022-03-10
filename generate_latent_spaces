@@ -13,7 +13,7 @@ for i in {1..500}
 do
  echo "Iteration $i"
 
- python3 train_multilayer_perceptron.py --datadir data/ --outdir $outdir --labels region67 --mousedata region67 --humandata region88 --nunits 200 --L2 1e-6 --nepochs 5 --learningrate 1e-5 --confusionmatrix true --voxeltransform true
+ python3 train_multilayer_perceptron.py --datadir data/ --outdir $outdir --labels region67 --mousedata region67 --humandata region88 --nunits 200 --L2 1e-6 --nepochs 200 --learningrate 1e-5 --confusionmatrix true --voxeltransform true
 
  mv ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L21e-06.csv ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L21e-06_$i.csv
 

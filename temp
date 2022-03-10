@@ -1,7 +1,0 @@
-#!/bin/bash -l
-
-source activate_venv
-
-python3 train_multilayer_perceptron.py --datadir data/ --outdir data/MLP_outcomes/ --labels region67 --mousedata region67 --humandata region88 --nunits 200 --confusionmatrix true --voxeltransform true --nepochs 5
-
-deactivate
