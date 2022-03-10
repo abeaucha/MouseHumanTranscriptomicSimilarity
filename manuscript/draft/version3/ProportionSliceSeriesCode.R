@@ -3,11 +3,11 @@ library(data.tree)
 library(RMINC)
 library(MRIcrotome)
 
-source("/projects/abeauchamp/Functions/TreeTools.R")
+source("../../../functions/tree_tools.R")
 
 #Load tree labels and tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Data/TreeLabelsReordered.RData")
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData")
+load("../../../data/TreeLabelsReordered.RData")
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -17,9 +17,9 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import DSURQE images in AMBA space, 200um
-dsurqeLabels_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_labels.mnc")
-dsurqeMask_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/coronal_200um_coverage_bin0.8.mnc")
-dsurqeAverage_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average.mnc")
+dsurqeLabels_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc")
+dsurqeMask_200um <- mincGetVolume("../../../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc")
+dsurqeAverage_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc")
 
 #Create a correspondence between voxels in the image space and in the expression matrices
 
@@ -35,7 +35,7 @@ voxelNames <- str_c("V", 1:sum(indVoxels))
 names(emptyArray)[indVoxels] <- voxelNames
 
 #Data frame containing proportions for striatal voxels
-load("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Draft/Version3/StriatumProportions.RData")
+load("StriatumProportions.RData")
 
 #Initialize 200um MINC arrays
 listArrayHumanTargets_200um <- vector(mode = "list", length = ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets))
@@ -51,8 +51,8 @@ for(j in 1:ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets)){
 
 #Files and paths for resampling
 outfiles <- str_c("Figure6_ss_", str_remove(names(listArrayHumanTargets_200um), " "), "_200um.mnc")
-outpaths <- str_c("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Draft/Version3/", outfiles)
-anatomy50um <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um.mnc"
+outpaths <- outfiles
+anatomy50um <- "../../../AMBA/data/imaging/average_template_50um.mnc"
 newpaths <- str_replace(outpaths, "200um", "50um")
 resampleCommands <- str_c("mincresample",
                           "-like",
@@ -80,8 +80,8 @@ for(i in 1:length(listArrayHumanTargets_200um)){
   
 }
 
-dsurqeMask_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um_mask.mnc")
-dsurqeAverage_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average_50um.mnc")
+dsurqeMask_50um <- mincGetVolume("../../../AMBA/data/imaging/average_template_50um_mask.mnc")
+dsurqeAverage_50um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_average_50um.mnc")
 dsurqeAverage_50um[dsurqeMask_50um == 0] <- 0
 
 #Overlay range
