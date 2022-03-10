@@ -34,7 +34,6 @@ library(RColorBrewer)
 source("../../../functions/tree_tools.R")
 source("../../../functions/mincBuildArray.R")
 source("../../../functions/processing_tools.R")
-# source("../../../functions/metrics_tools.R")
 source("../../../functions/buildSimilarityMatrix.R")
 ```
 

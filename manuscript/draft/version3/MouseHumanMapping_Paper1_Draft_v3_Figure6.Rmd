@@ -30,17 +30,17 @@ library(RColorBrewer)
 
 ```{r functions}
 #Functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
 ```
 
 ```{r import-general}
 #Path
 pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
 
-#Import mouse voxelwise gene expression matrix
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled_scaled.csv"))) 
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled_scaled.csv"))) 
+#Import data
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Extract gene names
 genes <- colnames(dfExprMouse)[!str_detect(colnames(dfExprMouse), "Region")]
@@ -59,10 +59,10 @@ dfLabelsHuman <- dfExprHuman %>%
 rm(dfExprMouse, dfExprHuman)
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -72,7 +72,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -87,9 +87,9 @@ pruneAnatTree(treeHuman,
               method = "AtNode")
 
 #Import DSURQE images in AMBA space
-dsurqeLabels_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_labels.mnc")
-dsurqeMask_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/coronal_200um_coverage_bin0.8.mnc")
-dsurqeAverage_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average.mnc")
+dsurqeLabels_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc")
+dsurqeMask_200um <- mincGetVolume("../../../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc")
+dsurqeAnat_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc")
 
 #Create a correspondence between voxels in the image space and in the expression matrices
 
@@ -135,7 +135,7 @@ if(runSimMat){
   #Get the names of latent space voxel and samples matrices
   files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
     map(function(x){
-      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+      str_subset(list.files("../../../data/MLP_outcomes/", full.names = T), x)
     })
   
   #' Title
@@ -189,13 +189,13 @@ if(runSimMat){
   
   #Save the resulting list to file
   save(listSimStriatum,
-       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_HumanSamples.RData"))
+       file = "StriatumSimilarityMatrices_HumanSamples.RData")
   
   tf <- Sys.time()
   
   print(tf-ti)
 } else{
-  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_HumanSamples.RData"))
+  load("StriatumSimilarityMatrices_HumanSamples.RData")
   listSimStriatum <- listSimilarity
   rm(listSimilarity)
   ## FIX THIS --------
@@ -361,7 +361,7 @@ if(runSimMat){
   
   files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
     map(function(x){
-      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+      str_subset(list.files("../../../data/MLP_outcomes/", full.names = T), x)
     })
   
   computeStriatumSimilarity <- function(mouse, human){
@@ -417,14 +417,14 @@ if(runSimMat){
   dimnames(arraySimStriatum) <- list(rownames(matSim), colnames(matSim), str_c("MLP", 1:length(files$Mouse)))
   
   save(arraySimStriatum,
-       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxels.RData"))
+       file = "StriatumSimilarityMatrices_MouseVoxels.RData")
   
   tf <- Sys.time()
   
   print(tf-ti)
   
 } else {
-  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxels.RData"))
+  load("StriatumSimilarityMatrices_MouseVoxels.RData")
 }
 ```
 
@@ -513,8 +513,8 @@ for(j in 1:ncol(dfSimStriatum_MaxSim_Proportions_HumanTargets)){
 
 #Paths and commands to resample to 50um
 outfiles <- str_c("Figure6_ss_", str_remove(names(listArrayHumanTargets_200um), " "), "_200um.mnc")
-outpaths <- str_c(pathHome, "Draft/", "Version3/", outfiles)
-anatomy50um <- "/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um.mnc"
+outpaths <- outfiles
+anatomy50um <- "../../../AMBA/data/imaging/average_template_50um.mnc"
 newpaths <- str_replace(outpaths, "200um", "50um")
 resampleCommands <- str_c("mincresample",
                           "-like",
@@ -540,8 +540,8 @@ for(i in 1:length(listArrayHumanTargets_200um)){
   listArrayHumanTargets_50um[[i]] <- mincGetVolume(newpaths[i])
 }
 
-dsurqeMask_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/average_template_50um_mask.mnc")
-dsurqeAverage_50um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average_50um.mnc")
+dsurqeMask_50um <- mincGetVolume("../../../AMBA/data/imaging/average_template_50um_mask.mnc")
+dsurqeAverage_50um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_average_50um.mnc")
 
 dsurqeAverage_50um[dsurqeMask_50um == 0] <- 0
 ```
@@ -643,7 +643,7 @@ grid.draw(fig6_grob)
 ```
 
 ```{r fig6-export}
-fileout <- str_c(pathHome, "Draft/", "Version3/", "Figure6.RData")
+fileout <- "Figure6.RData"
 save(fig6_grob,
      fig6_width,
      fig6_height,
@@ -754,7 +754,7 @@ if(runSimMat){
   
   files <- c("Mouse" = "MouseVoxelTx", "Human" = "HumanVoxelTx") %>% 
     map(function(x){
-      str_subset(list.files(str_c(pathHome, "Data/", "MultilayerPerceptronOutcomes/"), full.names = T), x)
+      str_subset(list.files("../../../data/MLP_outcomes/", full.names = T), x)
     })
   
   computeMaxSimilarity <- function(mouse, human){
@@ -809,14 +809,14 @@ if(runSimMat){
   names(listSimStriatum_MaxSim) <- str_c("MLP", 1:length(listSimStriatum_MaxSim))
   
   save(listSimStriatum_MaxSim,
-       file = str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxelwiseMax.RData"))
+       file = "StriatumSimilarityMatrices_MouseVoxelwiseMax.RData")
   
   tf <- Sys.time()
   
   print(tf-ti)
   
 } else {
-  load(str_c(pathHome, "Data/", "StriatumSimilarityMatrices_MouseVoxelwiseMax.RData"))
+  load("StriatumSimilarityMatrices_MouseVoxelwiseMax.RData")
   listSimStriatum_MaxSim <- listMaxSimilarity
   rm(listMaxSimilarity)
   # FIX THIS -------
