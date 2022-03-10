@@ -43,10 +43,10 @@ dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_vo
 dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Load mouse/human labels (Objects: listLabelsMouse, listLabelsHuman)
-load(str_c("../../../data/TreeLabels.RData"))
+load("../../../data/TreeLabels.RData")
 
 #Import MICe data tree
-load(str_c("../../../AMBA/data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 

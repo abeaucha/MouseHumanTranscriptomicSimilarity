@@ -31,25 +31,23 @@ library(RColorBrewer)
 
 ```{r functions}
 #Functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Functions/mincBuildArray.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/mincBuildArray.R")
+source("../../../functions/processing_tools.R")
+# source("../../../functions/metrics_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
 ```
 
 ```{r import}
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
 #Import data
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -59,7 +57,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -74,9 +72,9 @@ pruneAnatTree(treeHuman,
               method = "AtNode")
 
 #Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r normalization}
@@ -174,12 +172,12 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
   scale_fill_gradient(low = gray.colors(255)[1],
                       high = gray.colors(255)[255],
                       na.value = 'transparent',
-                      guide = F) + 
+                      guide = "none") + 
   new_scale_fill() + 
   geom_tile(aes(fill = Label)) + 
   scale_fill_manual(na.value = 'transparent',
                       values = dfMouseColours$Colour,
-                    guide = F) +
+                    guide = "none") +
   coord_fixed() +
   theme_void() +
   # theme_minimal() +
@@ -799,12 +797,9 @@ knitr::opts_chunk$set(echo = TRUE,
 Using a common space constructed from the expression of `r length(genes)` homologous genes, we observed clusters of similarity between coarsely defined regions of the mouse and human brains. While the distribution of correlation values within these broad regions is relatively homogeneous, the data show hints of local variation among the finer regions that make up these clusters, suggesting that the set of homologous genes contains information about mouse-human matches on a finer scale (Figure 1, panel C). We proceeded to investigate whether we could enhance these finer regional matches by constructing a new set of variables from the original gene set. Our primary goal was to transform the initial gene space into a new common space that would improve the locality of mouse-human matches. However while we sought a transformation that would allow us to recapitulate known mouse-human neuroanatomical homologues, we also wanted to avoid directly encoding such homologies in the transformation. Using this information as part of the optimization process for the transformation would run the risk of driving the transformation towards mouse-human matches that are already known. While we are interested in being able to recover such matches, we are equally interested in identifying novel and unexpected associations between neuroanatomical regions in the mouse and human brains, e.g. one-to-many correspondences. Given these criteria, our approach to identifying an appropriate transformation was to train a multi-layer perceptron (MLP) classifier on the data from the AMBA. The classifier was tasked with predicting the 67 labels in our mouse atlas from the voxel-wise expression of the `r length(genes)` homologous genes (Figure 2, panel A). While the model could have been trained using the data from either species, we chose to use the AMBA because it provides continuous coverage of the entire brain and is thus better suited to this purpose. In training the MLP to perform this classification task, we effectively optimize the network architecture to identify a transformation from the input gene space to a space that encodes information about the delineation between mouse brain regions. To extract this transformation, we removed the final predictive layer from the trained neural network. The resulting architecture defines a transformation from the input gene space to a lower-dimensional gene expression latent space. We then applied this transformation to the mouse and human gene expression blueprints to obtain representations of the data in the latent space (Figure 2, panel B). Finally, we used these gene expression latent space blueprints to compute the new similarity matrix (Figure 2, panel C). Since the algorithm used to train the MLP features an inherent degree of stochasticity, we repeated this training and transformation process 500 times to generate a distribution of latent spaces and similarity matrices over training runs.
 
 ```{r results2-fig2-processing}
-#Path to MLP files
-pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
-
 #Files containing latent space representations
-filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
-filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+filesMLP_Mouse <- list.files("../../../data/MLP_outcomes/", pattern = "MouseTx", full.names = T)
+filesMLP_Human <- list.files("../../../data/MLP_outcomes/", pattern = "HumanTx", full.names = T)
 
 #Import the mouse latent space data
 listMouseLatentSpace <- map(filesMLP_Mouse,
@@ -2083,7 +2078,7 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ```{r results2-fig4-processing}
 #Import the data frame containing mouse-human canonical pairs
-dfCanonicalPairs_H88M67 <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseHumanMatches_H88M67.csv")))
+dfCanonicalPairs_H88M67 <- suppressMessages(read_csv("../../../data/MouseHumanMatches_H88M67.csv"))
 
 #Extract the ranks for canonical pairs in all data sets
 dfCanonicalPairs_H88M67_Ranks <- dfSimilarityProfiles %>% 
