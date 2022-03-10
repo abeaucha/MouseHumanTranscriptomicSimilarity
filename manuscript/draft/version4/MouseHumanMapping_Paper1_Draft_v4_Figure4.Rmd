@@ -1,0 +1,1077 @@
+---
+title: "Mouse Human Mapping Paper 1"
+subtitle: "Figure 4"
+author: "Antoine Beauchamp"
+date: 'November 3rd, 2021'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
+
+```{r libraries}
+#Libraries
+suppressPackageStartupMessages(library(tidyverse))
+library(grid)
+library(gridExtra)
+library(pheatmap)
+library(ggplotify)
+library(ggnewscale)
+library(RMINC)
+library(MRIcrotome)
+library(data.tree)
+library(RColorBrewer)
+```
+
+```{r functions}
+#Functions
+source("/projects/abeauchamp/Functions/TreeTools.R")
+source("/projects/abeauchamp/Functions/mincBuildArray.R")
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
+source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+```
+
+```{r import}
+#Set path
+pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
+
+#Import data
+dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
+dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+
+#Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
+load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+
+#Import MICe data tree
+load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+treeMouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+#Remove white matter and ventricles
+pruneAnatTree(treeMouse, 
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Import AHBA data tree
+load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+treeHuman <- Clone(treeHumanExpr)
+rm(treeHumanExpr)
+
+#Fix human colour names (need to start with #)
+treeHuman$Do(function(node){
+  node$color_hex_triplet <- str_c("#", node$color_hex_triplet)
+})
+
+#Remove white matter and ventricles
+pruneAnatTree(treeHuman,
+              nodes = c("white matter", "sulci & spaces"),
+              method = "AtNode")
+
+#Import DSURQE labels and template
+dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+```
+
+```{r normalization}
+#Extract labels from data frames
+dfLabelsMouse <- dfExprMouse %>% select(contains("Region"))
+dfLabelsHuman <- dfExprHuman %>% select(contains("Region"))
+
+#Normalize mouse data
+dfExprMouse_scaled <- dfExprMouse %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsMouse)
+
+#Normalize human data
+dfExprHuman_scaled <- dfExprHuman %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsHuman)
+
+#Extract genes list from mouse data (same as human)
+genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), "Region")]
+
+rm(dfExprMouse, dfExprHuman)
+```
+
+```{r}
+#Compute average gene expression for 67 mouse brain regions
+matExprMouse_scaled <- dfExprMouse_scaled %>% 
+  select(Region = Region67,
+         genes) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+#Compute average gene expression for 88 human brain regions
+matExprHuman_scaled <- dfExprHuman_scaled %>% 
+  select(Region = Region88,
+         genes) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+#Compute human-mouse similarity matrix in gene space
+matSim_H88M67_AllGenes <- buildSimilarityMatrix(x1 = matExprHuman_scaled, 
+                                                x2 = matExprMouse_scaled)
+
+#Order similarity matrix rows/columns according to brain organization
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,match(listLabelsMouseReordered$Region67_reordered, colnames(matSim_H88M67_AllGenes))]
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[match(listLabelsHumanReordered$Region88_reordered, rownames(matSim_H88M67_AllGenes)),]
+```
+
+```{r results2-fig2-processing}
+#Path to MLP files
+pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
+
+#Files containing latent space representations
+filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
+filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+
+#Import the mouse latent space data
+listMouseLatentSpace <- map(filesMLP_Mouse,
+                            function(x){
+                              suppressMessages(read_csv(x)) %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+#Import the human latent space data
+listHumanLatentSpace <- map(filesMLP_Human,
+                            function(x){
+                              suppressMessages(read_csv(x)) %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+#Compute the latent space similarity matrices
+listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
+                           function(x1, x2){
+                             m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
+                             m <- m[,match(listLabelsMouseReordered$Region67_reordered, colnames(m))]
+                             m <- m[match(listLabelsHumanReordered$Region88_reordered, rownames(m)),]
+                           })
+names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
+rm(listMouseLatentSpace, listHumanLatentSpace)
+```
+
+```{r results2-fig3-processing}
+#' Compute scaled similarity profiles for every column in a similarity matrix
+#'
+#' @param similarity A similarity matrix
+#' @param scale A logical value indicating whether to scale the similarity profiles
+#'
+#' @return A tibble containing the scaled similarity profiles
+computeSimilarityProfiles <- function(similarity, scale = FALSE){
+  
+  profiles <- tibble()
+  for(seed in colnames(similarity)){
+    temp <- similarity[, seed] %>% 
+      enframe(name = "Target",
+              value = "Similarity") 
+      
+      if(scale){
+        temp <- temp %>% 
+          mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+      }
+    
+    temp <- temp %>% 
+      mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
+             Seed = seed)
+    profiles <- bind_rows(profiles, temp)
+  }
+  return(profiles)
+}
+
+#Include the original homologous gene similarity matrix
+listSimMats <- c(list("AllGenes" = matSim_H88M67_AllGenes),
+                 listSimLatentSpace)
+rm(listSimLatentSpace)
+
+#Create data frame with similarity profiles
+dfSimilarityProfiles <- map_df(.x = listSimMats,
+                               .f = computeSimilarityProfiles,
+                               .id = "Data",
+                               scale = TRUE)
+```
+
+```{r results2-fig4-processing}
+#Import the data frame containing mouse-human canonical pairs
+dfCanonicalPairs_H88M67 <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseHumanMatches_H88M67.csv")))
+
+#Extract the ranks for canonical pairs in all data sets
+dfCanonicalPairs_H88M67_Ranks <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Target == Human) %>% 
+  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered))) %>% 
+  select(Data, Seed, Target, Similarity, TargetRank)
+
+#Convert data frame to wide format to compute rank differences
+dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_Ranks %>% 
+  select(Data, Seed, TargetRank) %>% 
+  spread(key = "Data", value = "TargetRank")
+
+#Compute rank differences and convert back to long format
+dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  select(contains("MLP")) %>% 
+  map_dfc(function(x){x - dfCanonicalPairs_H88M67_RankDiffs$AllGenes}) %>% 
+  mutate(Seed = dfCanonicalPairs_H88M67_RankDiffs$Seed) %>% 
+  gather(key = "Data", value = "RankDiff", -Seed) %>% 
+  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)))
+```
+
+```{r}
+#Prune mouse tree to 11 regions for cluster annotations
+treeMouse_11 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_11,
+              nodes = listLabelsMouseReordered$Region11,
+              method = "BelowNode")
+
+#Prune human tree to 16 regions for cluster annotations
+treeHuman_16 <- Clone(treeHuman) 
+pruneAnatTree(treeHuman_16,
+              nodes = listLabelsHumanReordered$Region16,
+              method = "BelowNode")
+
+#Get colour annotation from trees
+coloursMouse <-  treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf)
+indOrderMouseColours <- match(listLabelsMouseReordered$Region11_reordered, names(coloursMouse))
+coloursMouse <- coloursMouse[indOrderMouseColours]
+
+coloursHuman <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf)
+indOrderHumanColours <- match(listLabelsHumanReordered$Region16_reordered, names(coloursHuman))
+coloursHuman <- coloursHuman[indOrderHumanColours]
+
+annotation_colours <- list(MouseRegion = coloursMouse,
+                           HumanRegion = coloursHuman)
+
+#Create a set of modified colours for clearer visualization. 
+#To be used for text colouring mostly
+annotation_colours_mod <- annotation_colours
+annotation_colours_mod$MouseRegion["Isocortex"] <- "#68EC68"
+annotation_colours_mod$MouseRegion["Cerebellar cortex"] <- "#E6E67B"
+annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
+
+annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
+annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
+annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
+```
+
+```{r results2-fig4-panelA-distributions}
+dfCanonicalPairs_H88M67_Ranks <- dfCanonicalPairs_H88M67_Ranks %>% 
+  mutate(Data2 = ifelse(Data == "AllGenes", "AllGenes", "MLP"),
+         Data2 = factor(Data2, levels = c("MLP", "AllGenes")))
+
+dfCanonicalPairs_H88M67_Ranks_AllGenes <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data == "AllGenes")
+
+dfCanonicalPairs_H88M67_Ranks_MLP <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != "AllGenes") %>% 
+  group_by(Seed) %>% 
+  summarise(RankMean = mean(TargetRank),
+            RankSdLower = RankMean - 2*sd(TargetRank),
+            RankSdUpper = RankMean + 2*sd(TargetRank)) %>% 
+  ungroup()
+
+dfMouseColours <- annotation_colours_mod$MouseRegion %>% 
+  enframe(name = "Region11",
+          value = "Colour") %>% 
+  inner_join(dfLabelsMouse %>% 
+               select(Region11, Region67) %>% 
+               distinct(),
+             by = "Region11") %>% 
+  semi_join(dfCanonicalPairs_H88M67,
+            by = c("Region67" = "Mouse")) %>% 
+  mutate(Region67 = fct_rev(factor(Region67, levels = listLabelsMouseReordered$Region67_reordered))) %>% 
+  arrange(Region67)
+
+#Create rank distributions plot
+fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
+       aes(x = Seed)) + 
+  geom_pointrange(mapping = aes(y = RankMean,
+                                ymin = RankSdLower,
+                                ymax = RankSdUpper),
+                  # col = "grey70",
+                  col = "#719DC0",
+                  size = 0.25) + 
+  geom_point(data = dfCanonicalPairs_H88M67_Ranks_AllGenes, 
+             mapping = aes(y = TargetRank),
+             # col = "black",
+             col = "#B27700",
+             size = 1.5) +  
+  coord_flip(ylim = c(0,35)) + 
+  scale_y_continuous(breaks = c(1, seq(10, 40, by = 10)),
+                     limits = c(0, 35),
+                     expand = c(0,0)) + 
+  labs(x = "Mouse region",
+       y = "Rank") + 
+  theme_bw() +
+  theme(axis.text.y = element_text(colour = dfMouseColours$Colour,
+                                   face = "bold"),
+        plot.margin = margin(t = 0, r = 0, l = 0, b = 0, unit = 'inch'))
+fig4_distributions_grob <- ggplotGrob(fig4_distributions) %>% grid.force()
+
+fig4_distributions_panel_grob <- getGrob(fig4_distributions_grob, "panel.7-5-7-5")
+fig4_distributions_ytext_grob <- getGrob(fig4_distributions_grob, "axis-l.7-4-7-4")
+fig4_distributions_ytitle_grob <- getGrob(fig4_distributions_grob, "ylab-l.7-3-7-3")
+fig4_distributions_xtext_grob <- getGrob(fig4_distributions_grob, "axis-b.8-5-8-5")
+fig4_distributions_xtitle_grob <- getGrob(fig4_distributions_grob, "xlab-b.9-5-9-5")
+
+#Create a separate plot to make the legend
+fig4_distributions_legend <- ggplot(dfCanonicalPairs_H88M67_Ranks, 
+                                    aes(x = TargetRank, y = Seed, col = Data2)) + 
+  geom_point() + 
+  scale_colour_manual(name = "Data",
+                      # values = c("grey70", "black"),
+                      values = c("#719DC0", "#B27700"),
+                      labels = c("Gene expression latent space", "Gene expression initial space")) + 
+  theme_bw() + 
+  theme(legend.position = "bottom",
+        legend.direction = "vertical",
+        legend.title = element_blank())
+
+#Extract the legend grob from the plot
+fig4_distributions_legend_grob <- ggplotGrob(fig4_distributions_legend) %>% 
+  grid.force() %>% 
+  getGrob("guides.3-3-3-3")
+
+#Create plot title
+fig4_distributions_title_grob <- textGrob("Rank of canonical human homologue",
+                                          x = unit(1, 'npc'), 
+                                          y = unit(0.3, 'npc'),
+                                          just = c("right", "bottom"))
+```
+
+
+```{r}
+#Generate a mouse tree with 67 leaf nodes
+treeMouse_67 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_67,
+              nodes = listLabelsMouseReordered$Region67_reordered,
+              method = "BelowNode")
+
+#Create a mouse atlas with 67 regions
+atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
+dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
+```
+
+```{r results2-fig4-panelB-proportions}
+#Compute the proportion of rank differences non-positive
+dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
+  group_by(Seed) %>% 
+  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
+  ungroup()
+
+#Create MINC array for proportions non-positive
+fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$PropNonPos,
+                                values.names = dfCanonicalPairs_H88M67_RankDiffsProp$Seed,
+                                labels = atlasMouse_67,
+                                defs = dfAtlasMouse_67)
+
+#Generate base slice series
+fig4_ss_grob <- sliceSeries(nrow = 8, ncol = 2, begin = 70, end = 330) %>% 
+  anatomy(mincArray(dsurqeAnat), low = 700, high = 1400) %>% 
+  overlay(mincArray(fig4_ss_array), low = 0, high = 1) %>% 
+  legend("Proportion of non-positive rank differences") %>%
+  grobify()
+```
+
+```{r}
+fig4_ss_legend_palette <- matrix(colorRampPalette(c("red", "yellow"))(255), nrow = 1, ncol = 100)
+
+fig4_ss_legend_scale_grob <- rasterGrob(fig4_ss_legend_palette,
+                                        x = 0, y = 0.95,
+                                        width = 1,
+                                        height = 0.2,
+                                        just = c("left", "top"))
+```
+
+
+```{r}
+treeHuman_88 <- Clone(treeHuman)
+pruneAnatTree(treeHuman_88,
+              nodes = listLabelsHumanReordered$Region88_reordered,
+              method = "BelowNode")
+
+temp <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Data != "AllGenes") %>% 
+  rename(HumanPair = Human)
+
+dfCombinations <- expand_grid(Seed = unique(temp$Seed),
+                              Target = unique(temp$Target))
+
+nMLPsamples <- dfSimilarityProfiles %>% 
+  filter(Data != "AllGenes") %>% 
+  pull(Data) %>% 
+  unique() %>% 
+  length()
+
+dfCanonicalPairs_H88M67_TopMatch_Summary <- temp %>% 
+  filter(TargetRank == 1) %>% 
+  select(Data, Seed, HumanPair, Target) %>% 
+  group_by(Seed, Target) %>% 
+  summarise(Prop = n()/nMLPsamples) %>% 
+  ungroup() %>% 
+  right_join(dfCombinations, by = c("Seed", "Target")) %>% 
+  mutate(Prop = ifelse(is.na(Prop), 0, Prop))
+
+# seed <- "Declive (VI)"
+seed <- "Field CA2"
+
+dfCanonicalPairs_H88M67_TopMatch_Summary_Seed <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
+  filter(Seed == seed)
+
+# treeHuman_88_seedprop <- Clone(treeHuman_88)
+# treeHuman_88_seedprop$Do(function(node){
+#   if(isLeaf(node)){
+#     ind <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seed$Target == node$name
+#     node$prop <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seed[ind,][["Prop"]]
+#   }
+# })
+```
+
+```{r}
+library(ape)
+library(tidytree)
+library(ggtree)
+
+treePlot <- Clone(treeHuman_88)
+treePlot <- FindNode(treePlot, "gray matter")
+treePlot$Do(function(node){
+  if(node$name == "Heschl's gyrus"){
+    node$name <- "Heschls gyrus"
+  }
+})
+
+treePlotPhylo <- as.phylo(treePlot)
+
+dfTreePlotPhylo <- as_tibble(treePlotPhylo)
+
+dfTreeColours <- treePlot$Get("color_hex_triplet") %>% 
+  enframe(name = "label",
+          value = "color_hex_triplet") %>% 
+  mutate(label = str_remove_all(label, ","),
+         label = str_replace_all(label, " ", "_"))
+
+dfTreeAcronyms <- treePlot$Get("acronym") %>% 
+  enframe(name = "label",
+          value = "acronym")%>% 
+  mutate(label = str_remove_all(label, ","),
+         label = str_replace_all(label, " ", "_"))
+
+dfTreePlotPhylo <- dfTreePlotPhylo %>%
+  inner_join(dfTreeColours,
+             by = "label") %>%
+  inner_join(dfTreeAcronyms,
+             by = "label")
+
+treePlotPhylo <- as.treedata(dfTreePlotPhylo)
+```
+
+```{r}
+colourPalette <- dfTreeColours %>% 
+  mutate(label = factor(label)) %>% 
+  arrange(label) %>% 
+  pull(color_hex_triplet)
+```
+
+```{r fig.width = 10}
+ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none", layout = "circular") + 
+  geom_tiplab(aes(label = acronym)) + 
+  scale_color_manual(values = colourPalette) + 
+  theme(legend.position = "none")
+```
+
+```{r}
+dfCanonicalPairs_H88M67_TopMatch_Summary <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
+  mutate(Target = ifelse(Target == "Heschl's gyrus", "Heschls gyrus", Target))
+```
+
+```{r}
+seeds_Hipp <- c("Field CA1", "Field CA2", "Field CA3") 
+seeds_CbCx <- c("Lingula (I)", "Uvula (IX)", "Crus 1")
+dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds <- dfCanonicalPairs_H88M67_TopMatch_Summary %>% 
+  filter(Seed %in% c(seeds_Hipp, seeds_CbCx)) %>%
+  pivot_wider(id_cols = Target, names_from = Seed, values_from = Prop) %>% 
+  rename(label = Target) %>% 
+  mutate(label = str_remove_all(label, ","),
+         label = str_replace_all(label, " ", "_")) %>% 
+  column_to_rownames("label")
+```
+
+```{r fig.width = 4, fig.height = 4}
+df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
+  select(seeds_Hipp)
+df_cbcx <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
+  select(seeds_CbCx)
+```
+
+```{r fig.width = 4, fig.height = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = 0, align = TRUE, size = 1) +
+  # xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p
+```
+
+
+```{r fig.width = 2.2, fig.height = 4.55}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = 4.95, align = F, size = 1.5) +
+  xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p1 <- gheatmap(p, df_hipp, offset = 0.05,
+               width = 0.3, colnames = F, colnames_angle = 0, hjust = -0.05,
+               color = "black") + 
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
+                      guide = FALSE) 
+
+# p1
+
+p2 <- p1 + new_scale_fill()
+
+ptree <- gheatmap(p2, df_cbcx, offset = 2.2,
+                  width = 0.3, colnames = F, colnames_angle = 265, hjust = -0.05,
+                  color = "grey40") +
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
+                      guide = F)
+
+treegrob <- ggplotGrob(ptree) %>% grid.force()
+```
+
+```{r fig.width = 3, fig.height = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  # geom_tiplab(offset = 3, align = TRUE) + 
+  # xlim(NA, 20) +
+  # coord_polar(theta = "y", start = 0) + 
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.8, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9], guide = F) + 
+  scale_x_ggtree()
+
+p1
+```
+
+
+```{r fig.width = 10, fig.height = 10}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none",
+       layout = "fan",
+       open.angle = 0) + 
+  geom_tiplab(offset = 3, align = TRUE) + 
+  xlim(NA, 20) +
+  # coord_polar(theta = "y", start = 0) + 
+  scale_color_manual(values = colourPalette,
+                     guide = F)
+
+p
+```
+
+
+```{r fig.width = 10, fig.height = 10}
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+p1
+```
+
+```{r fig.width = 4, fig.height = 4}
+df_hipp <- dfCanonicalPairs_H88M67_TopMatch_Summary_Seeds %>% 
+  select(seeds_Hipp)
+
+angle <- 20
+
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none", 
+       layout = "fan",
+       open.angle = 20,
+       ladderize = F) + 
+  geom_tiplab() +
+  # coord_cartesian(xlim = c(0, 5)) + 
+  # coord_polar(theta = "y", start = (angle/2)*(pi/180)) +
+  # xlim(0, 5) + 
+  scale_color_manual(values = colourPalette,
+                     guide = F) 
+
+p
+```
+
+```{r}
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+temp <- ggplotGrob(p1) %>% grid.force()
+
+p1
+```
+
+```{r fig.width = 4}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none", 
+       layout = "rectangular",
+       # open.angle = 180,
+       ladderize = F) + 
+  coord_cartesian(xlim = c(0, 10)) +
+  # coord_polar(theta = "y", start = 0) +
+  # xlim(0, 5) + 
+  # geom_tiplab() + 
+  scale_color_manual(values = colourPalette,
+                     guide = F) + 
+  theme_tree2()
+
+p1 <- gheatmap(p, df_hipp, offset = 0,
+         width = 0.3, colnames = T, colnames_angle = 0, hjust = 1,
+         font.size = 2, color = "grey30") + 
+  # scale_fill_viridis_c(option = "A", direction = -1, begin = 0, end = 0.8)
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9])
+
+temp <- ggplotGrob(p1) %>% grid.force()
+
+p1
+```
+
+
+
+```{r results2-fig4-plot-treedist, eval=FALSE}
+# treeHuman_88 <- Clone(treeHuman)
+# pruneAnatTree(treeHuman_88,
+#               nodes = listLabelsHumanReordered$Region88_reordered,
+#               method = "BelowNode")
+# 
+# structsHuman <- treeHuman_88$Get("name", filterFun = isLeaf)
+# 
+# dfTreeDist <- expand.grid(Node1 = structsHuman,
+#                           Node2 = structsHuman,
+#                           stringsAsFactors = FALSE) %>% 
+#   mutate(TreeDist = 0)
+# 
+# for(i in 1:nrow(dfTreeDist)){
+#   node1 <- dfTreeDist[i,][["Node1"]]
+#   node2 <- dfTreeDist[i,][["Node2"]]
+#   dfTreeDist[i,][["TreeDist"]] <- Distance(FindNode(treeHuman_88, node1),
+#                                            FindNode(treeHuman_88, node2))
+# }
+# 
+# dfCanonicalPairs_H88M67_TopMatch_TreeDist <- dfSimilarityProfiles %>%
+#   inner_join(dfCanonicalPairs_H88M67,
+#              by = c("Seed" = "Mouse")) %>% 
+#   filter(Data != "AllGenes", 
+#          TargetRank == 1) %>% 
+#   select(Data, Seed, HumanPair = Human, Target) %>% 
+#   inner_join(dfTreeDist,
+#              by = c("HumanPair" = "Node1",
+#                     "Target" = "Node2"))
+# 
+# dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary <- dfCanonicalPairs_H88M67_TopMatch_TreeDist %>%
+#   group_by(Seed, TreeDist) %>% 
+#   summarise(Count = n(),
+#             Prop = Count/500) %>% 
+#   ungroup()
+# 
+# dfCanonicalPairs_H88M67_TopMatch_TreeDist_Plot <- expand.grid(Seed = unique(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary$Seed),
+#                       TreeDist = unique(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary$TreeDist),
+#                       stringsAsFactors = FALSE) %>% 
+#   mutate(PropTemp = 0) %>% 
+#   left_join(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Summary,
+#             by = c("Seed", "TreeDist")) %>% 
+#   mutate(Prop = ifelse(is.na(Prop), PropTemp, Prop),
+#          Count = ifelse(is.na(Count), PropTemp, Count),
+#          Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)),
+#          TreeDist = factor(TreeDist))
+# 
+# fig4_treedist <- ggplot(dfCanonicalPairs_H88M67_TopMatch_TreeDist_Plot,
+#        aes(x = Seed, y = TreeDist, fill = Prop)) + 
+#   geom_raster() + 
+#   coord_flip() + 
+#   scale_fill_gradientn(colours = colorRampPalette(c("white", "black"))(255)) + 
+#   theme_bw() + 
+#   theme(axis.ticks = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.title.y = element_blank(),
+#         legend.position = "bottom",
+#         legend.direction = "horizontal",
+#         legend.title = element_blank(),
+#         plot.margin = margin(l = 0, b = 0, r = 0, t = 0, unit = 'inch'))
+# fig4_treedist_grob <- ggplotGrob(fig4_treedist) %>% grid.force()
+# 
+# fig4_treedist_panel_grob <- getGrob(fig4_treedist_grob, "panel.7-5-7-5")
+# fig4_treedist_xtext_grob <- getGrob(fig4_treedist_grob, "axis-b.8-5-8-5")
+# fig4_treedist_xtitle_grob <- getGrob(fig4_treedist_grob, "xlab-b.9-5-9-5")
+# fig4_treedist_legend_grob <- getGrob(fig4_treedist_grob, "guides.3-3-3-3")
+```
+
+```{r}
+treeMouse_11 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_11,
+              nodes = listLabelsMouseReordered$Region11_reordered,
+              method = "BelowNode")
+atlasMouse_11 <- hanatToAtlas(treeMouse_11, mincArray(dsurqeLabels))
+dfAtlasMouse_11 <- hanatToAtlasDefs(treeMouse_11)
+
+dsurqeAnat_3d <- mincArray(dsurqeAnat)
+dsurqeMask_3d <- mincArray(dsurqeMask)
+
+dsurqeAnat_3d[dsurqeMask_3d == 0] <- NA
+
+anatLow <-  700
+anatHigh <- 1400
+dsurqeAnat_3d[dsurqeAnat_3d >= anatHigh] <- anatHigh
+dsurqeAnat_3d[dsurqeAnat_3d <= anatLow] <- anatLow
+dims <- dim(dsurqeAnat_3d)
+
+slice <- 100
+sliceSelectionAnat <- dsurqeAnat_3d[1:dims[1], 1:dims[2], slice]
+colnames(sliceSelectionAnat) <- 1:ncol(sliceSelectionAnat)
+rownames(sliceSelectionAnat) <- nrow(sliceSelectionAnat):1
+
+dfSliceSelectionAnat <- sliceSelectionAnat %>% 
+  as_tibble(rownames = "x") %>% 
+  pivot_longer(-x, names_to = "y", values_to = "Intensity") %>% 
+  mutate_all(.funs = as.numeric)
+
+atlasMouse_11_3d <- mincArray(atlasMouse_11)
+atlasMouse_11_3d[dsurqeMask_3d == 0] <- NA
+atlasMouse_11_3d[atlasMouse_11_3d == 0] <- NA
+sliceSelectionLabels <- atlasMouse_11_3d[1:dims[1], 1:dims[2], slice]
+colnames(sliceSelectionLabels) <- 1:ncol(sliceSelectionLabels)
+rownames(sliceSelectionLabels) <- nrow(sliceSelectionLabels):1
+
+dfSliceSelectionLabels <- sliceSelectionLabels %>% 
+  as_tibble(rownames = "x") %>% 
+  pivot_longer(-x, names_to = "y", values_to = "Label") %>% 
+  mutate_all(.funs = as.numeric) 
+
+dfSliceSelection <- inner_join(dfSliceSelectionAnat,
+                               dfSliceSelectionLabels,
+                               by = c("x", "y"))
+
+dfMouseColours <- treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf) %>%
+  enframe(name = "Structure",
+          value = "Colour") %>% 
+  inner_join(dfAtlasMouse_11,
+             by = "Structure") %>% 
+  semi_join(dfSliceSelection,
+            by = "Label") %>% 
+  arrange(Label)
+
+dfSliceSelection <- dfSliceSelection %>% 
+  filter(y <= 400) %>% 
+  mutate(Label = factor(Label))
+
+asp <- max(dfSliceSelection$x)/max(dfSliceSelection$y)
+
+sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) + 
+  geom_tile(aes(fill = Intensity),
+            alpha = 0.5) + 
+  scale_fill_gradient(low = gray.colors(255)[1],
+                      high = gray.colors(255)[255],
+                      na.value = 'transparent',
+                      guide = F) + 
+  new_scale_fill() + 
+  geom_tile(aes(fill = Label)) + 
+  scale_fill_manual(na.value = 'transparent',
+                      values = dfMouseColours$Colour,
+                    guide = F) +
+  coord_fixed() +
+  theme_void() +
+  # theme_minimal() +
+  theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% grid.force()
+sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
+
+rm(treeMouse_11,
+   atlasMouse_11,
+   dfAtlasMouse_11,
+   dsurqeAnat_3d,
+   dsurqeMask_3d,
+   slice,
+   sliceSelectionAnat,
+   atlasMouse_11_3d,
+   sliceSelectionLabels,
+   dfSliceSelectionAnat,
+   dfSliceSelectionLabels,
+   dfSliceSelection,
+   dfMouseColours)
+```
+
+```{r fig.width = 2.2, fig.height = 4.55}
+p <- ggtree(treePlotPhylo, aes(color = label),
+       branch.length = "none") + 
+  geom_tiplab(aes(label = acronym),
+              offset = -12, align = F, size = 1.5, hjust = 1) +
+  xlim(NA, 20) +
+  scale_color_manual(values = colourPalette,
+                     guide = F) + 
+  scale_x_reverse() + 
+  theme_tree2()
+#offset is the offset in x coordinate as measured from the leaf nodes of the tree
+#use theme_tree2() to see the scale bar for reference
+
+p1 <- gheatmap(p, df_hipp, offset = 0.05,
+               width = 0.6, colnames = F, colnames_angle = 0, hjust = -0.05,
+               color = "black") + 
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Blues")[9],
+                      guide = FALSE) 
+#width argument is percentage of the width size of the tree diagram
+
+# p1
+
+p2 <- p1 + new_scale_fill()
+
+ptree <- gheatmap(p2, df_cbcx, offset = 4.5,
+                  width = 1, colnames = F, colnames_angle = 265, hjust = -0.05,
+                  color = "black") +
+  scale_fill_gradient(low = "white", high = brewer.pal(n = 9, name = "Oranges")[9],
+                      guide = F)
+
+ptree <- ptree + theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = 'in'))
+
+treegrob <- ggplotGrob(ptree) %>% grid.force()
+```
+
+```{r}
+temp <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Data != "AllGenes") %>% 
+  rename(HumanPair = Human)
+
+rank <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(str_detect(Region16, "cerebellar")) %>% 
+  nrow()
+
+structsCb <- dfLabelsHuman %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  filter(str_detect(Region16, "cerebellar")) %>% 
+  pull(Region88)
+
+seedsCb <- c("Copula pyramidis", "Crus 1")
+
+temp2 <- temp %>% 
+  filter(Seed %in% seedsCb) %>% 
+  filter(TargetRank <= rank) %>% 
+  select(Seed, Target, TargetRank) %>% 
+  group_by(Seed, Target, TargetRank) %>% 
+  summarise(prop = n()/nMLPsamples) %>% 
+  ungroup() 
+
+dfCombinations <- expand_grid(Seed = unique(temp2$Seed),
+                              Target = unique(temp2$Target),
+                              TargetRank = unique(temp2$TargetRank))
+
+temp3 <- temp2 %>% 
+  right_join(dfCombinations,
+             by = c("Seed", "Target", "TargetRank")) %>% 
+  mutate(prop = ifelse(is.na(prop), 0, prop)) %>% 
+  filter(Target %in% structsCb) %>% 
+  mutate(Target = factor(Target, listLabelsHumanReordered$Region88_reordered),
+         TargetRank = factor(TargetRank)) 
+```
+
+```{r}
+ptemp <- ggplot(temp3, aes(x = Target, y = TargetRank, fill = prop)) + 
+  geom_tile(col = "grey50") +
+  facet_wrap(~Seed, nrow = 2) + 
+  scale_fill_gradient(low = "white", high = "black") + 
+  scale_y_discrete(position = "right") + 
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle = 90),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        plot.margin = margin(t = 0, b = 0, l = 0, unit = 'in'))
+
+ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
+# ptemp_xtext_grob <- getGrob(ptemp_grob, "axis-b-1-2.14-5-14-5")
+# ptemp_xtitle_grob <- getGrob(ptemp_grob, "xlab-b.15-5-15-5")
+# 
+# ptemp <- ptemp + 
+#   theme(axis.text.x = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.ticks.x = element_blank())
+# ptemp_grob <- ggplotGrob(ptemp) %>% grid.force()
+```
+
+```{r}
+grid.ls(ptemp_grob)
+```
+
+
+```{r results2-fig4-grob}
+#Generate figure 4 grob
+fig4_grob <- arrangeGrob(fig4_distributions_panel_grob, #1
+                         fig4_distributions_ytext_grob,#2
+                         fig4_distributions_ytitle_grob,#3
+                         fig4_distributions_xtext_grob,#4
+                         fig4_distributions_xtitle_grob,#5
+                         fig4_distributions_legend_grob, #6
+                         fig4_distributions_title_grob, #7
+                         fig4_ss_grob, #8
+                         ptemp_grob,
+                         layout_matrix = rbind(c(NA, NA, 7, NA, NA, NA),
+                                               c( 3,  2, 1, NA,  8,  9),
+                                               c(NA, NA, 4, NA, NA,  9),
+                                               c(NA, NA, 4, NA, NA, NA),
+                                               c(NA, NA, 5, NA, NA, NA),
+                                               c(NA, NA, 6, NA, NA, NA),
+                                               c(NA, NA, 6, NA, NA, NA)),
+                         widths = unit(c(0.60, 2.0, 2.2, 0.25, 2.5, 2.45), 'inch'),
+                         heights = unit(c(0.4, 4.55, 0.09, 0.09, 0.175, 0.1, 0.6), 'inch'))
+```
+
+```{r results2-fig4-interactive, include=TRUE, echo=FALSE, fig.width=10, fig.height=6.2}
+grid.newpage()
+grid.draw(fig4_grob)
+sliceAMBAWidth <- 0.9
+sliceAMBAHeight <- sliceAMBAWidth/asp
+vp = viewport(x = unit(2.1, 'inch'),
+              y = unit(0.55, 'inch'),
+              width = unit(sliceAMBAWidth, 'inch'),
+              height = unit(sliceAMBAHeight, 'inch'))
+pushViewport(vp)
+grid.draw(sliceAMBALegend_panel_grob)
+popViewport()
+grid.rect(gp = gpar(fill = NA))
+grid.text(c("A.", "B."),
+          x = unit(c(0.2, 4.975), 'inch'),
+          y = unit(c(0.95, 0.95), 'npc'),
+          gp = gpar(fontsize = 14, fontface = "bold"))
+```
+
+```{r results2-fig4-write}
+fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure4.RData")
+save(fig4_grob,
+     sliceAMBALegend_panel_grob,
+     file = fileout)
+```
+
+#Numeric
+
+```{r}
+dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
+  group_by(Seed) %>% 
+  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
+  ungroup()
+```
+
+```{r}
+dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+  summarise(nregions = sum(PropNonPos >= 0.80),
+            fracregions = nregions/n())
+```
+
+```{r}
+thresholds <- seq(0, 1, by = 0.005)
+dfPropNonPos <- tibble(thresholds = thresholds,
+                       nRegions = 0,
+                       fracRegions = 0)
+
+for(i in 1:length(thresholds)){
+  dfTemp <- dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+    summarise(nRegions = sum(PropNonPos >= thresholds[i]),
+              fracRegions = nRegions/n())
+  dfPropNonPos[i,"nRegions"] <- dfTemp$nRegions
+  dfPropNonPos[i,"fracRegions"] <- dfTemp$fracRegions
+}
+
+ggplot(dfPropNonPos, aes(x = thresholds, y = fracRegions)) + 
+  geom_point(size = 0.5) + 
+  coord_fixed(xlim = c(0,1),
+              ylim = c(0,1)) +
+  labs(x = "Proportion of latent spaces",
+       y = "Proportion of regions showing improvement") + 
+  theme_bw()
+```
+
+```{r}
+x <- dfPropNonPos$thresholds
+y <- dfPropNonPos$fracRegions
+AUC <- sum(diff(x)*zoo::rollmean(y, k = 2))
+AUC
+```
+
+
+```{r}
+dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
+  select(Seed, Data2, TargetRank) %>% 
+  group_by(Seed, Data2) %>% 
+  summarise(mean(TargetRank))
+```
+
+```{r}
+dfCanonicalPairs_H88M67_Ranks %>% 
+filter(Seed %in% c("Pallidum", "Striatum ventral region", "Caudoputamen", "Hypothalamus", "Thalamus", "Inferior colliculus", "Superior colliculus, sensory related", "Pons", "Medulla"),
+       Data != "AllGenes") %>% 
+  select(Seed, TargetRank) %>% 
+  group_by(Seed) %>% 
+  summarise(prop = sum(TargetRank == 1)/nMLPsamples) %>% 
+  ungroup() %>% 
+  arrange(prop)
+```
+
+```{r}
+temp3 %>% 
+  filter(Seed == "Crus 1",
+         Target == "crus I") %>% 
+  ggplot(aes(x = TargetRank, y = prop)) + 
+  geom_col()
+```
+
+```{r}
+temp3 %>% 
+  filter(Seed == "Crus 1",
+         Target == "crus I") %>% 
+  filter(prop == max(prop)) %>% 
+  pull(TargetRank)
+```
+
