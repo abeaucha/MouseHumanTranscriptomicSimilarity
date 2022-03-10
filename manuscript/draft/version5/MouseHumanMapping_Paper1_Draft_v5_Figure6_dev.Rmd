@@ -30,27 +30,24 @@ library(RColorBrewer)
 
 ```{r functions}
 #Functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
+source("../../../functions/processing_tools.R")
 ```
 
 ```{r import-general}
-#Path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
-#Import mouse voxelwise gene expression matrix
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled_scaled.csv"))) 
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled_scaled.csv"))) 
+#Import data
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Extract gene names
 genes <- colnames(dfExprMouse)[!str_detect(colnames(dfExprMouse), "Region")]
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -60,7 +57,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -75,9 +72,9 @@ pruneAnatTree(treeHuman,
               method = "AtNode")
 
 #Import DSURQE images in AMBA space
-dsurqeLabels_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_labels.mnc")
-dsurqeMask_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/coronal_200um_coverage_bin0.8.mnc")
-dsurqeAverage_200um <- mincGetVolume("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MRI/DSURQE_Allen_average.mnc")
+dsurqeLabels_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc")
+dsurqeMask_200um <- mincGetVolume("../../../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc")
+dsurqeAnat_200um <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc")
 
 #Create a correspondence between voxels in the image space and in the expression matrices
 

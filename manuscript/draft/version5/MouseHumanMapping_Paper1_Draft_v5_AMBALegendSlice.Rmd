@@ -22,18 +22,15 @@ library(gridExtra)
 ```
 
 ```{r functions}
-source("/projects/abeauchamp/Functions/TreeTools.R")
+source("../../../functions/tree_tools.R")
 ```
 
 ```{r import}
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -43,9 +40,9 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r slice-atlas}
@@ -166,7 +163,6 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
 sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% 
   grid.force() %>% 
   getGrob("panel.7-5-7-5")
-# sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
 ```
 
 ```{r fig-dims}
@@ -182,7 +178,7 @@ grid.draw(sliceAMBALegend_grob)
 
 ```{r write}
 #Save the grob for the slice
-fileout <- str_c(pathHome, "Draft/", "Version5/", "AMBALegendSlice.RData")
+fileout <- "AMBALegendSlice.RData"
 save(sliceAMBALegend_grob,
      sliceAMBA_asp,
      file = fileout)
