@@ -28,25 +28,22 @@ library(RColorBrewer)
 
 ```{r functions}
 #Functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Functions/mincBuildArray.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/mincBuildArray.R")
+source("../../../functions/processing_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
 ```
 
 ```{r import}
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
 #Import data
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -56,7 +53,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -71,9 +68,9 @@ pruneAnatTree(treeHuman,
               method = "AtNode")
 
 #Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r}
@@ -85,7 +82,7 @@ dfLabelsHuman <- dfExprHuman %>% select(contains("Region"))
 
 ```{r results2-fig2-processing}
 #Path to MLP files
-pathMLP <- str_c(pathHome, "Data/MultilayerPerceptronOutcomes/")
+pathMLP <- "../../../data/MLP_outcomes/"
 
 #Files containing latent space representations
 filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
@@ -1008,7 +1005,7 @@ grid.rect(gp = gpar(fill = NA))
 ```
 
 ```{r results2-fig2-write}
-fileout <- str_c(pathHome, "Draft/", "Version4/", "Figure2.RData")
+fileout <- "Figure2.RData"
 save(fig2_grob,
      file = fileout)
 ```
