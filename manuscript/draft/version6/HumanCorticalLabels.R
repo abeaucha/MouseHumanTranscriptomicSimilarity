@@ -12,16 +12,16 @@ library(tidyverse)
 library(data.tree)
 
 #Tree functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
+source("../../../functions/tree_tools.R")
 
 #Import human sample expression matrix for labels
-dfExprHuman <- suppressMessages(read_csv("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Data/HumanExpressionMatrix_Samples_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Import human label sets
-load("/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Data/TreeLabels.RData")
+load("../../../data/TreeLabels.RData")
 
 #Import human tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -63,5 +63,5 @@ dfCorticalRegions <- dfExprHuman %>%
 
 #Save cortical labels as csv file
 write_csv(x = dfCorticalRegions,
-          file = "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/Draft/Version6/HumanCorticalLabels.csv")
+          file = "HumanCorticalLabels.csv")
    

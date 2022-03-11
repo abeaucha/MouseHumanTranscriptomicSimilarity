@@ -30,25 +30,22 @@ library(RColorBrewer)
 
 ```{r functions}
 #Functions
-source("/projects/abeauchamp/Functions/TreeTools.R")
-source("/projects/abeauchamp/Functions/mincBuildArray.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/ProcessingTools.R")
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/buildSimilarityMatrix.R")
+source("../../../functions/tree_tools.R")
+source("../../../functions/mincBuildArray.R")
+source("../../../functions/processing_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
 ```
 
 ```{r import}
-#Set path
-pathHome <- "/projects/abeauchamp/Projects/MouseHumanMapping/Paper_Descriptive/"
-
 #Import data
-dfExprMouse <- suppressMessages(read_csv(str_c(pathHome, "Data/", "MouseExpressionMatrix_Voxel_coronal_maskcoronal_imputed_labelled.csv")))
-dfExprHuman <- suppressMessages(read_csv(str_c(pathHome, "Data/", "HumanExpressionMatrix_Samples_labelled.csv")))
+dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
+dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"))
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load(str_c(pathHome, "Data/", "TreeLabelsReordered.RData"))
+load("../../../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load(str_c("/projects/abeauchamp/Projects/MouseHumanMapping/AllenMouseBrainAtlas/Data/MouseExpressionTree_DSURQE.RData"))
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -58,7 +55,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("/projects/abeauchamp/Projects/MouseHumanMapping/AllenHumanBrainAtlas/Data/HumanExpressionTree_Samples.RData")
+load("../../../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -73,9 +70,9 @@ pruneAnatTree(treeHuman,
               method = "AtNode")
 
 #Import DSURQE labels and template
-dsurqeLabels <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_labels.mnc")
-dsurqeAnat <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_average.mnc")
-dsurqeMask <- mincGetVolume("/projects/abeauchamp/Atlases/DSURQE/DSURQE_40micron_mask.mnc")
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
 ```
 
 ```{r normalization}
@@ -700,7 +697,7 @@ fig1_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
 fig1_border_grob <- rectGrob(gp = gpar(fill = NA))
 
 #Import AMBA legend slice
-load(str_c(pathHome, "Draft/", "Version6/", "AMBALegendSlice.RData"))
+load("AMBALegendSlice.RData")
 
 #Width and height for the atlas legend slice
 sliceAMBA_width <- 1.1
@@ -728,7 +725,7 @@ grid.draw(fig1_grob)
 
 ```{r results1-fig1-write}
 #Save figure 1 grob
-fileout <- str_c(pathHome, "Draft/", "Version6/", "Figure1.RData")
+fileout <- "Figure1.RData"
 save(fig1_grob,
      fig1_width,
      fig1_height,
