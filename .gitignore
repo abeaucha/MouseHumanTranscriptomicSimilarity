@@ -90,3 +90,5 @@ manuscript/draft/version6/HumanCorticalLabels.csv
 manuscript/draft/version6/CortexSimilarityMatrices.RData
 manuscript/draft/version6/StriatumSimilarityMatrices_HumanSamples.RData
 manuscript/draft/version6/StriatumSimilarityMatrices_MouseVoxels.RData
+AMBA/to_clean/
+AMBA/data/to_clean/
