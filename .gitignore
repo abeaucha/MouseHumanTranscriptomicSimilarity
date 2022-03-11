@@ -88,3 +88,5 @@ manuscript/draft/version6/Figure5.RData
 manuscript/draft/version6/Figure6.RData
 manuscript/draft/version6/HumanCorticalLabels.csv
 manuscript/draft/version6/CortexSimilarityMatrices.RData
+manuscript/draft/version6/StriatumSimilarityMatrices_HumanSamples.RData
+manuscript/draft/version6/StriatumSimilarityMatrices_MouseVoxels.RData
