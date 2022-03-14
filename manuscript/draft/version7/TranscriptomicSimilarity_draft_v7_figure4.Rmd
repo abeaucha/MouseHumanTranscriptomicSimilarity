@@ -2,7 +2,7 @@
 title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 2, Figure 4"
 author: "Antoine Beauchamp"
-date: 'January 25th, 2022'
+date: 'March 14th, 2022'
 output: html_document
 ---
 
@@ -17,16 +17,16 @@ knitr::opts_chunk$set(echo = TRUE,
 ```{r libraries}
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(grid)
-library(gridExtra)
-library(pheatmap)
-library(ggplotify)
-library(ggnewscale)
-library(RMINC)
-library(MRIcrotome)
-library(data.tree)
-library(RColorBrewer)
-library(viridis)
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
+suppressPackageStartupMessages(library(viridis))
 ```
 
 ```{r functions}
@@ -218,7 +218,7 @@ dfSimilarityProfiles <- map_df(.x = listSimMats,
 
 ```{r canonical-pairs}
 #Import the data frame containing mouse-human canonical pairs
-dfCanonicalPairs_H88M67 <- "../../../data/MouseHumanMatches_H88M67.csv"
+dfCanonicalPairs_H88M67 <- read_csv("../../../data/MouseHumanMatches_H88M67.csv")
 
 mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
   str_replace("Superior colliculus, sensory related", "Superior colliculus")
@@ -515,7 +515,7 @@ save(fig4_grob,
 
 # In-text quantification
 
-```{r results2-fig4-intext-1}
+```{r results2-fig4-intext-1, eval=F}
 #Data frame containing proportions of non-positive rank differences
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -529,7 +529,7 @@ dfCanonicalPairs_H88M67_RankDiffs_Summary %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig4-intext-2}
+```{r results2-fig4-intext-2, eval=F}
 #Ranks for frontal pole and visual areas
 dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
@@ -537,7 +537,8 @@ dfCanonicalPairs_H88M67_Ranks %>%
   group_by(Seed, Data2) %>% 
   summarise(mean(TargetRank))
 ```
-```{r results2-fig4-intext-3}
+
+```{r results2-fig4-intext-3, eval=F}
 #Number of MLP samples
 nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes") %>% 
@@ -564,7 +565,7 @@ filter(Seed %in% c("Pallidum",
   arrange(prop)
 ```
 
-```{r results2-fig4-intext-4}
+```{r results2-fig4-intext-4, eval=F}
 #Calculate rank frequency for crus 1 pair
 temp <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes",
@@ -589,7 +590,7 @@ ggplot(temp, aes(x = TargetRank, y = n)) +
 
 # Supplementary
 
-```{r results2-fig4-supp-1}
+```{r results2-fig4-supp-1, eval=F}
 #Compute a ROC-type curve for proportions of regions and proportions of latent spaces returning non-positive rank differences
 
 #Threshold increments
@@ -621,7 +622,7 @@ ggplot(dfPropNonPos, aes(x = thresholds, y = fracRegions)) +
   theme_bw()
 ```
 
-```{r results2-fig4-supp-2}
+```{r results2-fig4-supp-2, eval=F}
 #Calculate the AUC for the ROC-type curve
 x <- dfPropNonPos$thresholds
 y <- dfPropNonPos$fracRegions
