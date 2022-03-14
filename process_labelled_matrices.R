@@ -32,8 +32,6 @@ source("functions/processing_tools.R")
 
 args <- parse_args(OptionParser(option_list = option_list))
 
-args <- list(infile)
-
 if (!(args[["scale"]] %in% c("true", "false"))) {
   stop()
 }
