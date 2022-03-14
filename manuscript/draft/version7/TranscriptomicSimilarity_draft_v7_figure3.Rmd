@@ -17,16 +17,16 @@ knitr::opts_chunk$set(echo = TRUE,
 ```{r libraries}
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(grid)
-library(gridExtra)
-library(pheatmap)
-library(ggplotify)
-library(ggnewscale)
-library(RMINC)
-library(MRIcrotome)
-library(data.tree)
-library(RColorBrewer)
-library(viridis)
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
+suppressPackageStartupMessages(library(viridis))
 ```
 
 ```{r functions}
@@ -578,7 +578,7 @@ save(fig3_grob,
 
 # In-text quantification
 
-```{r results2-fig3-intext-1}
+```{r results2-fig3-intext-1, eval = F}
 #Number of latent spaces
 nMLP <- length(unique(dfRankDifferences$Data))
 
@@ -599,20 +599,19 @@ temp %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig3-intext-2}
+```{r results2-fig3-intext-2, eval = F}
 #Proportion of regions having non-positive rank difference in greater than 80% of latent spaces
 temp %>% 
   summarise(sum(PropNonPositive >= 0.80)/n())
 ```
 
-
-```{r results2-fig3-intext-3}
+```{r results2-fig3-intext-3, eval = F}
 #Summary statistics for specific mouse regions
 temp %>% 
   filter(Seed %in% c("Main olfactory bulb", "Accessory olfactory bulb", "Cerebellar nuclei"))
 ```
 
-```{r results2-fig3-intext-4}
+```{r results2-fig3-intext-4, eval = F}
 #Mouse regions in the isocortex
 structsCx <- dfLabelsMouse %>%
   select(Region11, Region67) %>% 
@@ -627,7 +626,7 @@ temp %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig3-intext-5}
+```{r results2-fig3-intext-5, eval = F}
 #Mouse regions in the cerebellar cortex
 structsCb <- dfLabelsMouse %>%
   select(Region11, Region67) %>% 
@@ -642,13 +641,13 @@ temp %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig3-intext-6}
+```{r results2-fig3-intext-6, eval = F}
 #Summary statistics for thalamus
 temp %>% 
   filter(Seed == "Thalamus")
 ```
 
-```{r results2-fig3-intext-7}
+```{r results2-fig3-intext-7, eval = F}
 #Mouse regions in the sub-cortex
 structsSubCx <- dfLabelsMouse %>% 
   select(Region11, Region67) %>% 
