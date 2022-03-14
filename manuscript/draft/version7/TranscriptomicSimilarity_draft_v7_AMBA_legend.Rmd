@@ -2,7 +2,7 @@
 title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Allen Mouse Brain Atlas legend slice"
 author: "Antoine Beauchamp"
-date: 'January 19th, 2022'
+date: 'March 14th, 2022'
 output: html_document
 ---
 
@@ -14,11 +14,11 @@ knitr::opts_chunk$set(echo = TRUE,
 
 ```{r libraries}
 suppressPackageStartupMessages(library(tidyverse))
-library(data.tree)
-library(RMINC)
-library(ggnewscale)
-library(grid)
-library(gridExtra)
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
 ```
 
 ```{r functions}
@@ -163,16 +163,15 @@ sliceAMBALegend <- ggplot(dfSliceSelection, aes(x = x, y = y)) +
 sliceAMBALegend_grob <- ggplotGrob(sliceAMBALegend) %>% 
   grid.force() %>% 
   getGrob("panel.7-5-7-5")
-# sliceAMBALegend_panel_grob <- getGrob(sliceAMBALegend_grob, "panel.7-5-7-5")
 ```
 
-```{r fig-dims}
+```{r fig-dims, eval = F}
 fig_height <- 4
 fig_width <- fig_height*sliceAMBA_asp
 print(c(fig_width, fig_height))
 ```
 
-```{r slice-grob, fig.width = 3.15, fig.height = 4}
+```{r slice-grob, eval = F, fig.width = 3.15, fig.height = 4}
 grid.newpage()
 grid.draw(sliceAMBALegend_grob)
 ```
