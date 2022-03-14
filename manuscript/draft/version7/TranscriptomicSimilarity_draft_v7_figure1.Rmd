@@ -2,7 +2,7 @@
 title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 1, Figure 1"
 author: "Antoine Beauchamp"
-date: 'January 19th, 2022'
+date: 'March 14th, 2022'
 output: html_document
 ---
 
@@ -17,15 +17,15 @@ knitr::opts_chunk$set(echo = TRUE,
 ```{r libraries}
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(grid)
-library(gridExtra)
-library(pheatmap)
-library(ggplotify)
-library(ggnewscale)
-library(RMINC)
-library(MRIcrotome)
-library(data.tree)
-library(RColorBrewer)
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
 ```
 
 ```{r functions}
@@ -734,17 +734,17 @@ save(fig1_grob,
 
 # In-text quantification
 
-```{r results1-fig1-intext-1}
+```{r results1-fig1-intext-1, eval = F}
 #Correlation between mouse cerebellar nuclei and human cerebellar nuclei, pons, and myelencephalon
 matSim_H88M67_AllGenes[c("cerebellar nuclei", "pons", "myelencephalon"), "Cerebellar nuclei"]
 ```
 
-```{r results1-fig1-intext-2}
+```{r results1-fig1-intext-2, eval = F}
 #Correlation between human cerebellar nuclei and mouse cerebellar nuclei, pons, and myelencephalon (medulla)
 matSim_H88M67_AllGenes["cerebellar nuclei", c("Cerebellar nuclei", "Pons", "Medulla")]
 ```
 
-```{r results1-fig1-intext-3}
+```{r results1-fig1-intext-3, eval = F}
 #Variance of correlation values across cortical regions
 
 #Extract mouse labels belonging to the isocortex
@@ -780,7 +780,7 @@ print(round(2*sdCortex, 2))
 print(round(varCortex, 4))
 ```
 
-```{r results1-fig1-intext-4}
+```{r results1-fig1-intext-4, eval = F}
 #Variance of correlation values across cerebellar cortical regions
 
 #Extract mouse labels belonging to the cerebellar cortex
@@ -815,20 +815,20 @@ print(round(2*sdCb, 2))
 print(round(varCb, 4))
 ```
 
-```{r results1-fig1-intext-5}
+```{r results1-fig1-intext-5, eval = F}
 #Variance over entire matrix
 varTot <- sd(matSim_H88M67_AllGenes)^2
 print(varTot)
 ```
 
-```{r results1-fig1-intext-6}
+```{r results1-fig1-intext-6, eval = F}
 #Correlation of similarity profiles of the precentral gyrus and cuneus
 
 t(matSim_H88M67_AllGenes)[,c("precentral gyrus", "cuneus")] %>% 
   cor()
 ```
 
-```{r results1-fig1-intext-7}
+```{r results1-fig1-intext-7, eval = F}
 #Average correlation and standard deviation between the human crus I and all mouse cerebellar cortical regions
 
 #Average correlation
