@@ -1,8 +1,7 @@
 #!/bin/bash
 
 markdown_files=(*_AMBA_legend.Rmd)
-markdown_files+=(*_figure[1-4].Rmd)
-#markdown_files=(*_figure*.Rmd)
+markdown_files=(*_figure*.Rmd)
 
 for file in ${markdown_files[@]};
 do
