@@ -2,9 +2,9 @@
 output: 
   pdf_document:
       includes:
-        in_header: MouseHumanMapping_Paper1_Header.tex
-        before_body: MouseHumanMapping_Paper1_FrontMatter.tex
-bibliography: MouseHumanMapping_Paper1.bib
+        in_header: TranscriptomicSimilarity_header.tex
+        before_body: TranscriptomicSimilarity_front_matter.tex
+bibliography: TranscriptomicSimilarity.bib
 ---
 
 ```{r setup, include=FALSE}
