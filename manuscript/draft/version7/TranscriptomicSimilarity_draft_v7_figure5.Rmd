@@ -17,17 +17,17 @@ knitr::opts_chunk$set(echo = TRUE,
 ```{r libraries}
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(grid)
-library(gridExtra)
-library(pheatmap)
-library(ggplotify)
-library(ggnewscale)
-library(RMINC)
-library(MRIcrotome)
-library(data.tree)
-library(RColorBrewer)
-library(viridis)
-library(rcartocolor)
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
+suppressPackageStartupMessages(library(viridis))
+suppressPackageStartupMessages(library(rcartocolor))
 ```
 
 ```{r functions}
@@ -741,7 +741,7 @@ save(fig5_grob,
 # In-text quantification
 
 
-```{r results3-fig5-intext-1}
+```{r results3-fig5-intext-1, eval=F}
 #Summary statistics for maximal correlations of S1 and M1
 dfSimilarityProfiles_Cx_MaxSim %>% 
   filter(Seed %in% c("Primary somatosensory area", "Primary motor area")) %>% 
@@ -752,7 +752,7 @@ dfSimilarityProfiles_Cx_MaxSim %>%
   arrange(desc(avg))
 ```
 
-```{r results3-fig5-intext-2}
+```{r results3-fig5-intext-2, eval=F}
 #Summary statistics for maximal correlation values by cortex type
 dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
   group_by(CortexType) %>% 
@@ -761,7 +761,7 @@ dfSimilarityProfiles_Cx_MaxSim_Compare %>%
   ungroup() 
 ```
 
-```{r results3-fig5-intext-3}
+```{r results3-fig5-intext-3, eval=F}
 #Compute the average correlation between the mouse S1 and cortical regions in the sensory-visual human cluster
 
 #Extract similarity profiles from the average latent space isocortical similarity matrix
@@ -790,7 +790,7 @@ dfSimilarityProfiles_Cx_Avg %>%
 
 For each mouse seed in the isocortex, what is the human cortical region that occurs as the top match with the highest proportion?
 
-```{r results3-supp-topmatches-table}
+```{r results3-supp-topmatches-table, eval=F}
 #Identify maximal similarity values for every seed and data set
 dfSimilarityProfiles_Cx_MaxSim <- dfSimilarityProfiles_Cx %>%
   group_by(Data, Seed) %>% 
@@ -850,7 +850,7 @@ dfCortex_MaxSim_Summary %>%
   arrange(desc(Seed))
 ```
 
-```{r results3-supp-topmatches-sankey-prop, fig.width = 10, fig.height = 5}
+```{r results3-supp-topmatches-sankey-prop, fig.width = 10, fig.height = 5, eval=F}
 #Isolate those pairs with the highest proportions
 dfCortex_MaxSim_Summary_MaxProp <- dfCortex_MaxSim_Summary %>% 
   filter(IsMaxProp == 1) %>% 
@@ -894,7 +894,7 @@ coloursHuman <- dfCortex_MaxSim_Summary_MaxProp %>%
   pull(color_hex_triplet)
 
 
-library(ggalluvial)
+suppressPackageStartupMessages(library(ggalluvial))
 plotCxAlluvial_prop <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
                               aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = prop),
@@ -921,7 +921,7 @@ plotCxAlluvial_prop
 
 What is the average correlation over latent spaces of the most frequently occurring maximal pair?
 
-```{r results3-supp-topmatches-sankey-avg, fig.width=10, fig.height = 5}
+```{r results3-supp-topmatches-sankey-avg, fig.width=10, fig.height = 5, eval=F}
 plotCxAlluvial_avgSim <- ggplot(dfCortex_MaxSim_Summary_MaxProp,
                                 aes(axis1 = fct_rev(Seed), axis2 = Target, y = y)) + 
   geom_alluvium(aes(fill = avgSimilarity),
@@ -948,7 +948,7 @@ plotCxAlluvial_avgSim
 
 In what proportion of latent spaces are mouse isocortical areas top matched with human cortical areas?
 
-```{r results3-supp-topmatches-grid-prop, fig.width=12, fig.height = 6}
+```{r results3-supp-topmatches-grid-prop, fig.width=12, fig.height = 6, eval=F}
 #Include colours to max similarity summary data frame
 dfCortex_MaxSim_Summary_wColours <- dfCortex_MaxSim_Summary %>% 
   left_join(dfLabelsHuman %>% 
@@ -996,7 +996,7 @@ plotCx_Dotmap_prop
 ```
 What are the average correlation values for the top matches?
 
-```{r results3-supp-topmatches-grid-avg, fig.width=12, fig.height=6}
+```{r results3-supp-topmatches-grid-avg, fig.width=12, fig.height=6, eval=F}
 plotCx_Dotmap_avgSim <- ggplot(dfCortex_MaxSim_Summary_wColours, aes(x = Target, y = Seed)) + 
   geom_tile(aes(fill = Region16),
             col = "grey50",
@@ -1020,14 +1020,15 @@ plotCx_Dotmap_avgSim
 ```
 What are the top matches to the mouse primary somatosensory area?
 
-```{r results3-supp-topmatches-S1-table}
+```{r results3-supp-topmatches-S1-table, eval=F}
 dfCortex_MaxSim_Summary_wColours %>% 
   filter(Seed == "Primary somatosensory area") %>% 
   filter(prop != 0) %>% 
   select(Seed, Target, Proportion = prop, AvgCorrelation = avgSimilarity) %>% 
   arrange(desc(Proportion))
 ```
-```{r results3-supp-topmatches-S1-plot, fig.width = 12, fig.height = 6}
+
+```{r results3-supp-topmatches-S1-plot, fig.width = 12, fig.height = 6, eval=F}
 #Create a data frame containing average correlation between mouse S1 and human cortical regions
 dfSimilarity_S1_Summary <- dfSimilarityProfiles_Cx %>% 
   filter(Seed == "Primary somatosensory area") %>% 
@@ -1056,17 +1057,17 @@ ggplot(dfSimilarity_S1_Summary, aes(x = fct_rev(Target), col = Region16)) +
 
 ## Cortical clustering
 
-```{r results3-supp-clustering-heatmap-mlp, fig.width = 12, fig.height = 6}
+```{r results3-supp-clustering-heatmap-mlp, fig.width = 12, fig.height = 6, eval=F}
 #Clustering of isocortical similarity in latent gene space
 clusteredHeatmap_MLP <- pheatmap(t(matSim_Cx_MLP), cluster_cols = T, cluster_rows  = T)
 ```
 
-```{r results3-supp-clustering-heatmap-allgenes, fig.width = 12, fig.height = 6}
+```{r results3-supp-clustering-heatmap-allgenes, fig.width = 12, fig.height = 6, eval=F}
 #Clustering of isocortical similarity in initial gene space
 clusteredHeatmap_AllGenes <- pheatmap(t(matSim_Cx_AllGenes), cluster_cols = T, cluster_rows  = T)
 ```
 
-```{r results3-supp-clustering-screeplot}
+```{r results3-supp-clustering-screeplot, eval=F}
 #Normalized scree plot
 dfWCSS %>% 
   group_by(data, axis) %>% 
@@ -1091,9 +1092,8 @@ dfWCSS %>%
         panel.grid.minor.x = element_blank())
 ```
 
-
-```{r results3-supp-clustering-overlap-human, fig.width = 10, fig.height = 5}
-library(mclustcomp)
+```{r results3-supp-clustering-overlap-human, fig.width = 10, fig.height = 5, eval=F}
+suppressPackageStartupMessages(library(mclustcomp))
 
 #Function to get cluster labels for different k
 getClusterLabels <- function(x, hc_tree){
@@ -1146,7 +1146,7 @@ dfClustComp %>%
   theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r results3-supp-clustering-overlap-mouse, fig.width = 10, fig.height = 5}
+```{r results3-supp-clustering-overlap-mouse, fig.width = 10, fig.height = 5, eval=F}
 #Repeat the process for mouse regions
 
 for(nk in 1:ncol(dfClustLabels_Mouse_MLP)){
@@ -1179,7 +1179,7 @@ dfClustComp %>%
   theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r results3-supp-clustering-overlap-heatmap, fig.width = 14, fig.height = 8}
+```{r results3-supp-clustering-overlap-heatmap, fig.width = 14, fig.height = 8, eval=F}
 #Data frame to annotate mouse regions with cluster labels in initial and latent spaces
 dfAnnotationsMouse <- inner_join(enframe(dfClustLabels_Mouse_MLP[,"k3"],
                                          name = "MouseRegion",
@@ -1214,7 +1214,7 @@ pheatmap(t(matSim_Cx_MLP),
 
 What are the distances between the centroids of different clusters? 
 
-```{r results3-supp-clustering-clusterdist-mouse, fig.width = 10, fig.height = 5}
+```{r results3-supp-clustering-clusterdist-mouse, fig.width = 10, fig.height = 5, eval=F}
 #Function to compute cluster centroids
 computeClusterCentroids <- function(x, hc_tree, nk = 1){
   centroids <- matrix(0, nrow = nrow(x), ncol = nk,
@@ -1246,7 +1246,7 @@ computeCentroidDistances <- function(x, hc_tree){
   return(df_centroids_dist)
 }
 
-source("/projects/abeauchamp/Projects/MouseHumanMapping/Functions/MetricTools.R")
+source("../../../functions/metrics_tools.R")
 
 #Compute cluster centroids for all k for mouse regions in initial gene space and latent space
 dfCentroidDist_Mouse_MLP <- computeCentroidDistances(x = matSim_Cx_MLP, hc_tree = clusteredHeatmap_MLP$tree_row)
