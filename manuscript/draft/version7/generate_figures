@@ -7,9 +7,17 @@ markdown_files+=(*_figure[12].Rmd)
 for file in ${markdown_files[@]};
 do
 	Rscript convert_markdown.R --infile $file
+	
 	r_file="${file/".Rmd"/".R"}"
+	
 	echo "Executing ${r_file} "
 	Rscript $r_file 
+	
 	rm $r_file
+	
+	if [ -f Rplots.pdf ]; 
+	then
+		rm Rplots.pdf
+	fi
 done
 
