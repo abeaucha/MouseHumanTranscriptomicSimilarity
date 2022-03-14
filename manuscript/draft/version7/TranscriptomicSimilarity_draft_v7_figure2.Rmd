@@ -2,7 +2,7 @@
 title: "Transcriptomic similarity in the mouse and human brain"
 subtitle: "Results 2, Figure 2"
 author: "Antoine Beauchamp"
-date: 'January 24th, 2022'
+date: 'March 14th, 2022'
 output: html_document
 ---
 
@@ -17,15 +17,15 @@ knitr::opts_chunk$set(echo = TRUE,
 ```{r libraries}
 #Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(grid)
-library(gridExtra)
-library(pheatmap)
-library(ggplotify)
-library(ggnewscale)
-library(RMINC)
-library(MRIcrotome)
-library(data.tree)
-library(RColorBrewer)
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
 ```
 
 ```{r functions}
