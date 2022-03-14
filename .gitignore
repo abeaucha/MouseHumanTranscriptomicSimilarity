@@ -38,3 +38,5 @@ logs/
 analyses/
 machine_learning/
 data/to_clean/
+manuscript/draft/version7/StriatumSimilarityMatrices_HumanSamples.RData
+manuscript/draft/version7/StriatumSimilarityMatrices_MouseVoxels.RData
