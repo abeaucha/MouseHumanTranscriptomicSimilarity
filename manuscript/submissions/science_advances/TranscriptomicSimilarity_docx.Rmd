@@ -1,6 +1,7 @@
 ---
 output: 
-  word_document: default
+  word_document: 
+    reference_docx: "template_word_science_advances.docx"
 bibliography: TranscriptomicSimilarity.bib
 csl: science-advances.csl
 ---
