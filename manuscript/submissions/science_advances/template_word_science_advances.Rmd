@@ -36,6 +36,17 @@ Body text
 
 ### Results sub-heading
 
+
+## Discussion
+
+## Materials and Methods
+
+## References
+
+## Acknowledgements
+
+## Figures and Tables
+
 ```{r}
 load("Figure1.RData")
 ```
@@ -56,16 +67,5 @@ knitr::opts_chunk$set(include = TRUE,
 grid.newpage()
 grid.draw(fig1_grob)
 ```
-
-
-## Discussion
-
-## Materials and Methods
-
-## References
-
-## Acknowledgements
-
-## Figures and Tables
 
 ## Supplementary Materials
