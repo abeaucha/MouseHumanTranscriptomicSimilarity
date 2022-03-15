@@ -16,36 +16,34 @@ library(gridExtra)
 
 # FRONT MATTER
 
-## Title
+# Title
 
-Body text
+# Authors
 
-## Authors
+# Affiliations
 
-## Affiliations
+# Abstract
 
-## Abstract
-
-## Teaser
+# Teaser
 
 # MAIN TEXT
 
-## Introduction
+# Introduction
 
-## Results
+# Results
 
-### Results sub-heading
+## Results sub-heading
 
 
-## Discussion
+# Discussion
 
-## Materials and Methods
+# Materials and Methods
 
-## References
+# References
 
-## Acknowledgements
+# Acknowledgements
 
-## Figures and Tables
+# Figures and Tables
 
 ```{r}
 load("Figure1.RData")
@@ -68,4 +66,4 @@ grid.newpage()
 grid.draw(fig1_grob)
 ```
 
-## Supplementary Materials
+# Supplementary Materials

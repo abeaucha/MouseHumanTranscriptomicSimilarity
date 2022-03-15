@@ -18,18 +18,26 @@ library(grid)
 library(gridExtra)
 ```
 
-\onehalfspacing
+# FRONT MATTER
 
-# Abstract {#abstract}
+# Title 
+
+# Authors
+
+# Affiliations
+
+# Abstract 
 
 The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between the mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
 
-# Teaser {#teaser}
+# Teaser
 
 Correspondences between the mouse and human brain can be identified using the expression patterns of homologous genes.
 
+# MAIN TEXT
 
-# Introduction {#intro}
+
+# Introduction
 
 Animal models play an indispensable role in neuroscience research, not only for understanding disease and developing treatments, but also for obtaining data that cannot be obtained in the human. While numerous species have been used to model the human brain, the mouse has emerged as the most prominent of these, due to its rapid life cycle, straightforward husbandry, and amenability to genetic engineering [@hedrich_chapter_2004; @houdebine_louis-marie_chapter_2004; @dietrich_publication_2014; @ellenbroek_rodent_2016]. Mouse models have proven to be extremely useful for understanding diverse features of the brain, from its molecular neurobiological properties to its large-scale network properties [@oh_mesoscale_2014; @hodge_conserved_2019; @yao_taxonomy_2021]. However, translating findings from the mouse to the human has not been straightforward. This is especially evident in the context of neuropsychopharmacology, where promising neuropsychiatric drugs have one of the highest failures rates in Phase III clinical trials [@hay_clinical_2014].
 
@@ -46,7 +54,7 @@ Here we examine the patterns of similarity between the mouse and human brain usi
 
 # Results
 
-## Homologous genes capture broad similarities in the mouse and human brains {#results-1}
+## Homologous genes capture broad similarities in the mouse and human brains 
 
 We first examined the pattern of similarities that emerged when comparing mouse and human brain regions on the basis of their gene expression profiles. We constructed a gene expression common space using widely available data sets from the Allen Institute for Brain Science: the Allen Mouse Brain Atlas (AMBA) and the Allen Human Brain Atlas (AHBA) [@lein_genome-wide_2007; @hawrylycz_anatomically_2012]. These data sets provide whole-brain coverage of expression intensity for thousands of genes in the mouse and human genomes. For our purposes we filtered these gene sets to retain only mouse-human homologous genes using a list of orthologues obtained from the NCBI HomoloGene system [@ncbi_database_2018]. Prior to analysis, both data sets were pre-processed using a pipeline that included quality control checks, normalization procedures, and aggregation of the expression values under a set of atlas labels. The result was a gene-by-region matrix in either species, describing the normalized expression of 2624 homologous genes across 67 mouse regions and 88 human regions (see [Materials and methods](#materials-methods)). We quantified the degree of similarity between all pairs of mouse and human regions using the Pearson correlation coefficient, resulting in a mouse-human similarity matrix (Fig. 1A). 
 
@@ -102,7 +110,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 
-## A latent gene expression space improves the resolution of mouse-human associations {#results-2}
+## A latent gene expression space improves the resolution of mouse-human associations
 
 In the previous analyses, we showed that the expression profiles of homologous genes capture broad similarities across the mouse and the human for the major subdivisions of the brain. Some information at a finer resolution (e.g. within the isocortex) was also evident, but much less distinctive. Our next goal was to investigate whether it is possible to leverage the gene expression data sets to relate mouse and human brains to one another at a finer regional level. In order to do so, we sought to maximise the informational value in the set of 2624 homologous genes by creating a new latent common space that exploits the regional distinctiveness of the expression profiles.
 
@@ -260,7 +268,7 @@ knitr::opts_chunk$set(echo = TRUE,
 Together, these results demonstrate that the multi-layer peceptron classification approach improves our ability to resolve finer scale mouse-human neuroanatomical matches within the broadly similar regions obtained using the initial gene expression space. By training a classifier to predict the atlas labels in one species, we were able to generate a new common space that amplified the amount of local signal within broadly similar regions while also improving our ability to recover known mouse-human neuroanatomical pairs. 
 
 
-## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas  {#results-3}
+## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas
 
 It is well established that the brains of most, if not all, extant mammalian species follow a common organizational blueprint inherited from an early mammalian ancestor [@kaas_reconstructing_2011]. A number of cortical subdivisions have consistently been identified in members of many distantly related mammalian species [@krubitzer_magnificent_2007] and hypothesized to have been present in the common ancestor of all mammals [@kaas_reconstructing_2011]. While it is clear that basic sensorimotor cortical regions are found in the majority of mammals, including mice and humans, there is much debate about the extent to which cortical areas involved in supramodal processing are conserved across mammalian taxa. Although some supramodal regions were likely present in the earliest mammals, including some cingulate regions and an orbitofrontal cortex [@kaas_reconstructing_2011], since the divergence of mouse and human lineages some 80 million years ago, the primate neocortex has undergone substantial expansion and re-organization [@kaas_evolution_2012]. Indeed, when comparing the human neocortex even to primate model species, this is the likely locus of areas that cannot be easily translated between species [@mars_whole_2018]. As a result, it is important to investigate whether our between-species mapping is more successful in somatosensory areas than supramodal areas.
 
@@ -377,7 +385,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 
-# Discussion {#discussion}
+# Discussion
 
 We have demonstrated how spatial transcriptomic patterns of homologous genes can be used to make quantitative comparisons between the mouse and human brain. We showed that using homologous genes as a common space allows one to easily identify coarse similarities in brain structures across species, but that more fine-scaled parcellations, such as at the level of cortical areas, are more complex. Despite this limitation, the approach still allows for a formal assessment of different patterns of between-species similarity in primary compared to supramodal regions, identifications of distinct clusters of cortical territories across species, and comparison of between-species similarities at the transcriptomic level to those observed using other modalities. We will discuss our observations in the context of the importance of the mouse as a model for human neuroscience below.
 
@@ -394,7 +402,7 @@ The power of a formal understanding of similarities and differences between brai
 \edit{Closing remarks?}
 
 
-# Materials and methods {#materials-methods}
+# Materials and methods 
 
 ## Mouse gene expression data
 
@@ -429,7 +437,7 @@ We used the trained perceptron to generate the latent gene expression space. To 
 
 Given the stochasticity inherent in training the network (e.g. random weight initialization and stochastic optimization), we repeated the training and transformation process 500 times using the same network architecture and input data.
 
-# Data and code availability
+## Data and code availability
 
 This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All of the code and additional data needed to generate this analysis, including figures and manuscript, is accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/. 
 
@@ -440,4 +448,7 @@ This manuscript, including all figures, was generated programmatically using R M
 
 # Acknowledgments
 
+# Figures and Tables
+
+# Supplementary Materials
 
