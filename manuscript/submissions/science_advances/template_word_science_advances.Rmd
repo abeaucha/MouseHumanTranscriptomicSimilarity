@@ -1,0 +1,89 @@
+---
+output: word_document
+---
+
+```{r libraries}
+library(tidyverse)
+library(grid)
+library(gridExtra)
+```
+
+# FRONT MATTER
+
+## Title
+
+Body text
+
+## Authors
+
+## Affiliations
+
+## Abstract
+
+## Teaser
+
+# MAIN TEXT
+
+## Introduction
+
+## Results
+
+### Results sub-heading
+
+
+```{r results1-fig1-import}
+load("Figure1.RData")
+```
+
+```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 9.5}
+grid.newpage()
+grid.draw(fig1_grob)
+```
+
+```{r results1-fig1-caption}
+fig1_cap_A <- "(\\textbf{A}) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns are annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows are annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
+fig1_cap_B <- "(\\textbf{B}) Mouse brain coronal slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
+fig1_cap_C <- "(\\textbf{C}) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
+
+fig1_cap <- str_c("\\textbf{Transcriptomic similarity in the mouse and human brains.}",
+                  fig1_cap_A,
+                  fig1_cap_B,
+                  fig1_cap_C,
+                  "Annotation colours correspond to atlas colours from the AMBA and AHBA for mouse and human regions respectively.",
+                  sep = " ")
+```
+
+```{r results1-fig1-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig1_width,
+                      fig.height = fig1_height,
+                      fig.cap = fig1_cap)
+```
+
+```{r results1-fig1-print}
+grid.newpage()
+grid.draw(fig1_grob)
+```
+
+```{r results1-fig1-clean}
+rm(list = ls())
+```
+
+```{r results1-fig1-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+
+## Discussion
+
+## Materials and Methods
+
+## References
+
+## Acknowledgements
+
+## Figures and Tables
+
+## Supplementary Materials
