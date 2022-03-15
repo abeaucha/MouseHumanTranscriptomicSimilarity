@@ -3,14 +3,16 @@
 markdown_files=(*_AMBA_legend.Rmd)
 markdown_files+=(*_figure*.Rmd)
 
+echo "Generating figures..."
+
 for file in ${markdown_files[@]};
 do
-	Rscript convert_markdown.R --infile $file
+	Rscript extract_code.R --infile $file
 	
 	r_file="${file/".Rmd"/".R"}"
 	
-	echo "Executing ${r_file} "
-	Rscript $r_file 
+	echo "Executing ${r_file} ..."
+#	Rscript $r_file 
 	
 	rm $r_file
 	
@@ -19,4 +21,8 @@ do
 		rm Rplots.pdf
 	fi
 done
+
+echo "Rendering manuscript..."
+
+Rscript render_pdf.R --infile TranscriptomicSimilarity_draft_v7.Rmd
 
