@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 ```{r libraries}
-library(stringr)
+library(tidyverse)
 library(grid)
 library(gridExtra)
 ```
