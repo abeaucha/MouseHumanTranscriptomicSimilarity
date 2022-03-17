@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 ```{r libraries}
-library(tidyverse)
+library(stringr)
 library(grid)
 library(gridExtra)
 ```
@@ -436,4 +436,4 @@ This manuscript, including all figures, was generated programmatically using R M
 
 # References
 
-
+<div id="refs"></div>
