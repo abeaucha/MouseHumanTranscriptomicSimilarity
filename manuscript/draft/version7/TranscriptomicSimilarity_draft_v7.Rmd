@@ -19,18 +19,18 @@ library(grid)
 library(gridExtra)
 ```
 
+\onehalfspacing
+
 ***
 
 # Abstract
 
-The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between the mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
+The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
 
 
 *** 
 
 # Introduction {#intro}
-
-\onehalfspacing
 
 Animal models play an indispensable role in neuroscience research, not only for understanding disease and developing treatments, but also for obtaining data that cannot be obtained in the human. While numerous species have been used to model the human brain, the mouse has emerged as the most prominent of these, due to its rapid life cycle, straightforward husbandry, and amenability to genetic engineering [@hedrich_chapter_2004; @houdebine_louis-marie_chapter_2004; @dietrich_publication_2014; @ellenbroek_rodent_2016]. Mouse models have proven to be extremely useful for understanding diverse features of the brain, from its molecular neurobiological properties to its large-scale network properties [@oh_mesoscale_2014; @hodge_conserved_2019; @yao_taxonomy_2021]. However, translating findings from the mouse to the human has not been straightforward. This is especially evident in the context of neuropsychopharmacology, where promising neuropsychiatric drugs have one of the highest failures rates in Phase III clinical trials [@hay_clinical_2014].
 
