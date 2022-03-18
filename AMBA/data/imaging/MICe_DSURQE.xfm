@@ -1,0 +1,10 @@
+MNI Transform File
+%Mon Aug  6 03:41:16 2018>>> xfmconcat /hpf/largeprojects/MICe/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/affine/MICe_DSURQE_affine.xfm /hpf/largeprojects/MICe/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/nlin/MICe_DSURQE_nlin.xfm /hpf/largeprojects/MICe/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/MICe_DSURQE.xfm
+
+Transform_Type = Linear;
+Linear_Transform =
+ 1.00644329321431 0.00226289817308968 -0.00433526800572426 -0.00914018468039816
+ -0.00135878642355625 0.94186832013622 0.0655852893178013 -2.23554540910663
+ 0.00278512392557761 -0.137130166823519 1.08142561117209 0.92576155465732;
+Transform_Type = Grid_Transform;
+Displacement_Volume = MICe_DSURQE_grid_0.mnc;
