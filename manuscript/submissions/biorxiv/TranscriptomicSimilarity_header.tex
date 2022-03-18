@@ -5,8 +5,9 @@
 \newcommand{\edit}[1]{\textbf{\color{red} (#1)}}
 
 \usepackage{caption}
-\captionsetup[figure]{font=scriptsize}
+\captionsetup[figure]{font=scriptsize, name=Fig., labelsep=period, labelfont=bf}
 
 %Update command to extend horizontal rule for entire page width
 \let\oldrule=\rule
 \renewcommand{\rule}[1]{\oldrule{\linewidth}}
+

@@ -69,11 +69,11 @@ grid.draw(fig1_grob)
 ```
 
 ```{r results1-fig1-caption}
-fig1_cap_A <- "(A) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns are annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows are annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
-fig1_cap_B <- "(B) Mouse brain coronal slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
-fig1_cap_C <- "(C) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
+fig1_cap_A <- "(\\textbf{A}) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns are annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows are annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
+fig1_cap_B <- "(\\textbf{B}) Mouse brain coronal slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
+fig1_cap_C <- "(\\textbf{C}) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
 
-fig1_cap <- str_c("Transcriptomic similarity in the mouse and human brains.",
+fig1_cap <- str_c("\\textbf{Transcriptomic similarity in the mouse and human brains.}",
                   fig1_cap_A,
                   fig1_cap_B,
                   fig1_cap_C,
@@ -123,10 +123,10 @@ grid.draw(fig2_grob)
 ```
 
 ```{r results2-fig2-caption}
-fig2_cap_A <- str_c("(A) Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
-fig2_cap_B <- "(B) Once the network is trained, the output layer is removed. The mouse and human regional gene expression matrices are passed through the network, resulting in lower-dimensional latent space representations of the data. The training and transformation process was repeated 500 times."
-fig2_cap_C <- "(C) A similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 neural network training runs. Similar brain regions exhibit very high correlation values. Column and row annotations as described in Figure 1."
-fig2_cap <- str_c("Creating a new common space.",
+fig2_cap_A <- str_c("(\\textbf{A}) Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
+fig2_cap_B <- "(\\textbf{B}) Once the network is trained, the output layer is removed. The mouse and human regional gene expression matrices are passed through the network, resulting in lower-dimensional latent space representations of the data. The training and transformation process was repeated 500 times."
+fig2_cap_C <- "(\\textbf{C}) A similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 neural network training runs. Similar brain regions exhibit very high correlation values. Column and row annotations as described in Figure 1."
+fig2_cap <- str_c("\\textbf{Creating a new common space.}",
                   fig2_cap_A,
                   fig2_cap_B,
                   fig2_cap_C,
@@ -175,10 +175,10 @@ grid.draw(fig3_grob)
 ```
 
 ```{r results2-fig3-caption}
-fig3_cap_A <- "(A) The amount of local signal within a broadly similar region of the brain for a finer seed region's (e.g. primary motor area) similarity profile can be quantified by the decay rate of the head of the rank-ordered profile. Decay rate was quantified by computing the rank at a similarity of 0.75. This metric was compared between the initial gene expression space (orange line) and every gene expression latent space resulting from repeated training of the neural network (every blue line is a training outcome, heavy blue line serves as an example). A negative difference between these rank metrics indicates an improvement in locality in the latent space."
-fig3_cap_B <- "(B) Structure-wise distributions of differences in rank at a similarity of 0.75 between the initial gene expression space and the gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Dashed black line at 0 indicates the threshold for improvement in one space over the other. Colours correspond to AMBA annotations as in Figures 1 and 2."
-fig3_cap_C <- "(C) Proportion of perceptron training runs resulting in an improvement or null difference in the gene expression latent space compared with the initial space. Cortical and cerebellar regions exhibit high proportions of improvement, while subcortical regions are less likely to be improved by the classification process."
-fig3_cap <- str_c("Quantifying improvement in locality in gene expression latent space.",
+fig3_cap_A <- "(\\textbf{A}) The amount of local signal within a broadly similar region of the brain for a finer seed region's (e.g. primary motor area) similarity profile can be quantified by the decay rate of the head of the rank-ordered profile. Decay rate was quantified by computing the rank at a similarity of 0.75. This metric was compared between the initial gene expression space (orange line) and every gene expression latent space resulting from repeated training of the neural network (every blue line is a training outcome, heavy blue line serves as an example). A negative difference between these rank metrics indicates an improvement in locality in the latent space."
+fig3_cap_B <- "(\\textbf{B}) Structure-wise distributions of differences in rank at a similarity of 0.75 between the initial gene expression space and the gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Dashed black line at 0 indicates the threshold for improvement in one space over the other. Colours correspond to AMBA annotations as in Figures 1 and 2."
+fig3_cap_C <- "(\\textbf{C}) Proportion of perceptron training runs resulting in an improvement or null difference in the gene expression latent space compared with the initial space. Cortical and cerebellar regions exhibit high proportions of improvement, while subcortical regions are less likely to be improved by the classification process."
+fig3_cap <- str_c("\\textbf{Quantifying improvement in locality in gene expression latent space.}",
                   fig3_cap_A,
                   fig3_cap_B,
                   fig3_cap_C,
@@ -226,9 +226,9 @@ grid.draw(fig4_grob)
 ```
 
 ```{r results2-fig4-caption}
-fig4_cap_A <- "(A) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Mouse region names are coloured according to the AMBA palette."
-fig4_cap_B <- "(B) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured voxels correspond to regions with no established canonical human match."
-fig4_cap <- str_c("Recovering canonical neuroanatomical pairs in gene expression space.",
+fig4_cap_A <- "(\\textbf{A}) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Mouse region names are coloured according to the AMBA palette."
+fig4_cap_B <- "(\\textbf{B}) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured voxels correspond to regions with no established canonical human match."
+fig4_cap <- str_c("\\textbf{Recovering canonical neuroanatomical pairs in gene expression space.}",
                   fig4_cap_A,
                   fig4_cap_B,
                   sep = " ")
@@ -290,11 +290,11 @@ grid.draw(fig5_grob)
 ```
 
 ```{r results3-fig5-caption}
-fig5_cap_A <- "(A) Maximal correlation distributions of mouse isocortical regions. Points and error bars represent mean and 95% confidence interval over latent space samples."
-fig5_cap_B <- "(B) Distributions of average maximal correlation for sensorimotor and supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
-fig5_cap_C <- "(C) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal. Four clusters were chosen for visualization using the elbow method." 
-fig5_cap_D <- c("(D) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space.")
-fig5_cap <- str_c("Similarity of mouse-human isocortical regions.",
+fig5_cap_A <- "(\\textbf{A}) Maximal correlation distributions of mouse isocortical regions. Points and error bars represent mean and 95% confidence interval over latent space samples."
+fig5_cap_B <- "(\\textbf{B}) Distributions of average maximal correlation for sensorimotor and supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
+fig5_cap_C <- "(\\textbf{C}) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal. Four clusters were chosen for visualization using the elbow method." 
+fig5_cap_D <- c("(\\textbf{D}) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space.")
+fig5_cap <- str_c("\\textbf{Similarity of mouse-human isocortical regions.}",
                   fig5_cap_A,
                   fig5_cap_B,
                   fig5_cap_C,
@@ -349,10 +349,10 @@ grid.draw(fig6_grob)
 ```
 
 ```{r results4-fig6-caption}
-fig6_cap_A <- "(A) Distributions over gene expression latent spaces of region-wise average correlation values for mouse and human striatal pairs. Human regions were chosen based on the AHBA ontology. Mouse target regions were chosen to be those with the highest average correlation values."
-fig6_cap_B <- "(B) Latent space averaged correlations between voxels in the mouse striatum and human target regions. Target regions were selected based on the highest mean correlation across all striatal voxels."
-fig6_cap_C <- "(C) Proportions of latent spaces in which mouse striatal voxels are maximally similar to human target regions."
-fig6_cap <- str_c("Similarity among mouse and human striatal regions.",
+fig6_cap_A <- "(\\textbf{A}) Distributions over gene expression latent spaces of region-wise average correlation values for mouse and human striatal pairs. Human regions were chosen based on the AHBA ontology. Mouse target regions were chosen to be those with the highest average correlation values."
+fig6_cap_B <- "(\\textbf{B}) Latent space averaged correlations between voxels in the mouse striatum and human target regions. Target regions were selected based on the highest mean correlation across all striatal voxels."
+fig6_cap_C <- "(\\textbf{C}) Proportions of latent spaces in which mouse striatal voxels are maximally similar to human target regions."
+fig6_cap <- str_c("\\textbf{Similarity among mouse and human striatal regions.}",
                   fig6_cap_A,
                   fig6_cap_B,
                   fig6_cap_C,
