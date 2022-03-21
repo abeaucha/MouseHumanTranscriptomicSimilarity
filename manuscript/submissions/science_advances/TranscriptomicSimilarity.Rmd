@@ -45,7 +45,6 @@ A more promising approach to mouse-human comparisons could be to exploit the spa
 Here we examine the patterns of similarity between the mouse and human brain using a common space constructed from spatial gene expression data sets. We begin with an initial set of 2624 homologous genes. Subsequently, we present and evaluate a novel method for improving the resolution of mouse-human neuroanatomical correspondences using a supervised machine learning approach. Using the novel representation of the gene expression common space, i.e. a latent gene expression space, we analyse the similarity of mouse and human isocortical subdivisions and demonstrate that sensorimotor regions exhibit a higher degree of similarity than supramodal regions. Finally, we examine the patterns of transcriptomic similarity at a voxel-wise level in the mouse and human striatum.
 
 
-
 # Results
 
 ## Homologous genes capture broad similarities in the mouse and human brains {#results-1}
