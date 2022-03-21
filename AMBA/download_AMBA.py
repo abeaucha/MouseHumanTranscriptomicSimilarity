@@ -1,5 +1,9 @@
+# ------------------------------------------------------------------------------
+# download_AMBA.py
+# Author: Antoine Beauchamp
+# Download in-situ hybridization data sets from the Allen Mouse Brain Atlas
 
-# Packages ------------------------------------------------------
+# Packages --------------------------------------------------------------------
 
 import os
 import argparse
@@ -13,11 +17,11 @@ from functools import partial
 from itertools import starmap
 from tqdm import tqdm
 
-
-
-# Functions ------------------------------------------------------
+# Functions -------------------------------------------------------------------
 
 def parse_args():
+
+    """ """
 
     parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 
