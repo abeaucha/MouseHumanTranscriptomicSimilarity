@@ -6,17 +6,17 @@ module purge
 #Resample DSURQE image files to CCFv3
 echo "Resampling DSURQE image files to CCFv3"
 module load minc-toolkit/1.9.18.1-mp7vcse minc-stuffs/0.1.25-4jzbv5d
-source resample_DSURQE_CCFv3
+#source resample_DSURQE_CCFv3
 module purge
 
 source activate_venv
 
 # Download AHBA data from the web
 echo "Downloading AMBA coronal in-situ hybridization data set..."
-#python3 download_AMBA.py --dataset coronal --outdir data/expression/ --metadata AMBA_metadata_coronal.csv --parallel true --nproc 12
+python3 download_AMBA.py --dataset coronal --outdir data/expression/ --metadata AMBA_metadata_coronal.csv --parallel true --nproc 12
 
 echo "Downloading AMBA sagittal in-situ hybridization data set..."
-#python3 download_AMBA.py --dataset sagittal --outdir data/expression/ --metadata AMBA_metadata_sagittal.csv --parallel true --nproc 12
+python3 download_AMBA.py --dataset sagittal --outdir data/expression/ --metadata AMBA_metadata_sagittal.csv --parallel true --nproc 12
 
 # Build voxel expression matrix 
 echo "Building mouse gene-by-voxel expression matrix using coronal data with coronal mask..."
