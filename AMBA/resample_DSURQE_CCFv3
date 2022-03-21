@@ -1,4 +1,9 @@
 #!/bin/bash
+# -----------------------------------------------------------------------------
+# resample_DSURQE_CCFv3
+#
+# Resample imaging files from the DSURQE common coordinate space to the 
+# Allen Institute CCFv3 space.
 
 echo "Resampling DSURQE consensus average template to Allen CCFv3 space..."
 
