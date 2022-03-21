@@ -48,11 +48,11 @@ $^{*}$Corresponding author. Email: antoine.beauchamp@sickkids.ca (A.B.); jason.l
 
 # Abstract 
 
-The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between the mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
+The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Recently, scientists have developed new ways of making these comparisons using data from various modalities. Here we use openly accessible brain-wide transcriptomic data sets to evaluate the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results demonstrate that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. We demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions. We also find that mouse and human striatal regions are strongly conserved. Our results highlight how gene homology can be used as a basis for quantitative comparative neuroanatomy.
 
 # Teaser
 
-Correspondences between the mouse and human brain can be identified using the expression patterns of homologous genes.
+The expression patterns of homologous genes can be used to make quantitative comparisons between mouse and human brains.
 
 # MAIN TEXT
 
@@ -196,6 +196,12 @@ This manuscript, including all figures, was generated programmatically using R M
 <div id="refs"></div>
 
 # Acknowledgments
+
+We thank C. Hammill, D.J. Fernandes, E. Anagnostou, B.J. Nieman, and E. Sibille for providing advice and for interesting conceptual discussions.
+**Funding:** This study was supported by the Canadian Institutes of Health Research (doctoral funding and foreign study award for A.B.). The Wellcome Centre for Integrative Neuroimaging is supported by core funding from the Wellcome Trust (203139/Z/16/Z).
+**Author contributions:** A.B. analyzed and visualized data, and wrote the manuscript with input from all authors. Y.Y. developed scripts for downloading the data sets. B.D. provided input and guidance on working with artificial neural networks. A.R. provided guidance for obtaining homologous gene sets. R.B.M. and J.P.L. conceived and supervised the project.
+**Competing interests:** The authors declare that they have no competing interests.
+**Data and materials availability:** This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All scripts and additional data needed to generate this analysis, including figures and manuscript, are accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/.
 
 # Figures and Tables
 
