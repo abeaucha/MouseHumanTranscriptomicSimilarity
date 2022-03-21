@@ -2,15 +2,15 @@
 
 echo "Resampling DSURQE consensus average template to Allen CCFv3 space..."
 
-mincresample -like data/imaging/average_template_200um.mnc -transform /projects/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/MICe_DSURQE.xfm /projects/tools/atlases/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/ex-vivo/DSURQE_40micron_average.mnc data/imaging/DSURQE_CCFv3_average_200um.mnc -clobber
+mincresample -like data/imaging/average_template_200um.mnc -transform data/imaging/MICe_DSURQE.xfm data/imaging/DSURQE_40micron_average.mnc data/imaging/DSURQE_CCFv3_average_200um.mnc -clobber
 
-mincresample -like data/imaging/average_template_50um.mnc -transform /projects/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/MICe_DSURQE.xfm /projects/tools/atlases/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/ex-vivo/DSURQE_40micron_average.mnc data/imaging/DSURQE_CCFv3_average_50um.mnc -clobber
+mincresample -like data/imaging/average_template_50um.mnc -transform data/imaging/MICe_DSURQE.xfm data/imaging/DSURQE_40micron_average.mnc data/imaging/DSURQE_CCFv3_average_50um.mnc -clobber
 
 echo "Resampling DSURQE atlas labels to Allen CCFv3 space..."
 
 #Note that running mincresample with the -label flag generates non-existent false labels.
 #Better to use -nearest and then minc_label_ops
-mincresample -like data/imaging/average_template_200um.mnc -transform /projects/tools/Allen_brain/transforms/CCFv3_MICe_DSURQE_25um/MICe_DSURQE.xfm /projects/tools/atlases/Dorr_2008_Steadman_2013_Ullmann_2013_Richards_2011_Qiu_2016_Egan_2015_40micron/ex-vivo/DSURQE_40micron_labels.mnc data/imaging/DSURQE_CCFv3_nearest_200um.mnc -nearest -clobber
+mincresample -like data/imaging/average_template_200um.mnc -transform data/imaging/MICe_DSURQE.xfm data/imaging/DSURQE_40micron_labels.mnc data/imaging/DSURQE_CCFv3_nearest_200um.mnc -nearest -clobber
 
 minc_label_ops --convert data/imaging/DSURQE_CCFv3_nearest_200um.mnc data/imaging/DSURQE_CCFv3_labels_200um.mnc
 
