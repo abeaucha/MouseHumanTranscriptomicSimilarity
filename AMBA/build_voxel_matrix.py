@@ -1,13 +1,13 @@
-# build_voxel_matrix.py --------------------------------------------
-#
-#
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# build_voxel_matrix.py 
+# Author: Antoine Beauchamp
 # Created: June 19th, 2020
-# Edited: March 7th, 2022
-# --------------------------------------------------------------------
 
-# Packages -----------------------------------------------------------
+"""
+Build a gene-by-voxel expression matrix
+"""
+
+# Packages -------------------------------------------------------------------
 
 import argparse
 import os
@@ -25,25 +25,30 @@ from sklearn.impute         import KNNImputer
 from sklearn.preprocessing  import FunctionTransformer
 from sklearn.pipeline       import Pipeline
 
-
 # Functions ----------------------------------------------------------
 
 def parse_args():
     
-    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-    
+    """Parse command line arguments"""
+
+    parser = argparse.ArgumentParser(
+                 formatter_class = argparse.ArgumentDefaultsHelpFormatter
+             )
+
     parser.add_argument(
         '--datadir',
         type = str,
         default = 'data/expression/',
-        help = 'Directory containing expression data'
+        help = ("Directory containing AMBA data. This directory should contain "
+                "sub-directories 'coronal' and 'sagittal', which contain "
+                "expression MINC files.")
     )
     
     parser.add_argument(
         '--outdir',
         type = str,
         default = 'data/',
-        help = 'Directory in which to save expression matrix'
+        help = "Directory in which to save the expression matrix"
     )
     
     parser.add_argument(
@@ -51,7 +56,7 @@ def parse_args():
         type = str,
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
-        help = 'AMBA dataset to import'
+        help = "AMBA dataset to import"
     )
     
     parser.add_argument(
@@ -59,7 +64,7 @@ def parse_args():
         type = str,
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
-        help = 'Mask to apply to ISH images'
+        help = "Mask to apply to expression images"
     )
     
     parser.add_argument(
@@ -67,7 +72,7 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = 'Option to transform expression data to log2'
+        help = "Option to transform expression data to log2"
     )
     
     parser.add_argument(
@@ -75,14 +80,14 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = 'Option to group multiple ISH experiments per gene'
+        help = "Option to group multiple ISH experiments per gene"
     )
     
     parser.add_argument(
         '--threshold',
         type = float,
         default = 0.2,
-        help = ''
+        help = ""
     )
     
     parser.add_argument(
@@ -90,7 +95,8 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = 'Option to impute missing data using KNN imputation'
+        help = ("Option to impute empty voxels using "
+                "K-nearest neighbours imputation")
     )
     
     parser.add_argument(
@@ -98,14 +104,15 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = 'Option to import image files in parallel'
+        help = "Option to import image files in parallel"
     )
     
     parser.add_argument(
         '--nproc',
         type = int,
         default = mp.cpu_count(),
-        help = 'Number of processors to use in parallel. Ignored if --parallel set to false.'
+        help = ("Number of processors to use in parallel. "
+               "Ignored if --parallel set to false.")
     )
     
     args = vars(parser.parse_args())
@@ -115,7 +122,30 @@ def parse_args():
     
 def importImage(img, mask):
     
-    """ """
+    """
+    Import a MINC file as NumPy array
+
+    Description
+    -----------
+    This function imports a MINC file as a flattened NumPy array. 
+    The image is masked using the mask provided, and values of -1
+    and 0 are replaced with NumPy NaNs.
+
+
+    Arguments
+    ---------
+    img: str
+        The path to the MINC file to import.
+    mask: str
+        The path to the the MINC file containing the mask. Must be in
+        the same space as `img`.
+
+    Returns
+    -------
+    imageArrayMasked: 
+        A 1-dimensional NumPy array containing the masked image voxel
+        values.
+    """
     
     #Import mask mask and convert to numpy array
     maskVol = volumeFromFile(mask)
