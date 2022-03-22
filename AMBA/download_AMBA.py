@@ -212,7 +212,15 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
         outfile = infile.replace('.raw', '.mnc')
     
     try: 
-        rawtominc = 'cat {} | rawtominc {} -signed -float -ounsigned -oshort -xstep 0.2 -ystep 0.2 -zstep 0.2 -clobber 58 41 67'.format(infile, outfile)
+        rawtominc = ('cat {} '.format(infile)
+                     '| rawtominc {} '.format(outfile)
+                     '-signed -float '
+                     '-ounsigned '
+                     '-oshort '
+                     '-xstep 0.2 '
+                     '-ystep 0.2 '
+                     '-zstep 0.2 '
+                     '-clobber 58 41 67')
         success = 1
     except: 
         success = 0
@@ -225,10 +233,14 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     return outfile, success
 
 
-def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
+def transform_space(infile, outfile = None, voxel_orientation = 'RAS', 
+                    world_space = 'MICe', expansion_factor = 1.0, 
+                    volume_type = None, data_type = None, labels = False):
 
     """ 
     Transform the coordinate space of a MINC file
+
+    Author: Yohan Yee
 
     Arguments
     ---------
@@ -279,21 +291,21 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_spa
                    "CCFv3"  :   [0, 0, 0]}
 
     # Direction cosines
-    direction_cosines_RAS = {"MICe"     :   [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-                             "CCFv3"    :   [[0, 0, 1], [-1, 0, 0], [0, -1, 0]]}
+    direction_cosines_RAS = {"MICe" :[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+                             "CCFv3":[[0, 0, 1], [-1, 0, 0], [0, -1, 0]]}
 
-    direction_cosines_PIR = {"MICe"     :   [[0, -1, 0], [0, 0, -1], [1, 0, 0]],
-                             "CCFv3"    :   [[1, 0, 0], [0, 1, 0], [0, 0, 1]]}
+    direction_cosines_PIR = {"MICe" :[[0, -1, 0], [0, 0, -1], [1, 0, 0]],
+                             "CCFv3":[[1, 0, 0], [0, 1, 0], [0, 0, 1]]}
 
     # Map arguments to functions/dicts/values
-    map_voxel_orientations = {"RAS" :   reorient_to_standard,
-                              "PIR":    do_nothing}
+    map_voxel_orientations = {"RAS":reorient_to_standard,
+                              "PIR":do_nothing}
 
-    map_centers = {"RAS"    :   centers_RAS,
-                   "PIR"    :   centers_PIR}
+    map_centers = {"RAS":centers_RAS,
+                   "PIR":centers_PIR}
 
-    map_dir_cosines = {"RAS"    :   direction_cosines_RAS,
-                       "PIR"    :   direction_cosines_PIR}
+    map_dir_cosines = {"RAS":direction_cosines_RAS,
+                       "PIR":direction_cosines_PIR}
 
     size_10 = 1320*800*1140
     size_25 = 528*320*456
@@ -361,7 +373,22 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_spa
 
 def download_data(experiment, outdir):
     
-    """ """
+    """
+    Download and transform the data from an ISH experiment
+
+    Arguments
+    ---------
+    experiment: list
+        List containing ISH experiment information. Element 0 must
+        contain the experiment ID as `int`. Element 1 must contain
+        the gene acronym as `str`.
+    outdir: str
+        Directory in which to download the ISH image.
+
+    Returns
+    -------
+    None
+    """
     
     experiment_id = experiment[0]
     gene = experiment[1]
@@ -371,7 +398,8 @@ def download_data(experiment, outdir):
     if success == 1:
         mincfile, success = rawtominc_wrapper(infile = rawfile)
     
-        outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0)
+        outfile = transform_space(infile = mincfile, voxel_orientation = 'RAS',
+                                  world_space = 'MICe', expansion_factor = 1.0)
     
         os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
     
@@ -397,16 +425,19 @@ def main():
         
     #If AMBA metadata file not found, download it from the web
     if os.path.isfile(outdir+metadata) == False:
-        print('Metadata file {} not found in {}. Fetching from API...'.format(metadata, outdir))
+        print('Metadata file {} not found in {}. Fetching from API...'
+              .format(metadata, outdir))
         fetch_metadata(dataset = dataset,
                        outdir = outdir,
                        outfile = metadata)
         
     #Import AMBA metadata
-    dfMetadata = pd.read_csv(outdir+metadata, index_col=None)
+    dfMetadata = pd.read_csv(outdir+metadata, index_col = None)
     
     #Extract experiment IDs and gene names from metadata
-    experiments = [(dfMetadata.loc[i, 'experiment_id'], dfMetadata.loc[i, 'gene']) for i in range(0, dfMetadata.shape[0])]
+    nrows = dfMetadata.shape[0]
+    experiments = [(dfMetadata.loc[i, 'experiment_id'], dfMetadata.loc[i, 'gene']) 
+                   for i in range(0, nrows)]
     
     #Create output sub-directory based on data set specified
     outdir = os.path.join(outdir, dataset, '')
@@ -416,12 +447,12 @@ def main():
     #Partial version of function for iteration
     download_data_partial = partial(download_data, outdir = outdir)
     
-
     size = 1.0 if dataset == 'coronal' else 3.0
 
     response_flag = 0
     while response_flag != 1:
-        response = input('Download will take up approximately {}GB of space. Proceed? (y/n) '.format(size))
+        response = input(('Download will take up approximately {}GB of space.
+                           Proceed? (y/n) '.format(size)))
         if response == 'y':
             response_flag = 1
         elif response == 'n':
@@ -440,7 +471,8 @@ def main():
         
         #Download data in parallel. Show progress bar.
         results_tqdm = []
-        for result in tqdm(pool.imap(download_data_partial, experiments), total = len(experiments)):
+        for result in tqdm(pool.imap(download_data_partial, experiments),
+                           total = len(experiments)):
             results_tqdm.append(result)
             
         pool.close()
