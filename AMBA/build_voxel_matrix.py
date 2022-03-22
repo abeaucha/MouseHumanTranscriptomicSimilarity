@@ -131,18 +131,17 @@ def importImage(img, mask):
     The image is masked using the mask provided, and values of -1
     and 0 are replaced with NumPy NaNs.
 
-
     Arguments
     ---------
     img: str
-        The path to the MINC file to import.
+        Path to the MINC file to import.
     mask: str
-        The path to the the MINC file containing the mask. Must be in
+        Path to the the MINC file containing the mask. Must be in
         the same space as `img`.
 
     Returns
     -------
-    imageArrayMasked: 
+    imageArrayMasked: numpy.ndarray
         A 1-dimensional NumPy array containing the masked image voxel
         values.
     """
@@ -165,9 +164,28 @@ def importImage(img, mask):
     return imageArrayMasked
 
 
-def buildExpressionMatrix(files, mask, log_transform = True, group_experiments = True, threshold = 0.2, parallel = True, nproc = None):
+def buildExpressionMatrix(files, mask, log_transform = True,
+                          group_experiments = True, threshold = 0.2, 
+                          parallel = True, nproc = None):
     
-    """ """
+    """ 
+    Build voxel-by-gene expression matrix
+
+    Arguments
+    ---------
+    files: 
+    mask: str
+    log_transform: bool, optional
+    group_experiments: bool, optional,
+    threshold: float, optional
+    parallel: bool, optional
+    nproc: int, optional
+
+    Returns
+    -------
+    dfExpression: 
+
+    """
     
     importImage_partial = partial(importImage, mask = mask)
 
@@ -179,7 +197,8 @@ def buildExpressionMatrix(files, mask, log_transform = True, group_experiments =
         pool = mp.Pool(nproc)
 
         arrays = []
-        for array in tqdm(pool.imap(importImage_partial, files), total = len(files)):
+        for array in tqdm(pool.imap(importImage_partial, files),
+                          total = len(files)):
             arrays.append(array)
 
         pool.close()
@@ -189,21 +208,26 @@ def buildExpressionMatrix(files, mask, log_transform = True, group_experiments =
 
         arrays = list(map(importImage_partial, tqdm(files)))
     
-    dfExpression = pd.DataFrame(np.asarray(arrays), index = [os.path.basename(file) for file in files])
+    dfExpression = pd.DataFrame(np.asarray(arrays), 
+                   index = [os.path.basename(file) for file in files])
 
     #Transform to log2
     if log_transform:
         print("Applying log2 transform...")
         dfExpression = np.log2(dfExpression)
     
-    dfExpression.index = dfExpression.index.str.replace('.mnc', '').str.replace('_.*', '')
+    dfExpression.index = (dfExpression.index
+                          .str.replace('.mnc', '')
+                          .str.replace('_.*', ''))
         
     dfExpression.index.name = 'Gene'
     
     #Aggregate experiments per gene if flag is set
     if group_experiments:
         print("Aggregating multiple experiments per gene...")
-        dfExpression = dfExpression.groupby(dfExpression.index).aggregate(np.mean)
+        dfExpression = (dfExpression
+                        .groupby(dfExpression.index)
+                        .aggregate(np.mean))
     
     #Remove genes where a threshold of voxels aren't expressing
     fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
