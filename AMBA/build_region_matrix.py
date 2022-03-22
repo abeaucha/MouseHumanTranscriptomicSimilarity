@@ -1,13 +1,11 @@
-# build_region_matrix.py -------------------------------------
-#
-#
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# build_region_matrix.py
+# Author: Antoine Beauchamp
 # Created: January 31st, 2022
-# Edited: March 9th, 2022
-# --------------------------------------------------------------
 
-# Packages -----------------------------------------------------
+""" """
+
+# Packages -------------------------------------------------------------------
 
 import argparse
 import os
@@ -16,50 +14,59 @@ import pandas as pd
 from pyminc.volumes.factory import *
 
 
-# Functions ---------------------------------------------------
+# Command line arguments -----------------------------------------------------
 
 def parse_args():
-    
-    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+   
+    """Parse command line arguments"""
+
+    parser = argparse.ArgumentParser(
+                 formatter_class = argparse.ArgumentDefaultsHelpFormatter
+             )
     
     parser.add_argument(
         '--datadir',
         type = str,
         default = 'data/',
-        help = 'Directory containing expression matrices'
+        help = "Directory containing expression matrices"
     )
     
     parser.add_argument(
         '--infile',
         type = str,
-        help = 'CSV file containing voxel-wise expression matrix'
+        help = "CSV file containing voxel-wise expression matrix"
     )
     
     parser.add_argument(
         '--outfile',
         type = str,
-        help = 'File in which to save regional expression matrix'
+        help = "File in which to save regional expression matrix"
     )
     
     parser.add_argument(
         '--mask',
-        type = str
+        type = str,
+        help = ""
     )
     
     parser.add_argument(
         '--labels',
-        type = str
+        type = str,
+        help = ""
     )
     
     parser.add_argument(
         '--defs',
-        type = str
+        type = str,
+        help = ""
     )
     
     args = vars(parser.parse_args())
     
     return args
 
+
+# Main -----------------------------------------------------------------------
 
 def main():
     
@@ -72,9 +79,9 @@ def main():
     mask = args['mask']
     labels = args['labels']
     defs = args['defs']
-    
-    
-    # Import expression data --------------------------------------
+   
+
+    # Import expression data -------------------------------------------------
     
     #File containing voxel expression matrix
     print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
@@ -91,12 +98,11 @@ def main():
     #Transpose numpy array so that voxels are rows
     npExprVoxel = np.transpose(npExprVoxel)
 
-    #Convert transposed numpy array to data frame. Set genes to be column names.
+    #Convert transposed numpy array to data frame.
+    #Set genes to be column names.
     dfExprVoxelTranspose = pd.DataFrame(npExprVoxel, columns=genes)
-          
         
-        
-    # Import imaging data --------------------------------------
+    # Import imaging data ----------------------------------------------------
     
     #Import image mask, flatten and convert to numpy array
     print("Importing mask volume: {} ...".format(mask))
@@ -104,10 +110,6 @@ def main():
     maskVol = volumeFromFile(os.path.join('data', 'imaging', mask))
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
-    
-    
-    #File containing atlas labels
-#     labelfile = 'DSURQE_CCFv3_labels_200um.mnc'
     
     print("Importing DSURQE label volume: {} ...".format(labels))
     
@@ -118,10 +120,6 @@ def main():
 
     #Mask the label array
     labelArrayMasked = labelArray[maskArray == 1]
-
-    
-    #File containing atlas definitions
-#     defsfile = 'DSURQE_40micron_R_mapping_long.csv'
     
     print("Importing DSURQE label definitions: {} ...".format(defs))
     
@@ -129,7 +127,7 @@ def main():
     dfAtlasDefs = pd.read_csv(os.path.join('data', 'imaging', defs))
     
     
-    # Match labels to voxels -----------------------------------------
+    # Match labels to voxels -------------------------------------------------
         
     print("Matching atlas labels to voxels...")
 
@@ -153,13 +151,14 @@ def main():
     dfExprVoxelTranspose = dfExprVoxelTranspose.loc[dfExprVoxelTranspose['Region'] != 'nan']
     
     
-    
-    # Aggregate expression data -------------------------------------------
+    # Aggregate expression data ----------------------------------------------
     
     print("Aggregating expression data...")
     
     #Aggregate expression data by ROI
-    dfExprRegionTranspose = dfExprVoxelTranspose.groupby('Region').aggregate(np.mean)
+    dfExprRegionTranspose = (dfExprVoxelTranspose
+                             .groupby('Region')
+                             .aggregate(np.mean))
 
     #Transpose data frame so that rows are genes
     dfExprRegion = np.transpose(dfExprRegionTranspose)
@@ -168,17 +167,14 @@ def main():
     #Label the index as Gene
     dfExprRegion.index.name = 'Gene'
     
+    # Write ------------------------------------------------------------------
 
-    
-    # Write -------------------------------------------
-    
     print("Writing to file...")
     
     #Write regional expression matrix to csv
     dfExprRegion.to_csv(os.path.join(datadir, args['outfile']))
     
     return
-
     
     
 if __name__ == '__main__':
