@@ -1,7 +1,10 @@
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # download_AMBA.py
 # Author: Antoine Beauchamp
-# Download in-situ hybridization data sets from the Allen Mouse Brain Atlas
+
+"""
+Download in-situ hybridization data sets from the Allen Mouse Brain Atlas
+"""
 
 # Packages --------------------------------------------------------------------
 
@@ -17,13 +20,16 @@ from functools import partial
 from itertools import starmap
 from tqdm import tqdm
 
+
 # Functions -------------------------------------------------------------------
 
 def parse_args():
 
-    """ """
+    """Parse command line arguments"""
 
-    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+                 formatter_class = argparse.ArgumentDefaultsHelpFormatter
+             )
 
     parser.add_argument(
         '--dataset',
@@ -44,7 +50,7 @@ def parse_args():
         '--metadata',
         type = str,
         default = 'metadata.csv',
-        help = 'File containing AMBA metadata'
+        help = 'File in --outdir containing AMBA metadata'
     )
     
     parser.add_argument(
@@ -52,7 +58,7 @@ def parse_args():
         type = str,
         default = 'false',
         choices = ['true', 'false'],
-        help = 'Run in parallel'
+        help = 'Option to run in parallel'
     )
     
     parser.add_argument(
@@ -67,29 +73,86 @@ def parse_args():
     return args
 
 
-
 def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
 
-    """ """        
+    """
+    Download metadata for in-situ hybridization data sets
+    
+    Arguments
+    ---------
+    dataset: str, optional
+        String indicating whether to download the coronal or sagittal
+        (default 'coronal')
+    outdir: str, optional
+        Directory in which to download the metadata. (default './')
+    outfile: str, optional
+        Name of csv file in which to save the metadata. 
+        (default 'metadata.csv')
+        
+    Returns
+    -------
+    None 
+    
+    """        
 
-    abi_query_metadata = "http://api.brain-map.org/api/v2/data/SectionDataSet/query.csv?"+\
-"criteria=[failed$eqfalse],plane_of_section[name$eq{}],products[abbreviation$eqMouse],treatments[name$eqISH],genes&".format(dataset)+\
-"tabular=data_sets.id+as+experiment_id,data_sets.section_thickness,data_sets.specimen_id,"+\
-"plane_of_sections.name+as+plane,"+\
-"genes.acronym+as+gene,genes.name+as+gene_name,genes.chromosome_id,genes.entrez_id,genes.genomic_reference_update_id,genes.homologene_id,genes.organism_id&"+\
-"start_row=0&num_rows=all"
+    abi_query_metadata = ("http://api.brain-map.org/api/v2/data/SectionDataSet/"
+                          "query.csv?criteria="
+                          "[failed$eqfalse],"
+                          "plane_of_section[name$eq{}],".format(dataset)
+                          "products[abbreviation$eqMouse],"
+                          "treatments[name$eqISH],"
+                          "genes"
+                          "&tabular="
+                          "data_sets.id+as+experiment_id,"
+                          "data_sets.section_thickness,"
+                          "data_sets.specimen_id,"
+                          "plane_of_sections.name+as+plane,"
+                          "genes.acronym+as+gene,"
+                          "genes.name+as+gene_name,"
+                          "genes.chromosome_id,"
+                          "genes.entrez_id,"
+                          "genes.genomic_reference_update_id,"
+                          "genes.homologene_id,"
+                          "genes.organism_id"
+                          "&start_row=0"
+                          "&num_rows=all")
 
-    pd.read_csv(abi_query_metadata).drop_duplicates().to_csv(outdir+outfile, index=False)
+    (pd.read_csv(abi_query_metadata)
+        .drop_duplicates()
+        .to_csv(outdir+outfile, index=False))
 
     print('Metadata downloaded at: {}'.format(outdir+outfile))
     
     return 
 
 
-
 def fetch_expression(experiment_id, outdir = './tmp/'):
 
-    """ """
+    """
+    Download the expression energy for an ISH experiment
+
+    Description
+    -----------
+    This function downloads the gridded expression energy for a single
+    in-situ hybridization experiment in the Allen Mouse Brain Atlas.
+    The downloaded data is in RAW format and is stored in a file named
+    according to the experiment ID. 
+
+    Arguments
+    ---------
+    experiment_id: str, int
+        The ID of the in-situ hybridization experiment to download.
+    outdir: str, optional
+        Directory in which to download the expression energy file.
+        (default './tmp/')   
+
+    Returns
+    -------
+    outfile: str
+        The name of the file containing the expression energy.
+    success: int
+        Integer indicating whether the download was successful.
+    """
     
     if not os.path.exists(outdir):
         os.mkdir(outdir)
@@ -97,7 +160,8 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
     tmpdir = outdir+str(experiment_id)+'/' 
     os.mkdir(tmpdir)
         
-    abi_query_expr = 'http://api.brain-map.org/grid_data/download/{}'.format(experiment_id)
+    abi_query_expr = ('http://api.brain-map.org/grid_data/download/{}'
+                      .format(experiment_id))
     amba_request = requests.get(abi_query_expr)
 
     tmpfile = tmpdir+str(experiment_id)+'.zip'
@@ -111,7 +175,8 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
             os.rename(tmpdir+'energy.raw', outfile)
             success = 1
         except KeyError as err:
-            print('Error for experiment {}: {}. Ignoring.'.format(experiment_id, err))
+            print('Error for experiment {}: {}. Ignoring.'
+                  .format(experiment_id, err))
             success = 0
             
     os.remove(tmpfile)
@@ -120,10 +185,11 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
     return outfile, success
 
 
-
 def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     
-    """ """
+    """
+    Convert RAW files to MINC format
+    """
     
     if outfile is None:
         outfile = infile.replace('.raw', '.mnc')
@@ -140,7 +206,6 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
         os.remove(infile)
         
     return outfile, success
-
 
 
 def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
@@ -248,7 +313,6 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_spa
         os.rename(tmpfile, infile)
         
     return outfile
-
     
 
 def download_data(experiment, outdir):
@@ -268,7 +332,6 @@ def download_data(experiment, outdir):
         os.rename(outfile, outdir+'{}_{}.mnc'.format(gene, experiment_id))
     
     return
-
     
     
 def main():
