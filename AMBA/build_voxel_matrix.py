@@ -169,22 +169,36 @@ def buildExpressionMatrix(files, mask, log_transform = True,
                           parallel = True, nproc = None):
     
     """ 
-    Build voxel-by-gene expression matrix
+    Build gene-by-voxel expression matrix
 
     Arguments
     ---------
-    files: 
+    files: list of str
+        List containing paths to expression MINC files.
     mask: str
+        Path to mask MINC file.
     log_transform: bool, optional
+        Option to apply a log2 transform to the expression values.
+        (default True)
     group_experiments: bool, optional,
+        Option to compute the voxel-wise average of expression values 
+        for experiments that correspond to the same gene. (default True)
     threshold: float, optional
+        Threshold value indicating the fraction of empty voxels in an 
+        image above which the image is discarded (default 0.2)
     parallel: bool, optional
+        Option to import MINC files in parallel. (default True)
     nproc: int, optional
+        Number of CPUs to use in parallel. If `None`, all CPUs are
+        used. (default None)
 
     Returns
     -------
-    dfExpression: 
-
+    dfExpression: pandas.core.frame.DataFrame
+       A DataFrame containing the expression of experiments/genes in
+       the Allen Mouse Brain Atlas. If `group_experiments` is False,
+       every row corresponds to an experiment. If `group_experiments`
+       is True, every row corresponds to a gene.
     """
     
     importImage_partial = partial(importImage, mask = mask)
@@ -248,35 +262,38 @@ def main():
     print("Importing {} dataset using {} mask".format(dataset, mask))
     
     if (dataset == 'sagittal') and (mask == 'coronal'):
-        warnings.warn("Running with sagittal dataset and coronal mask is not ideal. Proceed with caution.")
-        
+        warnings.warn(("Running with sagittal dataset and coronal mask is not"
+                       " ideal. Proceed with caution."))
     
-    #If dataset is sagittal, use only those genes that are also in the coronal set
+    #If dataset is sagittal, use only those genes that are also in the
+    #coronal set
     if dataset == "sagittal":
         
         #Paths to sagittal and coronal data set directories
         pathGeneDir_Sagittal = os.path.join(datadir, dataset, '')
         pathGeneDir_Coronal = os.path.join(datadir, 'coronal', '')
-    
+
         #Build paths to all files in the directories
-        pathGeneFiles_Sagittal = np.array(glob(pathGeneDir_Sagittal + "*.mnc"))
-        pathGeneFiles_Coronal = np.array(glob(pathGeneDir_Coronal + "*.mnc"))
-    
+        pathGeneFiles_Sagittal = glob(pathGeneDir_Sagittal + "*.mnc")
+        pathGeneFiles_Coronal = glob(pathGeneDir_Coronal + "*.mnc")
+
         #Extract gene names for coronal and sagittal data sets
-        genes_Sagittal = np.array([re.sub(r"_[0-9]+.mnc", "", file) for file in 
-                                    [os.path.basename(path) for path in pathGeneFiles_Sagittal]])
-        genes_Coronal = np.array([re.sub(r"_[0-9]+.mnc", "", file) for file in 
-                                    [os.path.basename(path) for path in pathGeneFiles_Coronal]])
+        genes_Sagittal = [re.sub(r"_[0-9]+.mnc", "", file) for file in 
+                [os.path.basename(path) for path in pathGeneFiles_Sagittal]]
+        genes_Coronal = [re.sub(r"_[0-9]+.mnc", "", file) for file in 
+                [os.path.basename(path) for path in pathGeneFiles_Coronal]]
 
         #Identify genes from sagittal data in coronal data
-        isInCoronal = np.isin(genes_Sagittal, genes_Coronal)
+        isInCoronal = np.isin(np.array(genes_Sagittal),
+                              np.array(genes_Coronal))
 
         #Extract subset of sagittal gene files
-        pathGeneFiles = pathGeneFiles_Sagittal[isInCoronal]
+        pathGeneFiles_Sagittal = np.array(pathGeneFiles_Sagittal)
+        pathGeneFiles = list(pathGeneFiles_Sagittal[isInCoronal])
         
     else:
         pathGeneDir = os.path.join(datadir, dataset, '')
-        pathGeneFiles = np.array(glob(pathGeneDir+"*.mnc"))
+        pathGeneFiles = glob(pathGeneDir+"*.mnc")
 
     print("Building voxel expression matrix...")
 
@@ -297,7 +314,6 @@ def main():
                                          threshold = args['threshold'], 
                                          parallel = parallel, 
                                          nproc = args['nproc'])
-
 
     #Impute missing values
     impute = True if args['impute'] == 'true' else False
@@ -320,8 +336,6 @@ def main():
         #Impute missing values and assign as data frame
         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
                                     index = genes)
-        
-        
         
     #Write to file
     print("Writing to file...")
