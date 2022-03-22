@@ -140,7 +140,7 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
 
     Arguments
     ---------
-    experiment_id: str, int
+    experiment_id: int
         The ID of the in-situ hybridization experiment to download.
     outdir: str, optional
         Directory in which to download the expression energy file.
@@ -188,7 +188,24 @@ def fetch_expression(experiment_id, outdir = './tmp/'):
 def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     
     """
-    Convert RAW files to MINC format
+    Convert a RAW file to MINC format
+
+    Arguments
+    ---------
+    infile: str
+    outfile: str, optional
+        Name of output MINC file. If None, will use the same name as
+        the RAW file. (default None)
+    keep_raw: bool, optional
+        Option to keep RAW file. If False, the input file will be
+        deleted. (default False)
+
+    Returns
+    -------
+    outfile: str
+        Name of output MINC file.
+    success: int
+        Integer indicating whether conversion was a success.
     """
     
     if outfile is None:
@@ -210,7 +227,34 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
 
 def transform_space(infile, outfile = None, voxel_orientation = 'RAS', world_space = 'MICe', expansion_factor = 1.0, volume_type = None, data_type = None, labels = False):
 
-    """ """
+    """ 
+    Transform the coordinate space of a MINC file
+
+    Arguments
+    ---------
+    infile: str
+        Name of the MINC file to transform.
+    outfile: str, optional
+        Name of the output MINC file. If None, the input file will be
+        overwritten. (default None)
+    voxel_orientation: str, optional
+        (default 'RAS')
+    world_space: str, optional
+        (default 'MICe')
+    expansion_factor: float, optional
+        (default 1.0)
+    volume_type: 
+        (default None)
+    data_type: 
+        (default None)
+    labels: bool, optional
+        (default None)
+
+    Returns
+    -------
+    outfile: str
+        Name of the transformed file.
+    """
     
     def reorient_to_standard(dat):
         dat = np.rot90(dat, k=1, axes=(0, 2))
