@@ -98,7 +98,7 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
     abi_query_metadata = ("http://api.brain-map.org/api/v2/data/SectionDataSet/"
                           "query.csv?criteria="
                           "[failed$eqfalse],"
-                          "plane_of_section[name$eq{}],".format(dataset)
+                          "plane_of_section[name$eq{}],"
                           "products[abbreviation$eqMouse],"
                           "treatments[name$eqISH],"
                           "genes"
@@ -115,7 +115,7 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
                           "genes.homologene_id,"
                           "genes.organism_id"
                           "&start_row=0"
-                          "&num_rows=all")
+                          "&num_rows=all".format(dataset))
 
     (pd.read_csv(abi_query_metadata)
         .drop_duplicates()
@@ -212,15 +212,15 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
         outfile = infile.replace('.raw', '.mnc')
     
     try: 
-        rawtominc = ('cat {} '.format(infile)
-                     '| rawtominc {} '.format(outfile)
+        rawtominc = ('cat {} '
+                     '| rawtominc {} '
                      '-signed -float '
                      '-ounsigned '
                      '-oshort '
                      '-xstep 0.2 '
                      '-ystep 0.2 '
                      '-zstep 0.2 '
-                     '-clobber 58 41 67')
+                     '-clobber 58 41 67'.format(infile, outfile))
         success = 1
     except: 
         success = 0
@@ -451,8 +451,8 @@ def main():
 
     response_flag = 0
     while response_flag != 1:
-        response = input(('Download will take up approximately {}GB of space.
-                           Proceed? (y/n) '.format(size)))
+        response = input(('Download will take up approximately {}GB of space.'
+                          'Proceed? (y/n) '.format(size)))
         if response == 'y':
             response_flag = 1
         elif response == 'n':
