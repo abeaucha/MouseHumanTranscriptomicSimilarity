@@ -3,7 +3,7 @@ library(tidyverse)
 #' Combine donor gene data into one
 #'
 #' @param data (list) A list containing elements:
-#'                Donor (character) 
+#'              Donor (character) 
 #'                    Donor name
 #'                GeneExpression (tibble)
 #'                    Tibble containing gene-by-sample expression values
@@ -246,38 +246,38 @@ importDonorData <- function(path, donor, verbose = TRUE){
 #' Process the AHBA data
 #'
 #' @param data (list) A list with elements:
-#'                Donor (character) 
-#'                    Donor name
-#'                DonorPath (character)
-#'                    Path to donor data dir 
-#'                ProbeExpression (tibble) 
-#'                    Tibble containing probe-by-sample expression
-#'                ProbeInfo (tibble) 
-#'                    Tibble containing metadata for each probe
-#'                SampleInfo (tibble) 
-#'                    Tibble containing metadata for each sample
-#'                IntensityFilter (tibble)
-#'                    Tibble containing probe-by-sample binary filter/mask
+#'        Donor (character) 
+#'            Donor name
+#'        DonorPath (character)
+#'            Path to donor data dir 
+#'        ProbeExpression (tibble) 
+#'            Tibble containing probe-by-sample expression
+#'        ProbeInfo (tibble) 
+#'            Tibble containing metadata for each probe
+#'        SampleInfo (tibble) 
+#'            Tibble containing metadata for each sample
+#'        IntensityFilter (tibble)
+#'            Tibble containing probe-by-sample binary filter/mask
 #' @param version (numeric scalar) Pipeline version (1, 2)
-#'   Version 1
-#'      1. Filter data for each donor
-#'      2. Average multiple probes per gene for each donor
-#'      3. Combine donor samples into one matrix
-#'   Version 2
-#'      1. Combine probes from all donors into one matrix
-#'      2. Filter data for all donors together
-#'      3. Select one probe per gene using Myers' 3-step method         
+#'        Version 1
+#'            1. Filter data for each donor
+#'            2. Average multiple probes per gene for each donor
+#'            3. Combine donor samples into one matrix
+#'        Version 2
+#'        1. Combine probes from all donors into one matrix
+#'        2. Filter data for all donors together
+#'        3. Select one probe per gene using Myers' 3-step method         
 #' @param verbose (logical scalar)
 #'
 #' @return (list) A list containing three elements:
-#'                Donor (character) 
-#'                    The names of all donors
-#'                GeneExpression (tibble)
-#'                    Tibble containing gene-by-sample expression values
-#'                    for all donors
-#'                SampleInfo (tibble) 
-#'                    Tibble containing metadata for each sample for 
-#'                    all donors
+#'         Donor (character) 
+#'             The names of all donors
+#'         GeneExpression (tibble)
+#'             Tibble containing gene-by-sample expression values
+#'             for all donors
+#'         SampleInfo (tibble) 
+#'             Tibble containing metadata for each sample for 
+#'             all donors
 processingPipeline <- function(data, version = 1, verbose = TRUE){
   if (version == 1){
     message("Running pipeline version 1")
