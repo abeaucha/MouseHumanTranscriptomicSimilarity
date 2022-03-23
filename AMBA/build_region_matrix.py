@@ -158,7 +158,8 @@ def main():
     dfExprVoxelTranspose['Region'] = structArray
     
     #Remove voxels that are empty
-    dfExprVoxelTranspose = dfExprVoxelTranspose.loc[dfExprVoxelTranspose['Region'] != 'nan']
+    indNotMissing = dfExprVoxelTranspose['Region'] != 'nan'
+    dfExprVoxelTranspose = dfExprVoxelTranspose.loc[indNotMissing]
     
     
     # Aggregate expression data ----------------------------------------------
