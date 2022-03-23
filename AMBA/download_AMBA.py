@@ -17,7 +17,6 @@ import multiprocessing as mp
 from pyminc.volumes.factory import *
 from zipfile import ZipFile
 from functools import partial
-from itertools import starmap
 from tqdm import tqdm
 
 # Functions -------------------------------------------------------------------
