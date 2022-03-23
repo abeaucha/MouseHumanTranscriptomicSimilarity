@@ -264,13 +264,13 @@ importDonorData <- function(path, donor, verbose = TRUE){
 #'            Tibble containing probe-by-sample binary filter/mask
 #' @param version (numeric scalar) Pipeline version (1, 2)
 #'        Version 1
-#'            1. Filter data for each donor
-#'            2. Average multiple probes per gene for each donor
-#'            3. Combine donor samples into one matrix
+#'         1. Filter data for each donor
+#'         2. Average multiple probes per gene for each donor
+#'         3. Combine donor samples into one matrix
 #'        Version 2
-#'        1. Combine probes from all donors into one matrix
-#'        2. Filter data for all donors together
-#'        3. Select one probe per gene using Myers' 3-step method         
+#'         1. Combine probes from all donors into one matrix
+#'         2. Filter data for all donors together
+#'         3. Select one probe per gene using Myers' 3-step method         
 #' @param verbose (logical scalar)
 #'
 #' @return (list) A list containing three elements:
