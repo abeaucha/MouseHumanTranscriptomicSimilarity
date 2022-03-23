@@ -5,6 +5,25 @@
 
 """
 Build a gene-by-voxel expression matrix
+
+Description
+-----------
+This script imports in-situ hybridization (ISH) MINC images from the
+Allen Mouse Brain Atlas, applies some pre-processing, and stores the
+voxel-wise expression values for ISH experiments or genes in a matrix. 
+This matrix is written out to a CSV file. 
+
+Pre-processing options include:
+1. log2 transformation
+2. Voxel-wise average of the expression from multiple experiments
+   that correspond to a single gene
+3. Filtering out genes or experiments that have too many empty voxels
+4. Imputing empty voxels using K-nearest neighbours
+
+The script can import either the coronal or sagittal AMBA data sets,
+using either a (bilateral) coronal or (unilateral) sagittal mask. When
+importing the sagittal data set, the script will only import those
+genes that are also present in the coronal data set.
 """
 
 # Packages -------------------------------------------------------------------
@@ -65,6 +84,7 @@ def parse_args():
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
         help = "Mask to apply to expression images"
+
     )
     
     parser.add_argument(
