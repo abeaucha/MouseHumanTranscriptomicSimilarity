@@ -104,3 +104,5 @@ manuscript/draft/
 AMBA/data/imaging/MICe_DSURQE_grid_0.mnc
 AMBA/data/MouseExpressionMatrix_ROI_DSURQE_sagittal_masksagittal_log2_grouped_imputed.csv
 AHBA/data/NOTE.txt
+AMBA/data/imaging/MICe_DSURQE.xfm
+AMBA/data/imaging/MICe_DSURQE_grid_0.mnc
