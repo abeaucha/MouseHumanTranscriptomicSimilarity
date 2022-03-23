@@ -3,7 +3,14 @@
 # Author: Antoine Beauchamp
 # Created: January 31st, 2022
 
-""" """
+"""
+Build a gene-by-region expression matrix
+
+Description
+-----------
+This script imports a gene-by-voxel expression matrix from a CSV file
+and aggregates the expression values for every region in an atlas. 
+"""
 
 # Packages -------------------------------------------------------------------
 
@@ -12,7 +19,6 @@ import os
 import numpy as np
 import pandas as pd
 from pyminc.volumes.factory import *
-
 
 # Command line arguments -----------------------------------------------------
 
@@ -28,43 +34,46 @@ def parse_args():
         '--datadir',
         type = str,
         default = 'data/',
-        help = "Directory containing expression matrices"
+        help = "Directory containing expression matrix CSV files"
     )
     
     parser.add_argument(
         '--infile',
         type = str,
-        help = "CSV file containing voxel-wise expression matrix"
+        help = "Name of CSV file containing the voxel-wise expression matrix"
     )
     
     parser.add_argument(
         '--outfile',
         type = str,
-        help = "File in which to save regional expression matrix"
+        help = "Name of CSV file in which to save regional expression matrix"
     )
     
     parser.add_argument(
         '--mask',
         type = str,
-        help = ""
+        help = ("Name of MINC file containing the mask used to build the "
+                "voxel-wise expression matrix provided to --infile")
     )
     
     parser.add_argument(
         '--labels',
         type = str,
-        help = ""
+        help = ("Name of MINC file containing the atlas labels to use. "
+                "Must be in CCFv3 space.")
     )
     
     parser.add_argument(
         '--defs',
         type = str,
-        help = ""
+        help = ("Name of CSV file containing the names of the "
+                "neuroanatomical regions corresponding to the "
+                "atlas labels in --labels")
     )
     
     args = vars(parser.parse_args())
     
     return args
-
 
 # Main -----------------------------------------------------------------------
 
@@ -101,7 +110,8 @@ def main():
     #Convert transposed numpy array to data frame.
     #Set genes to be column names.
     dfExprVoxelTranspose = pd.DataFrame(npExprVoxel, columns=genes)
-        
+
+
     # Import imaging data ----------------------------------------------------
     
     #Import image mask, flatten and convert to numpy array
@@ -166,7 +176,8 @@ def main():
     #Gene names are stored in the index
     #Label the index as Gene
     dfExprRegion.index.name = 'Gene'
-    
+
+
     # Write ------------------------------------------------------------------
 
     print("Writing to file...")
@@ -175,7 +186,6 @@ def main():
     dfExprRegion.to_csv(os.path.join(datadir, args['outfile']))
     
     return
-    
     
 if __name__ == '__main__':
     main()
