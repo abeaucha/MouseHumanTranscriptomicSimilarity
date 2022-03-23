@@ -1,5 +1,5 @@
 
-Imaging files for the Allen Mouse Brain Atlas (AMBA).
+Imaging files for the Allen Mouse Brain Atlas (AMBA):
 
 - average_template_200um_mask.mnc: MRI mask in CCFv3 space at 200um resolution
 - average_template_200um.mnc: MRI template in CCFv3 space at 200um resolution
@@ -13,6 +13,9 @@ Imaging files for the Allen Mouse Brain Atlas (AMBA).
 - DSURQE_CCFv3_average_200um.mnc: DSURQE consensus average template resampled to CCFv3 space at 200um resolution
 - DSURQE_CCFv3_average_50um.mnc: DSURQE consensus average template resampled to CCFv3 space at 50um resolution
 - DSURQE_CCFv3_labels_200um.mnc: DSURQE atlas labels resampled to CCFv3 space at 200um resolution
+- sagittal_200um_coverage_bin0.8.mnc: Mask in CCFv3 space at 200um resolution for sagittal ISH image coverage
+
+Not tracked:
+
 - MICe_DSURQE_grid_0.mnc: 4-dimensional MINC file containing the displacement field from the non-linear component of the transform between MICe space and CCFv3 space
 - MICe_DSURQE.xfm: Transform between MICe space and CCFv3 space
-- sagittal_200um_coverage_bin0.8.mnc: Mask in CCFv3 space at 200um resolution for sagittal ISH image coverage
