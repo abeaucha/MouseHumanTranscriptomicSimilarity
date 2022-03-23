@@ -102,3 +102,4 @@ manuscript/submissions/biorxiv/StriatumSimilarityMatrices_MouseVoxels.RData
 ignore_files
 manuscript/draft/
 AMBA/data/imaging/MICe_DSURQE_grid_0.mnc
+AMBA/data/MouseExpressionMatrix_ROI_DSURQE_sagittal_masksagittal_log2_grouped_imputed.csv
