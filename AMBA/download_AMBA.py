@@ -20,7 +20,6 @@ from functools import partial
 from itertools import starmap
 from tqdm import tqdm
 
-
 # Functions -------------------------------------------------------------------
 
 def parse_args():
@@ -92,7 +91,6 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
     Returns
     -------
     None 
-    
     """        
 
     abi_query_metadata = ("http://api.brain-map.org/api/v2/data/SectionDataSet/"
@@ -405,7 +403,8 @@ def download_data(experiment, outdir):
     
     return
     
-    
+# Main -----------------------------------------------------------------------    
+
 def main():
 
     #Get command line arguments
@@ -485,6 +484,5 @@ def main():
         
     return
     
-
 if __name__ == '__main__':
     main()
