@@ -269,7 +269,6 @@ def buildExpressionMatrix(files, mask, log_transform = True,
     
     return dfExpression
 
-
 # Main -----------------------------------------------------------------------
 
 def main():
@@ -379,7 +378,6 @@ def main():
     dfExpression.to_csv(os.path.join(outdir, outfile))
 
     return
-    
 
 if __name__ == '__main__':
     main()
