@@ -1,19 +1,29 @@
-# build_mouse_tree.R ------------------------------------------------------------------
-# 
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# build_mouse_tree.R
+# Author: Antoine Beauchamp
 # Created: January 31st, 2022
-# Edited March 8th, 2022
+#
+# Description
+# -----------
+#
+
+
+# Packages -------------------------------------------------------------------
 
 message("Initializing...")
 
-#Libraries
 suppressPackageStartupMessages(library(tidyverse))
-library(data.tree)
-library(rjson)
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(rjson))
+
+
+# Functions ------------------------------------------------------------------
 
 #Import tree functions
 source("../functions/tree_tools.R")
+
+
+# Import ---------------------------------------------------------------------
 
 #Import expression data
 message("Importing expression data...")
@@ -27,6 +37,9 @@ treeMouseExpr <- Clone(treeDefs)
 
 #Import DSURQE atlas definitions
 defs <- suppressMessages(read_csv("data/imaging/DSURQE_40micron_R_mapping_long.csv"))
+
+
+# Assign values to tree ------------------------------------------------------
 
 #Assign DSURQE ROI expression values to leaf nodes on the tree
 treeMouseExpr$Do(function(node){
@@ -47,6 +60,8 @@ treeMouseExpr$Do(function(node){
   node$Gene <- dfExpr$Gene
 })
 
+
+# Write ----------------------------------------------------------------------
 
 message("Writing to file...")
 
