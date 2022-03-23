@@ -1,12 +1,18 @@
+# ----------------------------------------------------------------------------
 # download_ahba.py 
-#
-# Download AHBA ontology and microarray data from the web API
-# 
-# Antoine Beauchamp
+# Author: Antoine Beauchamp
 # Created: February 10th, 2022
-# Edited: March 5th, 2022
 
-# Packages -------------------------------------------------------
+"""
+Download data from the Allen Human Brain Atlas
+
+Description
+-----------
+This script downloads the microarray data sets from all six donors in the
+AHBA. It also downloads the hierarchical ontology from the AHBA.
+"""
+
+# Packages -------------------------------------------------------------------
 
 import os
 import argparse
@@ -14,24 +20,28 @@ import abagen
 import requests
 import json
 
-# Functions -------------------------------------------------------
+# Command line arguments -----------------------------------------------------
 
 def parse_args():
-    
-    parser = argparse.ArgumentParser()
+   
+    """Parse command line arguments"""
+
+    parser = argparse.ArgumentParser(
+                 formatter_class = argparse.ArgumentDefaultsHelpFormatter
+             )
     
     parser.add_argument(
         '--outdir',
         type = str,
         default = 'data/',
-        help = 'Directory in which to download the data'
+        help = "Directory in which to download the data"
     )
     
     args = vars(parser.parse_args())
     
     return args
 
-
+# Main -----------------------------------------------------------------------
 
 def main():
 
@@ -46,11 +56,12 @@ def main():
         os.mkdir(outdir)
         
     #Download AHBA hierarchical ontology as JSON
-    print('Downloading AHBA hierarchical ontology...')
-    hierarchy_url = "http://api.brain-map.org/api/v2/structure_graph_download/10.json"
+    print("Downloading AHBA hierarchical ontology...")
+    hierarchy_url = ('http://api.brain-map.org/api/v2/'
+                     'structure_graph_download/10.json')
     hierarchy_url_get = requests.get(hierarchy_url)
     hierarchy_dict = json.loads(hierarchy_url_get.text)
-    with open(outdir+"AHBA_hierarchy_definitions.json", "w") as outfile: 
+    with open(outdir+'AHBA_hierarchy_definitions.json', 'w') as outfile: 
         json.dump(hierarchy_dict, outfile)
     
     #Include 'microarray' sub-directory. abagen will download to ~/ otherwise
@@ -59,11 +70,10 @@ def main():
         os.mkdir(outdir)
 
     #Download microarray data
-    print('Downloading AHBA microarray data...')
+    print("Downloading AHBA microarray data...")
     files = abagen.fetch_microarray(donors = 'all', data_dir = outdir)
 
     return
-    
     
 if __name__ == '__main__':
     main()
