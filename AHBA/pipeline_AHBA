@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# ----------------------------------------------------------------------------
+# pipeline_AHBA
+# Author: Antoine Beauchamp
+#
+# Pipeline to generate necessary data files from the Allen Human Brain Atlas
+#
+# Pipeline steps:
+# 1. Download the AHBA ontology and microarray data sets from the web
+# 2. Build the gene-by-sample expression matrix using data from all donors
+# 3. Build a gene expression tree using the sample expression matrix
+
+# On MICe machines
+module purge
+
+# Activate the python virtual environment
 source activate_venv
 
 # Download AHBA data from the web
@@ -14,3 +29,4 @@ Rscript build_sample_matrix.R --version 1 --verbose true
 echo "Building human neuroanatomical tree..."
 Rscript build_human_tree.R
 
+deactivate
