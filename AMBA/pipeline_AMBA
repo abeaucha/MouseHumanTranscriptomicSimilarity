@@ -21,15 +21,16 @@
 # 8. Build a gene expression tree by combining the coronal voxel-wise
 #    expression matrix with the AMBA hierarchical ontology. 
 
-#On MICe machines
+# On MICe machines
 module purge
 
-#Resample DSURQE image files to CCFv3
+# Resample DSURQE image files to CCFv3
 echo "Resampling DSURQE image files to CCFv3"
 module load minc-toolkit/1.9.18.1-mp7vcse minc-stuffs/0.1.25-4jzbv5d
 source resample_DSURQE_CCFv3
 module purge
 
+# Activate the python virtual environment
 source activate_venv
 
 # Download AHBA data from the web
