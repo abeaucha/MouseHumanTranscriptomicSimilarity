@@ -8,7 +8,7 @@ AMBA/.envrc
 AMBA/.ipynb_checkpoints/
 AMBA/AMBA_env/
 AMBA/data/expression/
-AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv
+AHBA/data/HumanExpressionMatrix_samples_pipeline_v1.csv
 AHBA/data/SampleInformation_pipeline_v1.csv
 AHBA/data/HumanExpressionTree.RData
 AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv
