@@ -284,8 +284,8 @@ def main():
     print("Importing {} dataset using {} mask".format(dataset, mask))
     
     if (dataset == 'sagittal') and (mask == 'coronal'):
-        warnings.warn(("Running with sagittal dataset and coronal mask is not"
-                       " ideal. Proceed with caution."))
+        warnings.warn(("Running with sagittal dataset and coronal mask is "
+                       "not ideal. Proceed with caution."))
     
     #If dataset is sagittal, use only those genes that are also in the
     #coronal set
@@ -356,8 +356,9 @@ def main():
         genes = dfExpression.index
         
         #Impute missing values and assign as data frame
-        dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(dfExpression.to_numpy()),
-                                    index = genes)
+        dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(
+                                                  dfExpression.to_numpy()
+                                    ), index = genes)
         
     #Write to file
     print("Writing to file...")
