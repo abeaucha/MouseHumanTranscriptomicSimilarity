@@ -25,7 +25,7 @@ from sklearn.impute         import KNNImputer
 from sklearn.preprocessing  import FunctionTransformer
 from sklearn.pipeline       import Pipeline
 
-# Functions ----------------------------------------------------------
+# Functions ------------------------------------------------------------------
 
 def parse_args():
     
@@ -39,9 +39,9 @@ def parse_args():
         '--datadir',
         type = str,
         default = 'data/expression/',
-        help = ("Directory containing AMBA data. This directory should contain "
-                "sub-directories 'coronal' and 'sagittal', which contain "
-                "expression MINC files.")
+        help = ("Directory containing AMBA data. This directory should "
+                "contain sub-directories 'coronal' and 'sagittal', which "
+                "contain expression MINC files.")
     )
     
     parser.add_argument(
