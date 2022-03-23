@@ -1,34 +1,34 @@
-# build_human_tree --------------------------------------------------------------------
-# 
-#
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# build_human_tree.R 
+# Author: Antoine Beauchamp
 # Created: March 9th, 2021
-# Edited: March 7th, 2022
-# ---------------------------------------------------------------------------------------
+# 
+# Build the gene expression tree for the Allen Human Brain Atlas 
 
-# Libraries -----------------------------------------------------------------------------
+
+# Packages -------------------------------------------------------------------
 
 suppressPackageStartupMessages(library(tidyverse))
-library(data.tree)
-library(rjson)
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(rjson))
 
 
-# Functions -----------------------------------------------------------------------------
+# Functions ------------------------------------------------------------------
 
-source("../functions/abi_parsing_funs.R")
 source("../functions/tree_tools.R")
 
 
-# Map microarray samples to tree nodes --------------------------------------------------
+# Map microarray samples to tree nodes ---------------------------------------
 
-message("Mapping AHBA microarray samples to the human neuroanatomical tree...")
+message("Mapping microarray samples to the AHBA ontology...")
 
 #Load AHBA sample information
-dfSampleInfo <- suppressMessages(read_csv("data/SampleInformation_pipeline_v1.csv"))
+fileSampleInfo <- "SampleInformation_pipeline_v1.csv"
+dfSampleInfo <- suppressMessages(read_csv(paste0("data/",fileSampleInfo)))
 
 #Load the human tree definitions
-treeHumanDefs <- parse_abi_hierarchy("data/AHBA_hierarchy_definitions.json")
+fileTreeDefs <- "AHBA_hierarchy_definitions.json"
+treeHumanDefs <- parse_abi_hierarchy(paste0("data/", fileTreeDefs))
 
 #Make cerebellar vermis names different from cerebellar hemispheres
 #Otherwise this messes with the sample assignment
@@ -68,12 +68,13 @@ treeHumanDefs$Do(function(node){
 Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 
 
-# Add gene expression values to the tree ------------------------------------------------
+# Add gene expression values to the tree -------------------------------------
 
 message("Adding gene expression data to the tree...")
 
 #Import sample expression matrix
-matHumanExpr <- suppressMessages(read_csv(str_c("data/HumanExpressionMatrix_Samples_pipeline_v1.csv"))) %>% 
+fileExpr <- "HumanExpressionMatrix_Samples_pipeline_v1.csv"
+matHumanExpr <- suppressMessages(read_csv(str_c(paste0("data/", fileExpr)))) %>% 
   column_to_rownames("Gene") %>% 
   as.matrix()
 
@@ -94,10 +95,11 @@ treeHumanExpr$Do(function(node){
 })
 
 
-# Write to file -------------------------------------------------------------------------
+# Write to file --------------------------------------------------------------
 
 message("Writing data to file...")
 
+fileOut <- "HumanExpressionTree.RData"
 save(treeHumanExpr,
-     file = "data/HumanExpressionTree.RData")
+     file = paste0("data/", fileOut))
 
