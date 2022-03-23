@@ -73,7 +73,7 @@ Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 message("Adding gene expression data to the tree...")
 
 #Import sample expression matrix
-fileExpr <- "HumanExpressionMatrix_Samples_pipeline_v1.csv"
+fileExpr <- "HumanExpressionMatrix_samples_pipeline_v1.csv"
 matHumanExpr <- suppressMessages(read_csv(str_c(paste0("data/", fileExpr)))) %>% 
   column_to_rownames("Gene") %>% 
   as.matrix()
