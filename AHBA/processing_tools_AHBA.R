@@ -2,24 +2,24 @@ library(tidyverse)
 
 #' Combine donor gene data into one
 #'
-#' @param data (list) A list with one entry per donor. Each entry
-#' contains a nested list with the following elements:
+#' @param data (list) A list with one entry per donor. Each entry must
+#' contain a nested list with the following named elements:
 #'        Donor (character scalar) 
-#'            Donor name
+#'            The donor name
 #'        GeneExpression (tibble)
-#'            Tibble containing gene-by-sample expression values
+#'            A tibble containing gene-by-sample expression values
 #'        SampleInfo (tibble) 
-#'            Tibble containing metadata for each sample
+#'            A tibble containing metadata for each sample
 #' @param verbose (logical scalar) 
 #'
-#' @return (list) A list containing three elements:
+#' @return (list) A list containing three named elements:
 #'          Donor (character vector) 
 #'              The names of all donors
 #'          GeneExpression (tibble)
-#'              Tibble containing gene-by-sample expression values
+#'              A tibble containing gene-by-sample expression values
 #'              for all donors
 #'          SampleInfo (tibble) 
-#'              Tibble containing metadata for each sample for 
+#'              A tibble containing metadata for each sample for 
 #'              all donors
 combineDonorGenes <- function(data, verbose = TRUE){
   
@@ -55,36 +55,36 @@ combineDonorGenes <- function(data, verbose = TRUE){
 
 #' Combine donor probe data into one
 #'
-#' @param data (list) A list with one entry per donor. Each entry
-#' contains a nested list with the following elements:
+#' @param data (list) A list with one entry per donor. Each entry must
+#' contain a nested list with the following named elements:
 #'        Donor (character scalar) 
-#'            Donor name
+#'            The donor name
 #'        DonorPath (character scalar)
-#'            Path to donor data dir 
+#'            The path to the donor data directory
 #'        ProbeExpression (tibble) 
-#'            Tibble containing probe-by-sample expression
+#'            A tibble containing probe-by-sample expression values
 #'        ProbeInfo (tibble) 
-#'            Tibble containing metadata for each probe
+#'            A tibble containing metadata for each probe
 #'        SampleInfo (tibble) 
-#'            Tibble containing metadata for each sample
+#'            A tibble containing metadata for each sample
 #'        IntensityFilter (tibble)
-#'            Tibble containing probe-by-sample binary filter/mask
+#'            A tibble containing the probe-by-sample binary filter/mask
 #' @param verbose (logical scalar)
 #'
-#' @return (list) A list containing six elements:
+#' @return (list) A list containing six named elements:
 #'          Donor (character vector) 
 #'              The names of all donors
 #'          DonorPath (character vector)
-#'              Paths to each donor data dir 
+#'              The paths to the data directories of all donors
 #'          ProbeExpression (tibble) 
-#'              Tibble containing probe-by-sample expression
+#'              A tibble containing probe-by-sample expression
 #'          ProbeInfo (tibble) 
-#'              Tibble containing metadata for each probe for all donors
+#'              A tibble containing metadata for each probe for all donors
 #'          SampleInfo (tibble) 
-#'              Tibble containing metadata for each sample for all donors
+#'              A tibble containing metadata for each sample for all donors
 #'          IntensityFilter (tibble)
-#'              Tibble containing probe-by-sample binary filter/mask for 
-#'              all donors
+#'              A tibble containing the probe-by-sample binary filter/mask
+#'              for all donors
 combineDonorProbes <- function(data, verbose = TRUE){
   
   if(verbose) {message("Combining donor probes...")}
@@ -129,19 +129,19 @@ combineDonorProbes <- function(data, verbose = TRUE){
 
 #' Filter the AHBA microarray probes
 #'
-#' @param data (list) A list with elements:
+#' @param data (list) A list with named elements:
 #'        Donor (character scalar) 
-#'            Donor name
+#'            The donor name
 #'        DonorPath (character scalar)
-#'            Path to donor data dir 
+#'            The path to the donor's data directory
 #'        ProbeExpression (tibble) 
-#'            Tibble containing probe-by-sample expression
+#'            A tibble containing probe-by-sample expression values
 #'        ProbeInfo (tibble) 
-#'            Tibble containing metadata for each probe
+#'            A tibble containing metadata for each probe
 #'        SampleInfo (tibble) 
-#'            Tibble containing metadata for each sample
+#'            A tibble containing metadata for each sample
 #'        IntensityFilter (tibble)
-#'            Tibble containing probe-by-sample binary filter/mask
+#'            A tibble containing the probe-by-sample binary filter/mask
 #' @param entrezFiltering (logical scalar) Entrez ID filtering
 #' @param intensityFiltering (logical scalar) Intensity filtering
 #' @param intensityThreshold (numeric scalar) Threshold to use for intensity
@@ -194,17 +194,17 @@ filterDonorData <- function(data, entrezFilter = TRUE, intensityFilter = TRUE,
 #'
 #' @return (list) A list with elements:
 #'          Donor (character scalar) 
-#'              Donor name
+#'              The donor name
 #'          DonorPath (character scalar)
-#'              Path to donor data dir 
+#'              The path to donor's data directory
 #'          ProbeExpression (tibble) 
-#'              Tibble containing probe-by-sample expression
+#'              A tibble containing probe-by-sample expression values
 #'          ProbeInfo (tibble) 
-#'              Tibble containing metadata for each probe
+#'              A tibble containing metadata for each probe
 #'          SampleInfo (tibble) 
-#'              Tibble containing metadata for each sample
+#'              A tibble containing metadata for each sample
 #'          IntensityFilter (tibble)
-#'              Tibble containing probe-by-sample binary filter/mask
+#'              A tibble containing the probe-by-sample binary filter/mask
 importDonorData <- function(path, donor, verbose = TRUE){
   
   if(verbose) {message(str_c("Importing data for donor ", donor, "..."))}
@@ -248,20 +248,20 @@ importDonorData <- function(path, donor, verbose = TRUE){
 
 #' Process the AHBA data
 #'
-#' @param data (list) A list with one entry per donor. Each entry
-#' contains a nested list with the following elements:
+#' @param data (list) A list with one entry per donor. Each entry must
+#' contain a nested list with the following named elements:
 #'        Donor (character) 
-#'            Donor name
+#'            The donor name
 #'        DonorPath (character)
-#'            Path to donor data dir 
+#'            The path to the donor's data directory
 #'        ProbeExpression (tibble) 
-#'            Tibble containing probe-by-sample expression
+#'            A tibble containing probe-by-sample expression values
 #'        ProbeInfo (tibble) 
-#'            Tibble containing metadata for each probe
+#'            A tibble containing metadata for each probe
 #'        SampleInfo (tibble) 
-#'            Tibble containing metadata for each sample
+#'            A tibble containing metadata for each sample
 #'        IntensityFilter (tibble)
-#'            Tibble containing probe-by-sample binary filter/mask
+#'            A tibble containing the probe-by-sample binary filter/mask
 #' @param version (numeric scalar) Pipeline version (1, 2)
 #'        Version 1
 #'         1. Filter data for each donor
@@ -273,14 +273,14 @@ importDonorData <- function(path, donor, verbose = TRUE){
 #'         3. Select one probe per gene using Myers' 3-step method         
 #' @param verbose (logical scalar)
 #'
-#' @return (list) A list containing three elements:
+#' @return (list) A list containing three named elements:
 #'         Donor (character) 
 #'             The names of all donors
 #'         GeneExpression (tibble)
-#'             Tibble containing gene-by-sample expression values
+#'             A tibble containing gene-by-sample expression values
 #'             for all donors
 #'         SampleInfo (tibble) 
-#'             Tibble containing metadata for each sample for 
+#'             A tibble containing metadata for each sample for 
 #'             all donors
 processingPipeline <- function(data, version = 1, verbose = TRUE){
   if (version == 1){
@@ -313,29 +313,29 @@ processingPipeline <- function(data, version = 1, verbose = TRUE){
 
 #' Consolidate multiple microarray probes for each gene
 #'
-#' @param data (list) A list containing elements:
-#'                Donor (character) 
-#'                    Donor name
-#'                ProbeExpression (tibble) 
-#'                    Tibble containing probe-by-sample expression
-#'                ProbeInfo (tibble) 
-#'                    Tibble containing metadata for each probe
-#'                SampleInfo (tibble) 
-#'                    Tibble containing metadata for each sample
-#' @param method (character) One of "Beauchamp" or "Myers" indicating the method
-#'                           "Beauchamp": Average the expression of multiple
-#'                                        probes per gene
-#'                           "Myers": Three step probe selection based on 
-#'                                    mean intensity and probe-probe correlation
-#' @param verbose (logical) Verbosity option
+#' @param data (list) A list containing named elements:
+#'        Donor (character scalar) 
+#'            The donor name
+#'        ProbeExpression (tibble) 
+#'            A tibble containing probe-by-sample expression values
+#'        ProbeInfo (tibble) 
+#'            A tibble containing metadata for each probe
+#'        SampleInfo (tibble) 
+#'            A tibble containing metadata for each sample
+#' @param method (character scalar) One of "Beauchamp" or "Myers" indicating the
+#' method to use.
+#'     "Beauchamp": Average the expression of multiple probes per gene
+#'     "Myers": Three step probe selection based on mean intensity and 
+#'              probe-probe correlation
+#' @param verbose (logical scalar)
 #'
 #' @return (list) A list containing three elements:
-#'                Donor (character) 
-#'                    Donor name
-#'                GeneExpression (tibble)
-#'                    Tibble containing gene-by-sample expression values
-#'                SampleInfo (tibble) 
-#'                    Tibble containing metadata for each sample
+#'          Donor (character scalar) 
+#'              The donor name
+#'          GeneExpression (tibble)
+#'              A tibble containing gene-by-sample expression values
+#'          SampleInfo (tibble) 
+#'              A tibble containing metadata for each sample
 selectMicroarrayProbes <- function(data, method = "Beauchamp", verbose = TRUE){
   
   if(verbose){message("Consolidating multiple probes per gene...")}
