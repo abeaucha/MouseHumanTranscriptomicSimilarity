@@ -30,13 +30,13 @@ genes that are also present in the coronal data set.
 
 import argparse
 import os
-import re
 import warnings
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
 
 from pyminc.volumes.factory import *
+from re                     import sub
 from glob                   import glob
 from tqdm                   import tqdm
 from functools              import partial
@@ -299,9 +299,9 @@ def main():
         pathGeneFiles_Coronal = glob(pathGeneDir_Coronal + "*.mnc")
 
         #Extract gene names for coronal and sagittal data sets
-        genes_Sagittal = [re.sub(r"_[0-9]+.mnc", "", file) for file in 
+        genes_Sagittal = [sub(r"_[0-9]+.mnc", "", file) for file in 
                 [os.path.basename(path) for path in pathGeneFiles_Sagittal]]
-        genes_Coronal = [re.sub(r"_[0-9]+.mnc", "", file) for file in 
+        genes_Coronal = [sub(r"_[0-9]+.mnc", "", file) for file in 
                 [os.path.basename(path) for path in pathGeneFiles_Coronal]]
 
         #Identify genes from sagittal data in coronal data
