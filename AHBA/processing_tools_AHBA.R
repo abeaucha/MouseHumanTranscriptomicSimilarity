@@ -1,73 +1,25 @@
-#' Aggregate AHBA samples using atlas mappings
-#'
-#' @param donorInfo (character) Vector with elements 1. the donor name, 2. the path to the preprocessed data, 3. the path to the atlas mappings
-#' @param atlas (character) String indicating which atlas mapping is used
-#'
-#' @return
-aggregateSamples <- function(donorInfo, atlas = "AHBA"){
-  
-  donorID <- donorInfo[[1]]
-  dataPath <- donorInfo[[2]]
-  atlasPath <- donorInfo[[3]]
-  
-  #Read in preprocessed expression data  
-  dfMicroarrayExpression <- suppressMessages(read_csv(dataPath))
-  
-  #Read in atlas mappings
-  dfAtlasMappings <- suppressMessages(read_csv(atlasPath))
-  
-  if(atlas == "AALsubcortical"){
-    
-    dfAtlasMappings <- dfAtlasMappings %>% 
-      select(SampleID, 
-             AtlasStructure,
-             AtlasLabel) %>% 
-      filter(AtlasLabel != 0)
-    
-  } else {
-    
-    dfAtlasMappings <- dfAtlasMappings %>% 
-      select(SampleID,
-             AtlasStructure = structure_name, 
-             AtlasLabel = structure_id)
-    
-  }
-  
-  #Aggregate samples per structure
-  dfMicroarrayExpression_wLabels <- dfMicroarrayExpression %>% 
-    gather(key = SampleID, value = Expression, -1) %>% 
-    left_join(dfAtlasMappings, by = "SampleID") %>% 
-    mutate(Expression = 2^Expression) %>% 
-    group_by(Gene, AtlasStructure) %>% 
-    summarise(StructExpression = mean(Expression, na.rm = T)) %>% 
-    ungroup() %>% 
-    mutate(StructExpression = log2(StructExpression)) %>% 
-    spread(key = AtlasStructure, value = StructExpression, -1)
-  
-  
-  #Order the columns according to the atlas labels
-  structOrder <- dfAtlasMappings %>% 
-    select(AtlasStructure, AtlasLabel) %>% 
-    unique() %>% 
-    arrange(AtlasLabel) %>% 
-    pull(AtlasStructure)
-  
-  structOrder <- structOrder[structOrder %in% colnames(dfMicroarrayExpression_wLabels[,-1])]
-  indOrder <- c(1, match(structOrder, colnames(dfMicroarrayExpression_wLabels)))
-  
-  dfMicroarrayExpression_wLabels <- dfMicroarrayExpression_wLabels[, indOrder]
-  
-  return(dfMicroarrayExpression_wLabels)
-  
-}
-
+library(tidyverse)
 
 #' Combine donor gene data into one
 #'
-#' @param data (list)
-#' @param verbose (logical)
+#' @param data (list) A list containing elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                GeneExpression (tibble)
+#'                    Tibble containing gene-by-sample expression values
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#' @param verbose (logical) Verbosity option
 #'
-#' @return
+#' @return (list) A list containing three elements:
+#'                Donor (character) 
+#'                    The names of all donors
+#'                GeneExpression (tibble)
+#'                    Tibble containing gene-by-sample expression values
+#'                    for all donors
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample for 
+#'                    all donors
 combineDonorGenes <- function(data, verbose = TRUE){
   
   if(verbose) {message("Combining donor genes...")}
@@ -102,10 +54,35 @@ combineDonorGenes <- function(data, verbose = TRUE){
 
 #' Combine donor probe data into one
 #'
-#' @param data (list)
+#' @param data (list) A list with elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                DonorPath (character)
+#'                    Path to donor data dir 
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#'                IntensityFilter (tibble)
+#'                    Tibble containing probe-by-sample binary filter/mask
 #' @param verbose (logical)
 #'
-#' @return
+#' @return (list) A list containing six elements:
+#'                Donor (character) 
+#'                    The names of all donors
+#'                DonorPath (character)
+#'                    Paths to each donor data dir 
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe for all donors
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample for all donors
+#'                IntensityFilter (tibble)
+#'                    Tibble containing probe-by-sample binary filter/mask for 
+#'                    all donors
 combineDonorProbes <- function(data, verbose = TRUE){
   
   if(verbose) {message("Combining donor probes...")}
@@ -115,11 +92,15 @@ combineDonorProbes <- function(data, verbose = TRUE){
   
   #Combine probe expression values into one data frame
   dfProbeExpression <- map_dfc(data,
-                               function(x){select(x[["ProbeExpression"]], -ProbeID)}) %>% 
+                               function(x){
+                                 select(x[["ProbeExpression"]], -ProbeID)
+                               }) %>% 
     mutate(ProbeID = dfProbeInfo$ProbeID)
   
   dfIntensityFilter <- map_dfc(data,
-                               function(x){select(x[["IntensityFilter"]], -ProbeID)}) %>% 
+                               function(x){
+                                 select(x[["IntensityFilter"]], -ProbeID)
+                               }) %>% 
     mutate(ProbeID = dfProbeInfo$ProbeID)
   
   #Combine sample information into one data frame
@@ -144,34 +125,29 @@ combineDonorProbes <- function(data, verbose = TRUE){
 }
 
 
-#' Extract samples from the left hemisphere
-#'
-#' @param data (list)
-#'
-#' @return
-extractLeftHemisphere <- function(data){
-  
-  data[["SampleInfo"]] <- data[["SampleInfo"]] %>% 
-    filter(mni_x < 0)
-  
-  indLeft <- colnames(data[["ProbeExpression"]]) %in% c("ProbeID", data[["SampleInfo"]]$SampleID)
-  data[["ProbeExpression"]] <- data[["ProbeExpression"]][,indLeft]
-  
-  return(data)
-  
-}
-
-
 #' Filter the AHBA microarray probes
 #'
-#' @param data (list)
-#' @param entrezFiltering (logical) Flag for entrez ID filtering
-#' @param intensityFiltering (logical) Flag for intensity filtering
+#' @param data (list) A list with elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                DonorPath (character)
+#'                    Path to donor data dir 
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#'                IntensityFilter (tibble)
+#'                    Tibble containing probe-by-sample binary filter/mask
+#' @param entrezFiltering (logical) Entrez ID filtering
+#' @param intensityFiltering (logical) Intensity filtering
 #' @param intensityThreshold (numeric) Threshold to use for intensity filtering
-#' @param verbose (logical)
+#' @param verbose (logical) Verbosity option
 #'
-#' @return
-filterDonorData <- function(data, entrezFilter = TRUE, intensityFilter = TRUE, intensityThreshold = 0.5, verbose = TRUE){
+#' @return A list with the same components as `data`, but with filters applied.
+filterDonorData <- function(data, entrezFilter = TRUE, intensityFilter = TRUE, 
+                            intensityThreshold = 0.5, verbose = TRUE){
   
   if(verbose) {message("Filtering microarray probes...")}
   
@@ -211,29 +187,47 @@ filterDonorData <- function(data, entrezFilter = TRUE, intensityFilter = TRUE, i
 #'
 #' @param path (character) Path to donor data directory
 #' @param donor (character) Name of donor
-#' @param verbose (logical)
+#' @param verbose (logical) Verbosity option
 #'
-#' @return 
+#' @return (list) A list with elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                DonorPath (character)
+#'                    Path to donor data dir 
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#'                IntensityFilter (tibble)
+#'                    Tibble containing probe-by-sample binary filter/mask
 importDonorData <- function(path, donor, verbose = TRUE){
   
   if(verbose) {message(str_c("Importing data for donor ", donor, "..."))}
   
   #Microarray probe (rows) expression across all samples (cols)
-  dfProbeExpression <- suppressMessages(read_csv(str_c(path, "MicroarrayExpression.csv"), col_names = F)) %>% 
+  pathProbeExpr <- str_c(path, "MicroarrayExpression.csv")
+  dfProbeExpression <- suppressMessages(read_csv(pathProbeExpr, 
+                                                 col_names = F)) %>% 
     rename(ProbeID = X1)
   
   #Microarray probe information
-  dfProbeInfo <- suppressMessages(read_csv(str_c(path, "Probes.csv"))) %>% 
+  pathProbeInfo <- str_c(path, "Probes.csv")
+  dfProbeInfo <- suppressMessages(read_csv(pathProbeInfo)) %>% 
     select(ProbeID = probe_id,
            Gene = gene_symbol,
            EntrezID = entrez_id)
   
   #Sample information
-  dfSampleInfo <- suppressMessages(read_csv(str_c(path, "SampleAnnot.csv"))) %>% 
+  pathSampleInfo <- str_c(path, "SampleAnnot.csv")
+  dfSampleInfo <- suppressMessages(read_csv(pathSampleInfo)) %>% 
     mutate(SampleID = str_c(structure_id, slab_num, well_id, sep = "-"),
            Donor = donor)
   
-  dfIntensityFilter <- suppressMessages(read_csv(str_c(path, "PACall.csv"), col_names = F)) %>% 
+  pathIntensityFilter <- str_c(path, "PACall.csv")
+  dfIntensityFilter <- suppressMessages(read_csv(pathIntensityFilter,
+                                                 col_names = F)) %>% 
     rename(ProbeID = X1)
   
   #Label expression data columns with sample IDs
@@ -251,11 +245,39 @@ importDonorData <- function(path, donor, verbose = TRUE){
 
 #' Process the AHBA data
 #'
-#' @param data 
-#' @param version 
-#' @param verbose 
+#' @param data (list) A list with elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                DonorPath (character)
+#'                    Path to donor data dir 
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#'                IntensityFilter (tibble)
+#'                    Tibble containing probe-by-sample binary filter/mask
+#' @param version (numeric scalar) Pipeline version (1, 2)
+#'   Version 1
+#'      1. Filter data for each donor
+#'      2. Average multiple probes per gene for each donor
+#'      3. Combine donor samples into one matrix
+#'   Version 2
+#'      1. Combine probes from all donors into one matrix
+#'      2. Filter data for all donors together
+#'      3. Select one probe per gene using Myers' 3-step method         
+#' @param verbose (logical scalar)
 #'
-#' @return
+#' @return (list) A list containing three elements:
+#'                Donor (character) 
+#'                    The names of all donors
+#'                GeneExpression (tibble)
+#'                    Tibble containing gene-by-sample expression values
+#'                    for all donors
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample for 
+#'                    all donors
 processingPipeline <- function(data, version = 1, verbose = TRUE){
   if (version == 1){
     message("Running pipeline version 1")
@@ -287,11 +309,29 @@ processingPipeline <- function(data, version = 1, verbose = TRUE){
 
 #' Consolidate multiple microarray probes for each gene
 #'
-#' @param data (list)
-#' @param method (character) One of "Beauchamp" or "Myers", indicating how to consolidate probes per gene
-#' @param verbose (logical)
+#' @param data (list) A list containing elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                ProbeExpression (tibble) 
+#'                    Tibble containing probe-by-sample expression
+#'                ProbeInfo (tibble) 
+#'                    Tibble containing metadata for each probe
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
+#' @param method (character) One of "Beauchamp" or "Myers" indicating the method
+#'                           "Beauchamp": Average the expression of multiple
+#'                                        probes per gene
+#'                           "Myers": Three step probe selection based on 
+#'                                    mean intensity and probe-probe correlation
+#' @param verbose (logical) Verbosity option
 #'
-#' @return
+#' @return (list) A list containing three elements:
+#'                Donor (character) 
+#'                    Donor name
+#'                GeneExpression (tibble)
+#'                    Tibble containing gene-by-sample expression values
+#'                SampleInfo (tibble) 
+#'                    Tibble containing metadata for each sample
 selectMicroarrayProbes <- function(data, method = "Beauchamp", verbose = TRUE){
   
   if(verbose){message("Consolidating multiple probes per gene...")}
@@ -360,7 +400,8 @@ selectMicroarrayProbes <- function(data, method = "Beauchamp", verbose = TRUE){
       filter(Gene %in% genes_many) %>% 
       select(Gene, ProbeID)
     
-    #Select probe per gene based on maximal average correlation to all other probes for that gene
+    #Select probe per gene based on maximal average correlation to all other
+    #probes for that gene
     probes_many <- data[["ProbeExpression"]] %>% 
       inner_join(df_many, by = "ProbeID") %>% 
       group_by(Gene) %>% 
