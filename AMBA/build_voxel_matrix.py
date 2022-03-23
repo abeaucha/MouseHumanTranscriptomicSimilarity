@@ -268,7 +268,9 @@ def buildExpressionMatrix(files, mask, log_transform = True,
     dfExpression = dfExpression[fracVoxelsNA < threshold]
     
     return dfExpression
-    
+
+
+# Main -----------------------------------------------------------------------
 
 def main():
 
