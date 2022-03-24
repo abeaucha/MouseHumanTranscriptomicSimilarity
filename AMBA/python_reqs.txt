@@ -1,8 +1,0 @@
-numpy
-scipy
-sklearn
-pandas
-jupyter
-requests
-pyminc
-tqdm
