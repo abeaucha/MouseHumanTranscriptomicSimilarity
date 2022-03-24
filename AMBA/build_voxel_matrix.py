@@ -64,6 +64,13 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--imgdir',
+        type = str,
+        default = 'data/imaging/',
+        help = ("Directory containing imaging data."
+    )
+    
+    parser.add_argument(
         '--outdir',
         type = str,
         default = 'data/',
@@ -276,6 +283,7 @@ def main():
     #Load command line arguments
     args = parse_args()
     datadir = args['datadir']
+    imgdir = args['imgdir']
     outdir = args['outdir']
     dataset = args['dataset']
     mask = args['mask']
@@ -320,9 +328,9 @@ def main():
 
     #Mask files
     if mask == "sagittal":
-        maskfile = "data/imaging/sagittal_200um_coverage_bin0.8.mnc"
+        maskfile = os.join(imgdir, 'sagittal_200um_coverage_bin0.8.mnc')
     else: 
-        maskfile = "data/imaging/coronal_200um_coverage_bin0.8.mnc"
+        maskfile = os.join(imgdir, 'coronal_200um_coverage_bin0.8.mnc')
     
     #Build expression data frame
     log_transform = True if args['log2'] == 'true' else False
@@ -358,7 +366,7 @@ def main():
         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(
                                                   dfExpression.to_numpy()
                                     ), index = genes)
-        
+        data/imaging/
     #Write to file
     print("Writing to file...")
     
