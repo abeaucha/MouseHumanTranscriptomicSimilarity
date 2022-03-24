@@ -303,13 +303,13 @@ def main():
         pathGeneDir_Coronal = os.path.join(datadir, 'coronal', '')
 
         #Build paths to all files in the directories
-        pathGeneFiles_Sagittal = glob(pathGeneDir_Sagittal + "*.mnc")
-        pathGeneFiles_Coronal = glob(pathGeneDir_Coronal + "*.mnc")
+        pathGeneFiles_Sagittal = glob(pathGeneDir_Sagittal + '*.mnc')
+        pathGeneFiles_Coronal = glob(pathGeneDir_Coronal + '*.mnc')
 
         #Extract gene names for coronal and sagittal data sets
-        genes_Sagittal = [sub(r"_[0-9]+.mnc", "", file) for file in 
+        genes_Sagittal = [sub(r'_[0-9]+.mnc', '', file) for file in 
                 [os.path.basename(path) for path in pathGeneFiles_Sagittal]]
-        genes_Coronal = [sub(r"_[0-9]+.mnc", "", file) for file in 
+        genes_Coronal = [sub(r'_[0-9]+.mnc', "", file) for file in 
                 [os.path.basename(path) for path in pathGeneFiles_Coronal]]
 
         #Identify genes from sagittal data in coronal data
@@ -322,12 +322,12 @@ def main():
         
     else:
         pathGeneDir = os.path.join(datadir, dataset, '')
-        pathGeneFiles = glob(pathGeneDir+"*.mnc")
+        pathGeneFiles = glob(pathGeneDir+'*.mnc')
 
     print("Building voxel expression matrix...")
 
     #Mask files
-    if mask == "sagittal":
+    if mask == 'sagittal':
         maskfile = os.join(imgdir, 'sagittal_200um_coverage_bin0.8.mnc')
     else: 
         maskfile = os.join(imgdir, 'coronal_200um_coverage_bin0.8.mnc')
