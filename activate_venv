@@ -3,16 +3,16 @@
 module purge
 
 #If venv does not exist, create it
-if [ ! -d "MLP_env" ]; then
+if [ ! -d "project_env" ]; then
 	echo "Initializing python virtual environment..."
 
 	#Create the venv
-	python3 -m venv MLP_env
+	python3 -m venv project_env
 
 	echo "Installing python packages..."
 
 	#Activate the venv
-	source MLP_env/bin/activate
+	source project_env/bin/activate
 
 	#Install necessary python packages
 	pip3 install -r python_reqs.txt
@@ -27,4 +27,4 @@ fi
 #module load minc-toolkit/1.9.18.1-mp7vcse r/3.6.3-zlk4uk6 r-packages/2022-01-26
 
 #Activate the python venv
-source MLP_env/bin/activate
+source project_env/bin/activate
