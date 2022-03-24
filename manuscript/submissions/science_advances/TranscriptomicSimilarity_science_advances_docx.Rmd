@@ -22,7 +22,9 @@ library(gridExtra)
 
 # Title 
 
-Transcriptomic similarity in the mouse and human brain
+**Long title**: Transcriptomic similarity in the mouse and human brain
+
+**Short title**: Transcriptomic similarity in mouse and human brain
 
 # Authors
 
