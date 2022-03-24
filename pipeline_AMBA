@@ -39,18 +39,18 @@ python3 AMBA/download_AMBA.py --dataset sagittal --outdir AMBA/data/expression/ 
 # Build voxel expression matrix 
 echo "Building mouse gene-by-voxel expression matrix using coronal data with coronal mask..."
 python3 AMBA/build_voxel_matrix.py --datadir AMBA/data/expression/ --outdir AMBA/data/ \
-	--dataset coronal --mask coronal --log2 true --groupexp true \
-	--threshold 0.2 --impute true --parallel true --nproc 4 
+	--imgdir AMBA/data/imaging/ --dataset coronal --mask coronal --log2 true \
+	--groupexp true --threshold 0.2 --impute true --parallel true --nproc 4 
 
 echo "Building mouse gene-by-voxel expression matrix using coronal data with sagittal mask..."
 python3 AMBA/build_voxel_matrix.py --datadir AMBA/data/expression/ --outdir AMBA/data/ \
-	--dataset coronal --mask sagittal --log2 true --groupexp false \
-	--threshold 0.2 --impute true --parallel true --nproc 4 
+	--imgdir AMBA/data/imaging/ --dataset coronal --mask sagittal --log2 true \
+	--groupexp false --threshold 0.2 --impute true --parallel true --nproc 4 
 
 echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
 python3 AMBA/build_voxel_matrix.py --datadir AMBA/data/expression/ --outdir AMBA/data/ \
-	--dataset sagittal --mask sagittal --log2 true --groupexp true \
-	--threshold 0.2 --impute true --parallel true --nproc 4 
+	--imgdir AMBA/data/imaging/ --dataset sagittal --mask sagittal --log2 true \
+	--groupexp true --threshold 0.2 --impute true --parallel true --nproc 4 
 
 # Build regional expression matrix using DSURQE
 echo "Building mouse gene-by-region expression matrix using the DSURQE atlas..."
