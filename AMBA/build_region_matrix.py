@@ -38,6 +38,13 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--imgdir',
+        type = str,
+        default = 'data/imaging/',
+        help = "Directory containing imaging files"
+    )
+    
+    parser.add_argument(
         '--infile',
         type = str,
         help = "Name of CSV file containing the voxel-wise expression matrix"
@@ -84,6 +91,7 @@ def main():
     
     #Flags
     datadir = args['datadir']
+    imgdir = args['imgdir']
     infile = args['infile']
     mask = args['mask']
     labels = args['labels']
@@ -117,14 +125,14 @@ def main():
     #Import image mask, flatten and convert to numpy array
     print("Importing mask volume: {} ...".format(mask))
 
-    maskVol = volumeFromFile(os.path.join('data', 'imaging', mask))
+    maskVol = volumeFromFile(os.path.join(imgdir, mask))
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
     
     print("Importing DSURQE label volume: {} ...".format(labels))
     
     #Import DSURQE label volume, flatten, and convert to numpy array
-    labelVol = volumeFromFile(os.path.join('data', 'imaging', labels))
+    labelVol = volumeFromFile(os.path.join(imgdir, labels))
     labelArray = np.array(labelVol.data.flatten())
     labelVol.closeVolume()
 
@@ -134,7 +142,7 @@ def main():
     print("Importing DSURQE label definitions: {} ...".format(defs))
     
     #Import DSURQE label definitions
-    dfAtlasDefs = pd.read_csv(os.path.join('data', 'imaging', defs))
+    dfAtlasDefs = pd.read_csv(os.path.join(imgdir, defs))
     
     
     # Match labels to voxels -------------------------------------------------
