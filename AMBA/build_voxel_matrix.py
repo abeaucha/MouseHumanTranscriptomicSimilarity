@@ -67,7 +67,7 @@ def parse_args():
         '--imgdir',
         type = str,
         default = 'data/imaging/',
-        help = ("Directory containing imaging data."
+        help = ("Directory containing imaging data.")
     )
     
     parser.add_argument(
