@@ -60,14 +60,15 @@ def parse_args():
         '--mask',
         type = str,
         help = ("Name of MINC file containing the mask used to build the "
-                "voxel-wise expression matrix provided to --infile")
+                "voxel-wise expression matrix provided to --infile. "
+                "Must reside in --imgdir.")
     )
     
     parser.add_argument(
         '--labels',
         type = str,
         help = ("Name of MINC file containing the atlas labels to use. "
-                "Must be in CCFv3 space.")
+                "Must be in CCFv3 space. Must reside in --imgdir.")
     )
     
     parser.add_argument(
@@ -75,7 +76,7 @@ def parse_args():
         type = str,
         help = ("Name of CSV file containing the names of the "
                 "neuroanatomical regions corresponding to the "
-                "atlas labels in --labels")
+                "atlas labels in --labels. Must reside in --imgdir.")
     )
     
     args = vars(parser.parse_args())
