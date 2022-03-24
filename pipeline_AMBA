@@ -54,7 +54,7 @@ python3 AMBA/build_voxel_matrix.py --datadir AMBA/data/expression/ --outdir AMBA
 
 # Build regional expression matrix using DSURQE
 echo "Building mouse gene-by-region expression matrix using the DSURQE atlas..."
-python3 AMBA/build_region_matrix.py --datadir AMBA/data/ \
+python3 AMBA/build_region_matrix.py --datadir AMBA/data/ --imgdir AMBA/data/imaging \
 	--infile MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv \
 	--outfile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv \
 	--mask coronal_200um_coverage_bin0.8.mnc \
