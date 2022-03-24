@@ -1,10 +1,13 @@
+jupyter
 numpy
 scipy
-sklearn
 pandas
+requests
+pyminc
+tqdm
+sklearn
 torch
 skorch
-jupyter
 openpyxl
 matplotlib
 seaborn
