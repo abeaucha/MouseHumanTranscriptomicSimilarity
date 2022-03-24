@@ -328,9 +328,9 @@ def main():
 
     #Mask files
     if mask == 'sagittal':
-        maskfile = os.join(imgdir, 'sagittal_200um_coverage_bin0.8.mnc')
+        maskfile = os.path.join(imgdir, 'sagittal_200um_coverage_bin0.8.mnc')
     else: 
-        maskfile = os.join(imgdir, 'coronal_200um_coverage_bin0.8.mnc')
+        maskfile = os.path.join(imgdir, 'coronal_200um_coverage_bin0.8.mnc')
     
     #Build expression data frame
     log_transform = True if args['log2'] == 'true' else False
@@ -366,7 +366,7 @@ def main():
         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(
                                                   dfExpression.to_numpy()
                                     ), index = genes)
-        data/imaging/
+
     #Write to file
     print("Writing to file...")
     
