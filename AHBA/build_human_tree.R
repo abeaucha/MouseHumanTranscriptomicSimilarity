@@ -148,7 +148,7 @@ treeHumanExpr$Do(function(node){
 
 # Write to file --------------------------------------------------------------
 
-message("Writing data to file...")
+message(str_c("Writing to file: ", args[["outfile"]], "..."))
 
 save(treeHumanExpr,
      file = file.path(dirData, args[["outfile"]]))
