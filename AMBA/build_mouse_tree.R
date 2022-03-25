@@ -38,11 +38,13 @@ option_list <- list(
   make_option("--outfile",
               type = "character",
               default = "MouseExpressionTree_DSURQE.RData",
-              help = "Name of .RData file in which to export the tree."),
+              help = paste("Name of .RData file in which to export the tree.",
+                           "[default %default]")),
   make_option("--treefile",
               type = "character",
               default = "DSURQE_tree.json",
-              help = "Name of JSON file containing hierarchical ontology."),
+              help = paste("Name of JSON file containing hierarchical", 
+                           "ontology. [default %default]")),
   make_option("--defs",
               type = "character",
               help = paste("Name of CSV file containing the names of the", 
@@ -63,10 +65,9 @@ if (is.null(args[["defs"]])){
 
 # Functions ------------------------------------------------------------------
 
-#Import tree functions
 working_dir <- getwd()
 
-script_dir <- commandArgs(trailingOnly = FALSE) %>% 
+script_dir <- commandArgs() %>% 
   str_subset("--file=") %>% 
   str_remove("--file=") %>%
   dirname()  
