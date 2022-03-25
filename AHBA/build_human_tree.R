@@ -11,24 +11,76 @@
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(data.tree))
 suppressPackageStartupMessages(library(rjson))
+suppressPackageStartupMessages(library(optparse))
 
+
+# Command line arguments -----------------------------------------------------
+
+option_list <- list(
+  make_option("--datadir",
+              type = "character",
+              default = "data/",
+              help = paste("Directory containing expression matrix CSV files.",
+                           "[default %default]")),
+  make_option("--infile",
+              type = "character",
+              help = paste("Name of CSV file containing the sample-wise",
+                           "expression matrix.")),
+  make_option("--outfile",
+              type = "character",
+              default = "HumanExpressionTree.RData",
+              help = paste("Name of .RData file in which to export the tree.",
+                           "[default %default]")),
+  make_option("--samplefile",
+              type = "character",
+              help = "Name of CSV file containing sample information."),
+  make_option("--treefile",
+              type = "character",
+              help = paste("Name of JSON file containing hierarchical ontology.",
+                           "[default %default]"))
+)
+
+args <- parse_args(OptionParser(option_list = option_list))
+
+if (is.null(args[["infile"]])){
+  stop("Argument --infile empty with no default.")
+}
+
+if (is.null(args[["samplefile"]])){
+  stop("Argument --samplefile empty with no default.")
+}
 
 # Functions ------------------------------------------------------------------
 
-source("../functions/tree_tools.R")
+working_dir <- getwd()
+
+script_dir <- commandArgs() %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>%
+  dirname()  
+
+path_tree_tools <- str_c(working_dir, 
+                         script_dir, 
+                         "../functions/tree_tools.R", 
+                         sep = "/")
+
+source(path_tree_tools)
 
 
 # Map microarray samples to tree nodes ---------------------------------------
 
+dirData <- args[["datadir"]]
+fileExpr <- args[["infile"]]
+fileSampleInfo <- args[["samplefile"]]
+fileTreeDefs <- args[["treefile"]]
+
 message("Mapping microarray samples to the AHBA ontology...")
 
 #Load AHBA sample information
-fileSampleInfo <- "SampleInformation_pipeline_v1.csv"
-dfSampleInfo <- suppressMessages(read_csv(paste0("data/",fileSampleInfo)))
+dfSampleInfo <- suppressMessages(read_csv(file.path(dirData,fileSampleInfo)))
 
 #Load the human tree definitions
-fileTreeDefs <- "AHBA_hierarchy_definitions.json"
-treeHumanDefs <- parse_abi_hierarchy(paste0("data/", fileTreeDefs))
+treeHumanDefs <- parse_abi_hierarchy(file.path(dirData, fileTreeDefs))
 
 #Make cerebellar vermis names different from cerebellar hemispheres
 #Otherwise this messes with the sample assignment
@@ -73,8 +125,7 @@ Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 message("Adding gene expression data to the tree...")
 
 #Import sample expression matrix
-fileExpr <- "HumanExpressionMatrix_samples_pipeline_v1.csv"
-matHumanExpr <- suppressMessages(read_csv(str_c(paste0("data/", fileExpr)))) %>% 
+matHumanExpr <- suppressMessages(read_csv(str_c(file.path(dirData, fileExpr)))) %>% 
   column_to_rownames("Gene") %>% 
   as.matrix()
 
@@ -99,7 +150,6 @@ treeHumanExpr$Do(function(node){
 
 message("Writing data to file...")
 
-fileOut <- "HumanExpressionTree.RData"
 save(treeHumanExpr,
-     file = paste0("data/", fileOut))
+     file = file.path(dirData, args[["outfile"]]))
 
