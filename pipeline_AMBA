@@ -63,6 +63,9 @@ python3 AMBA/build_region_matrix.py --datadir AMBA/data/ --imgdir AMBA/data/imag
  
 # Build mouse data tree
 echo "Building mouse neuroanatomical tree..."
-Rscript AMBA/build_mouse_tree.R
+Rscript AMBA/build_mouse_tree.R --datadir AMBA/data/ --imgdir AMBA/data/imaging/ \
+	--infile MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv \
+	--outfile MouseExpressionTree_DSURQE.RData --treefile DSURQE_tree.json \
+	--defs DSURQE_40micron_R_mapping_long.csv
 
 deactivate
