@@ -12,16 +12,32 @@
 # neuroimaging data" by Aurina Arnatkeviciute, published in NeuroImage, 2019. 
 # Two versions of the pipeline are available.
 
-
 # Packages -------------------------------------------------------------------
 
-suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(optparse))
 
 
 # Command line arguments -----------------------------------------------------
 
 option_list <- list(
+  make_option("--microarraydir",
+              type = "character",
+              default = "data/microarray/",
+              help = paste("Directory containing the microarray data sets",
+                           "from the Allen Human Brain Atlas", 
+                           "[default %default]")),
+  make_option("--datadir",
+              type = "character",
+              default = "data/", 
+              help = paste("Directory containing additional data files",
+                           "This also acts as the output directory",
+                           "[default %default]")),
+  make_option("--donorsfile",
+              type = "character",
+              default = "donors.csv",
+              help = paste("CSV file containing donor name conventions",
+                           "[default %default]")),
   make_option("--version",
               type = "numeric",
               default = 1,
@@ -49,22 +65,35 @@ if (!(args[["verbose"]] %in% c("true","false"))){
 
 # Functions ------------------------------------------------------------------
 
-source("processing_tools_AHBA.R")
+working_dir <- getwd()
+
+script_dir <- commandArgs() %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>% 
+  dirname()
+
+path_tools <- str_c(working_dir, script_dir, "processing_tools_AHBA.R",
+                    sep = "/")
+
+source(path_tools)
 
 
 # Import ---------------------------------------------------------------------
 
+dirMicroarray <- args[["microarraydir"]]
+dirData <- args[["datadir"]]
+fileDonors <- args[["donorsfile"]]
+
 #Set paths to AHBA directories
-pathData <- "data/microarray/"
-donorDirectories <- list.files(pathData)
+donorDirectories <- list.files(dirMicroarray)
 
 message("Importing data...")
 
 #Import donor information and naming conventions
-dfDonorInfo <- suppressMessages(read_csv("data/donors.csv")) %>% 
+dfDonorInfo <- suppressMessages(read_csv(str_c(dirData, fileDonors))) %>% 
   inner_join(tibble(donorFileID = str_remove(donorDirectories, 
                                              "normalized_microarray_"),
-                    donorPath = str_c(pathData, 
+                    donorPath = str_c(dirMicroarray, 
                                       donorDirectories, 
                                       "/")),
              by = "donorFileID") %>% 
@@ -94,9 +123,9 @@ message("Writing to file...")
 #Write gene expression matrix
 exprfile <- paste0("HumanExpressionMatrix_samples_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["GeneExpression"]],
-          file = paste0("data/", exprfile))
+          file = paste0(dirData, exprfile))
 
 #Write sample information
 samplefile <- paste0("SampleInformation_pipeline_v", args[["version"]], ".csv")
 write_csv(x = listData[["SampleInfo"]],
-          file = paste0("data/", samplefile))
+          file = paste0(dirData, samplefile))
