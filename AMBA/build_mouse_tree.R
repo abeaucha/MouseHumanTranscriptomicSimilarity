@@ -13,29 +13,79 @@
 
 # Packages -------------------------------------------------------------------
 
-message("Initializing...")
-
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(data.tree))
 suppressPackageStartupMessages(library(rjson))
+suppressPackageStartupMessages(library(optparse))
+
+
+# Command line arguments -----------------------------------------------------
+
+option_list <- list(
+  make_option("--datadir",
+              type = "character",
+              default = "data/",
+              help = paste("Directory containing expression matrix CSV files.",
+                           "[default %default]")),
+  make_option("--imgdir",
+              type = "character",
+              default = "data/imaging/",
+              help = "Directory containing imaging files. [default %default]"),
+  make_option("--infile",
+              type = "character",
+              help = paste("Name of CSV file containing the voxel-wise",
+                           "expression matrix.")),
+  make_option("--outfile",
+              type = "character",
+              default = "MouseExpressionTree_DSURQE.RData",
+              help = "Name of .RData file in which to export the tree."),
+  make_option("--treefile",
+              type = "character",
+              default = "DSURQE_tree.json",
+              help = "Name of JSON file containing hierarchical ontology."),
+  make_option("--defs",
+              type = "character",
+              help = paste("Name of CSV file containing the names of the", 
+                           "neuroanatomical regions corresponding to the",
+                           "nodes of the tree in --treefile"))
+)
+
+args <- parse_args(OptionParser(option_list = option_list))
+
+if (is.null(args[["infile"]])){
+  stop("Argument --infile empty with no default.")
+}
+
+if (is.null(args[["defs"]])){
+  stop("Argument --defs empty with no default.")
+}
 
 
 # Functions ------------------------------------------------------------------
 
 #Import tree functions
-source("../functions/tree_tools.R")
+working_dir <- getwd()
 
+script_dir <- commandArgs(trailingOnly = FALSE) %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>%
+  dirname()  
 
-# Variables ------------------------------------------------------------------
+path_tree_tools <- str_c(working_dir, 
+                         script_dir, 
+                         "../functions/tree_tools.R", 
+                         sep = "/")
 
-dirData <- "data/"
-dirImaging <- "data/imaging/"
-fileExpr <- "MouseExpressionMatrix_ROI_DSURQE_coronal_maskcoronal_log2_grouped_imputed.csv"
-fileTree <- "DSURQE_tree.json"
-fileAtlasDefs <- "DSURQE_40micron_R_mapping_long.csv"
+source(path_tree_tools)
 
 
 # Import ---------------------------------------------------------------------
+
+dirData <- args[["datadir"]]
+dirImaging <- args[["imgdir"]]
+fileExpr <- args[["infile"]]
+fileTree <- args[["treefile"]]
+fileAtlasDefs <- args[["defs"]]
 
 #Import expression data
 message("Importing expression data...")
@@ -75,9 +125,7 @@ treeMouseExpr$Do(function(node){
 
 # Write ----------------------------------------------------------------------
 
-message("Writing to file...")
-
-fileOut <- "MouseExpressionTree_DSURQE.RData"
+message(str_c("Writing to file: ", args[["outfile"]], "..."))
 
 save(treeMouseExpr, 
-     file = str_c(dirData, fileOut))
+     file = str_c(dirData, args[["outfile"]]))
