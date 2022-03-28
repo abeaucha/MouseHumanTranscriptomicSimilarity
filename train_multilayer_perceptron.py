@@ -1,12 +1,15 @@
-# train_multilayer_perceptron.py -----------------------------------------------
-#
-# This script runs a multilayer perceptron model. 
-#
-#
-#
+# ----------------------------------------------------------------------------
+# train_multilayer_perceptron.py 
+# Author: Antoine Beauchamp
 # Created: December 15th, 2020
-# Edited: March 10th, 2022
-# -----------------------------------------------------------------------------
+
+"""
+Train a multi-layer perceptron
+
+Description
+-----------
+
+"""
 
 # Packages -------------------------------------------------------------------
 
@@ -30,9 +33,7 @@ from skorch.helper            import DataFrameTransformer
 
 from sklearn.metrics import accuracy_score, confusion_matrix
 
-
-
-# Functions -------------------------------------------------------------------
+# Functions ------------------------------------------------------------------
 
 def parse_args():
     
@@ -42,45 +43,60 @@ def parse_args():
         "--datadir",
         type = str,
         default = 'data/',
-        help = "Directory containing input data"
+        help = "Directory containing input data."
     )
     
     parser.add_argument(
         "--outdir",
         type = str,
         default = 'data/MLP_outcomes/',
-        help = "Directory in which to write neural net outcomes"
+        help = "Directory in which to write neural net outcomes."
     )
     
     parser.add_argument(
         "--labels",
         type = str,
         default = 'region5',
-        choices = ['region5', 'region11', 'region28', 'region46', 'region67', 'region134'],
-        help = "Class of mouse labels on which to train"
+        choices = ['region5', 
+                   'region11',
+                   'region28',
+                   'region46',
+                   'region67',
+                   'region134'],
+        help = "Class of mouse labels on which to train."
     )
     
     parser.add_argument(
         "--mousedata",
         type = str,
         default = 'region134',
-        choices = ['region5', 'region11', 'region28', 'region46', 'region67', 'region134'],
-        help = "Mouse data to apply the trained network to"
+        choices = ['region5', 
+                   'region11',
+                   'region28',
+                   'region46',
+                   'region67',
+                   'region134'],
+        help = "Mouse data to apply the trained network to."
     )
     
     parser.add_argument(
         "--humandata",
         type = str,
         default = 'region166',
-        choices = ['region5', 'region16', 'region56', 'region79', 'region88', 'region166'],
-        help = "Human data to apply the trained network to"
+        choices = ['region5',
+                   'region16',
+                   'region56',
+                   'region79',
+                   'region88',
+                   'region166'],
+        help = "Human data to apply the trained network to."
     )
     
     parser.add_argument(
         "--nunits",
         type = int,
         default = 500,
-        help = "Number of hidden units in the network"
+        help = "Number of hidden units in the network."
     )
     
     parser.add_argument(
@@ -94,14 +110,14 @@ def parse_args():
         "--nepochs",
         type = int,
         default = 200,
-        help = "Number of epochs to train over"
+        help = "Number of epochs to train over."
     )
     
     parser.add_argument(
         "--learningrate",
         type = float,
         default = 1e-5,
-        help = "Learning rate during training"
+        help = "Learning rate during training."
     )
     
     parser.add_argument(
@@ -109,7 +125,8 @@ def parse_args():
         type = str,
         default = 'false',
         choices = ['true', 'false'],
-        help = "Option to compute confusion matrix from training set predictions"
+        help = ("Option to compute confusion matrix from training set "
+                "predictions.")
     )
     
     parser.add_argument(
@@ -117,13 +134,13 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = "Option to transform the voxel-wise data using the modified MLP"
+        help = ("Option to transform the voxel-wise data using the "
+                "modified MLP.")
     )
     
     args = vars(parser.parse_args())
     
     return args
-    
     
     
 # Main ------------------------------------------------------------------------
@@ -143,17 +160,20 @@ def main():
         print('Output directory {} not found. Creating it...'.format(outdir))
         os.mkdir(outdir)
     
-    
     # Import data -------------------------------------------------------------
 
     #Set up files for import
     #Mouse voxelwise data to train over
-    file_voxel = "MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv"
+    file_voxel = ("MouseExpressionMatrix_"
+                  "voxel_coronal_maskcoronal_"
+                  "log2_grouped_imputed_labelled_scaled.csv")
     filepath_voxel = os.path.join(datadir, file_voxel)
     
     #Mouse and human data to pass to network
-    file_mouse = "MouseExpressionMatrix_ROI_{}_scaled.csv".format(args['mousedata'].capitalize())
-    file_human = "HumanExpressionMatrix_ROI_{}_scaled.csv".format(args['humandata'].capitalize())
+    file_mouse = ("MouseExpressionMatrix_ROI_{}_scaled.csv"
+                  .format(args['mousedata'].capitalize()))
+    file_human = ("HumanExpressionMatrix_ROI_{}_scaled.csv"
+                  .format(args['humandata'].capitalize()))
     filepath_mouse = os.path.join(datadir, file_mouse)
     filepath_human = os.path.join(datadir, file_human)
 
@@ -163,8 +183,6 @@ def main():
     dfExprVoxel = pd.read_csv(filepath_voxel)
     dfExprMouse = pd.read_csv(filepath_mouse)
     dfExprHuman = pd.read_csv(filepath_human)
-
-
 
     # Process data ------------------------------------------------------------
 
@@ -201,8 +219,6 @@ def main():
     # Extract the arrays from the dictionaries.
     X = X_temp['X']
     y = y_temp[labelcol]
-    
-
 
     # Initialize the network --------------------------------------------------
 
@@ -264,14 +280,12 @@ def main():
         )
 
     
-    
-    # Train the network -------------------------------------------------------
+    # Train the network ------------------------------------------------------
     
     if is_available() == True:
         print("GPU available. Training network using GPU...")
     else:
         print("GPU unavailable. Training network using CPU...")
-    
     
     #Fit the network
     net.fit(X, y)
@@ -286,9 +300,7 @@ def main():
     dfLabels['DummyVariable'] = y
     dfLabelsUnique = dfLabels.sort_values('DummyVariable').drop_duplicates()
     
-    
-    
-    # Compute training confusion matrix ---------------------------------------
+    # Compute training confusion matrix --------------------------------------
     
     #Switch to compute confusion matrix
     if args['confusionmatrix'] == 'true':
@@ -302,7 +314,9 @@ def main():
         dfConfusionMat.columns = dfLabelsUnique[labelcol].astype('str')
     
         #Assign region names to the confusion matrix rows
-        dfConfusionMat['TrueLabels'] = dfLabelsUnique[labelcol].astype('str').reset_index(drop = True)
+        dfConfusionMat['TrueLabels'] = (dfLabelsUnique[labelcol]
+                                        .astype('str')
+                                        .reset_index(drop = True))
         
         #File to save confusion matrix
         fileConfMat = "MLP_ConfusionMatrix_Training"+\
@@ -312,11 +326,11 @@ def main():
         "_L2"+str(args['L2'])+".csv"
     
         #Write confusion matrix to file
-        dfConfusionMat.to_csv(os.path.join(outdir, fileConfMat), index = False)
+        dfConfusionMat.to_csv(os.path.join(outdir, fileConfMat), 
+                              index = False)
 
 
-
-    # Predict label probabilities for mouse/human data ------------------------
+    # Predict label probabilities for mouse/human data -----------------------
         
     print("Applying trained network to mouse and human data...")
 
@@ -351,17 +365,18 @@ def main():
     "_HumanProb_"+args['humandata'].capitalize()+'.csv'
     
     #Write probability data to file
-    dfPredictionsMouse.to_csv(os.path.join(outdir, fileMouseProb), index = False)
-    dfPredictionsHuman.to_csv(os.path.join(outdir, fileHumanProb), index = False)
+    dfPredictionsMouse.to_csv(os.path.join(outdir, fileMouseProb), 
+                              index = False)
+    dfPredictionsHuman.to_csv(os.path.join(outdir, fileHumanProb), 
+                              index = False)
     
-    
-
-    # Extract hidden layer for mouse/human data -------------------------------
+    # Extract hidden layer for mouse/human data ------------------------------
 
     #Change the mode of the network to extract a hidden layer
     net.module_.apply_output_layer = False
     
-    #Apply the modified network to the mouse and human data to get the hidden units
+    #Apply the modified network to the mouse and human data to get the
+    #hidden units
     dfMouseTransformed = pd.DataFrame(net.predict_proba(X_Mouse))
     dfHumanTransformed = pd.DataFrame(net.predict_proba(X_Human))
     
@@ -393,7 +408,8 @@ def main():
         dfMouseVoxelTransformed = pd.DataFrame(net.predict_proba(X))
         dfMouseVoxelTransformed['Region'] = dfLabels[labelcol]
         
-        file_voxel_human = "HumanExpressionMatrix_Samples_pipeline_v1_labelled.csv"
+        file_voxel_human = ("HumanExpressionMatrix_"
+                            "samples_pipeline_v1_labelled.csv")
         filepath_voxel_human = os.path.join(datadir, file_voxel_human)
         dfExprVoxelHuman = pd.read_csv(filepath_voxel_human)
         indLabelsHuman = dfExprVoxelHuman.columns.str.match('Region')
@@ -414,9 +430,10 @@ def main():
         "_L2"+str(args['L2'])+\
         "_HumanVoxelTx.csv"
 
-        dfMouseVoxelTransformed.to_csv(os.path.join(outdir,fileMouseVoxelTx), index = False)
-        dfHumanVoxelTransformed.to_csv(os.path.join(outdir,fileHumanVoxelTx), index = False)
+        dfMouseVoxelTransformed.to_csv(os.path.join(outdir,fileMouseVoxelTx), 
+                                       index = False)
+        dfHumanVoxelTransformed.to_csv(os.path.join(outdir,fileHumanVoxelTx), 
+                                       index = False)
         
-    
 if __name__ == "__main__":
     main()
