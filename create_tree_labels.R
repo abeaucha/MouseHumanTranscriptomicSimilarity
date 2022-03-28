@@ -1,21 +1,55 @@
-# create_tree_labels.R ----------------------------------------------------------------
-#
-# 
-# 
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# create_tree_labels.R 
+# Author: Antoine Beauchamp
 # Created: February 16th, 2021
-# Edited: March 9th, 2022
+#
+# Description
+# -----------
+# This script defines a set of mouse and human atlas labels that can be
+# used to prune the neuroanatomical trees to the desired level of granularity
 
-library(stringr)
-library(data.tree)
+# Packages -------------------------------------------------------------------
+
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(optparse))
+
+# Command line arguments -----------------------------------------------------
+
+option_list <- list(
+  make_option("--outdir",
+              type = "character",
+              default = "data/",
+              help = paste("Directory in which to save the .RData file",
+                           "containing the label sets. [default %default")),
+  make_option("--mousetree",
+              type = "character",
+              help = "Path to mouse tree .RData file."),
+  make_option("--humantree",
+              type = "character",
+              help = "Path to human tree .RData file.")
+)
+
+args <- parse_args(OptionParser(option_list = option_list))
+
+# Functions ------------------------------------------------------------------
+
+working_dir <- getwd()
+
+script_dir <- commandArgs() %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>% 
+  dirname()
+
+path_tools <- file.path(working_dir, script_dir, "functions", "tree_tools.R")
+
+souce(path_tools)
 
 # Mouse labels 134 / Human labels 166 -------------------------------------------
 
-source("functions/tree_tools.R")
-
 #Import AMBA tree
-load("AMBA/data/MouseExpressionTree_DSURQE.RData")
+
+load(args[["mousetree"]])
 
 #Remove white matter and ventricles
 pruneAnatTree(treeMouseExpr,
@@ -30,7 +64,7 @@ labelsMouse_134 <- treeMouseExpr$Get("name", filterFun = isLeaf)
 names(labelsMouse_134) <- NULL
 
 #Import AHBA data tree
-load("AHBA/data/HumanExpressionTree.RData")
+load(args[["humantree"]])
 
 #Remove white matter and ventricles
 pruneAnatTree(treeHumanExpr,
@@ -546,8 +580,8 @@ listLabelsHuman = list(Region5 = labelsHuman_5,
 listLabelsHumanReordered <- list(Region16_reordered = labelsHuman_16_reordered,
                                  Region88_reordered = labelsHuman_88_reordered)
 
-fileout <- "data/TreeLabels.RData"
-fileout_reordered <- "data/TreeLabelsReordered.RData"
+fileout <- file.path(args[["outdir"]], "TreeLabels.RData")
+fileout_reordered <- file.path(args[["outdir"]], "TreeLabelsReordered.RData")
 
 save(listLabelsMouse,
      listLabelsHuman,
