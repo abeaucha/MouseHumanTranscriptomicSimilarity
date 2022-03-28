@@ -37,7 +37,11 @@ option_list <- list(
               default = "data/",
               type = "character",
               help = paste("Directory in which to save processed data.",
-                           "[default %default]"))
+                           "[default %default]")),
+  make_option("--verbose",
+              default = "true",
+              type = "character",
+              help = "[default %default]")
 )
 
 args <- parse_args(OptionParser(option_list = option_list))
@@ -51,7 +55,7 @@ if (!(args[["aggregate"]] %in% c("true", "false"))) {
 }
 
 if (args[["scale"]] == "false" & args[["aggregate"]] == "false"){
-  stop()
+  stop(paste("Both --scale and --aggregate were false. This does nothing."))
 }
 
 # Functions ------------------------------------------------------------------
@@ -72,8 +76,12 @@ source(path_processing_tools)
 
 # Main -----------------------------------------------------------------------
 
+verbose <- ifelse(args[["verbose"]] == 'true', TRUE, FALSE)
+
+if(verbose){message("Importing data...")}
+
 #Import data
-dfExpression <- suppressMessages(data.table::fread(args["infile"],
+dfExpression <- suppressMessages(data.table::fread(args[["infile"]],
                                                    header = TRUE)) %>% 
   as_tibble()
 
@@ -81,6 +89,8 @@ dfExpression <- suppressMessages(data.table::fread(args["infile"],
 genes <- colnames(dfExpression)[!str_detect(colnames(dfExpression), "Region")]
 
 if (args[["scale"]] == "true") {
+  
+  if(verbose){message("Scaling data...")}
   
   #Extract labels from data frame
   dfLabels <- dfExpression %>% select(contains("Region"))
@@ -101,6 +111,8 @@ if (args[["scale"]] == "true") {
 }
 
 if (args[["aggregate"]] == "true") {
+  
+  if(verbose){message("Aggregating data...")}
   
   labels <- str_c("Region", args[["nlabels"]])
   
@@ -125,6 +137,8 @@ if (args[["aggregate"]] == "true") {
   }
   
 }
+
+if(verbose){message("Writing to file...")}
 
 write_csv(dfExpression,
           file = file.path(args[["outdir"]], outfile))
