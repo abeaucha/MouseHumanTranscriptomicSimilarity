@@ -1,3 +1,13 @@
 #!/bin/bash
 
+#On MICe machine
+module purge
+
 source activate_venv
+
+source pipeline_AMBA
+source pipeline_AHBA
+source process_data
+
+deactivate
+
