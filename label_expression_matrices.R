@@ -1,52 +1,77 @@
-# label_data.R ------------------------------------------------------------
-#
-# 
-# 
-#
+# ----------------------------------------------------------------------------
+# label_expression_matrices.R 
 # Antoine Beauchamp
-# Edited: March 9th, 2022
+# 
+# Description
+# -----------
+# 
 
-# Libraries -------------------------------------------------------------------
+# Libraries ------------------------------------------------------------------
 suppressPackageStartupMessages(library(tidyverse))
-library(RMINC)
-library(data.tree)
-library(optparse)
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(optparse))
 
 
-# Command line arguments ------------------------------------------------------
+# Command line arguments -----------------------------------------------------
 
 option_list <- list(
   make_option("--mousematrix",
               type = "character",
-              help = "Path to CSV file containing mouse voxel expression matrix to label. [default %default]"),
+              help = paste("Path to CSV file containing mouse voxel",
+                           "expression matrix to label.")),
   make_option("--humanmatrix",
               type = "character",
-              help = "Path to CSV file containing human sample expression matrix to label. [default %default]"),
+              help = paste("Path to CSV file containing human sample",
+                           "expression matrix to label.")),
   make_option("--mousetree",
-              type = "character"),
+              type = "character",
+              help = paste("")),
   make_option("--humantree",
-              type = "character"),
+              type = "character",
+              help = paste("")),
   make_option("--homologs",
               type = "character",
-              help = "Path to CSV file containing mouse and human gene homologs"),
+              help = paste("Path to CSV file containing mouse and human gene",
+                           "homologs")),
   make_option("--outdir",
               type = "character",
-              default = "data/"),
+              default = "data/",
+              help = paste("[default %default]")),
   make_option("--savemouse",
               type = "character",
               default = "true",
-              help = "Option to save labelled mouse data to file [default %default]"),
+              help = paste("Option to save labelled mouse data to file",
+                           "[default %default]")),
   make_option("--savehuman",
               type = "character",
               default = "true",
-              help = "Option to save labelled human data to file [default %default]")
+              help = paste("Option to save labelled human data to file",
+                           "[default %default]"))
 )
 
 
-# Functions -------------------------------------------------------------------
+# Functions ------------------------------------------------------------------
 
-source("functions/tree_tools.R")
-source("functions/processing_tools.R")
+working_dir <- getwd()
+
+script_dir <- commandArgs() %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>% 
+  dirname()
+
+path_tree_tools <- file.path(working_dir, 
+                             script_dir, 
+                             "functions", 
+                             "tree_tools.R")
+source(path_tree_tools)
+
+path_processing_tools <- file.path(working_dir,
+                                   script_dir,
+                                   "functions",
+                                   "processing_tools.R")
+source(path_processing_tools)
+
 
 #' Label voxels/samples with neuroanatomical regions
 #'
@@ -89,19 +114,10 @@ labelRegions <- function(measurements, tree, treefield){
 }
 
 
-# Paths -----------------------------------------------------------------------
+# Paths ----------------------------------------------------------------------
 
 #Parse command line args
 args <- parse_args(OptionParser(option_list = option_list))
-
-args <- list(mousematrix = "AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv",
-             humanmatrix = "AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv",
-             mousetree =  "AMBA/data/MouseExpressionTree_DSURQE.RData",
-             humantree = "AHBA/data/HumanExpressionTree.RData",
-             homologs = "data/MouseHumanGeneHomologs.csv",
-             outdir = "data/",
-             savemouse = "true",
-             savehuman = "true") 
 
 if (is.null(args[["mousematrix"]])){
   stop("No input file given to --mousematrix")
@@ -113,11 +129,13 @@ if (is.null(args[["humanmatrix"]])){
 
 
 if (!(args[["savemouse"]] %in% c("true", "false"))) {
-  stop(str_c("Argument --savemouse must be one of [true, false] (got ", args[["savemouse"]], ")"))
+  stop(paste("Argument --savemouse must be one of [true, false] (got ", 
+             args[["savemouse"]], ")"))
 }
 
 if (!(args[["savehuman"]] %in% c("true", "false"))) {
-  stop(str_c("Argument --savehuman must be one of [true, false] (got ", args[["savehuman"]], ")"))
+  stop(paste("Argument --savehuman must be one of [true, false] (got ", 
+             args[["savehuman"]], ")"))
 }
 
 
@@ -153,13 +171,18 @@ message("Labelling data from human file: ", fileHumanMat)
 maskFlag <- str_extract(fileMouseMat, "mask[a-z]+")
 
 
-# Importing and processing ----------------------------------------------------
+# Importing and processing ---------------------------------------------------
 
 message("Importing data...")
 
-#Load expression data
-dfExprMouse <- suppressMessages(read_csv(fileMouseMat))
-dfExprHuman <- suppressMessages(read_csv(fileHumanMat))
+#Import expression matrices
+dfExprMouse <- suppressMessages(data.table::fread(fileMouseMat, 
+                                                  header = TRUE)) %>% 
+  as_tibble()
+
+dfExprHuman <- suppressMessages(data.table::fread(fileHumanMat,
+                                                  header = TRUE)) %>% 
+  as_tibble()
 
 #Subset genes for mouse-human homologs
 listExpr <- intersectGeneHomologs(data = list(Mouse = dfExprMouse, 
@@ -182,7 +205,7 @@ dfExprHuman <- dfExprHuman %>% select(-Gene)
 colnames(dfExprMouse) <- str_c("V", colnames(dfExprMouse))
 
 
-# Build the mouse data tree ---------------------------------------------------
+# Build the mouse data tree --------------------------------------------------
 
 message("Importing mouse data tree...")
 
@@ -260,7 +283,8 @@ colnames(dfExprMouse) <- genesMouse
 colnames(dfExprHuman) <- genesHuman
 
 #Convert back to data frame
-#Note: This will create new names if there are duplicated genes. This is fine and desired.
+#Note: This will create new names if there are duplicated genes. 
+#This is fine and desired.
 dfExprMouse <- dfExprMouse %>% 
   as_tibble(rownames = "Voxels", .name_repair = "unique") %>% 
   column_to_rownames("Voxels")
@@ -279,7 +303,9 @@ for (l in 1:length(listLabelsMouse)){
   pruneAnatTree(treeMousePruned, listLabelsMouse[[l]], method = "BelowNode")
   
   #Get the region labels for every voxel
-  dfExprMouse[,names(listLabelsMouse)[[l]]] <- labelRegions(rownames(dfExprMouse), treeMousePruned, "voxels")
+  dfExprMouse[,names(listLabelsMouse)[[l]]] <- labelRegions(rownames(dfExprMouse),
+                                                            treeMousePruned,
+                                                            "voxels")
 }
 
 #Iterate over human parcellations
@@ -290,7 +316,9 @@ for (l in 1:length(listLabelsHuman)){
   pruneAnatTree(treeHumanPruned, listLabelsHuman[[l]], method = "BelowNode")
   
   #Get the region labels
-  dfExprHuman[,names(listLabelsHuman)[[l]]] <- labelRegions(rownames(dfExprHuman), treeHumanPruned, "samples")
+  dfExprHuman[,names(listLabelsHuman)[[l]]] <- labelRegions(rownames(dfExprHuman),
+                                                            treeHumanPruned, 
+                                                            "samples")
 }
 
 #Remove identifiers from rownames
@@ -298,7 +326,7 @@ rownames(dfExprMouse) <- NULL
 rownames(dfExprHuman) <- NULL
 
 
-# Write to file ---------------------------------------------------------------
+# Write to file --------------------------------------------------------------
 
 message("Writing to file...")
 

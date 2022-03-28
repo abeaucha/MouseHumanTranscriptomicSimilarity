@@ -2,20 +2,28 @@
 
 #Create atlas labels
 echo "Creating pruned atlas labels from neuroanatomical trees..."
-Rscript create_tree_labels.R \
-	--outdir data/ \
-	--mousetree AMBA/data/MouseExpressionTree_DSURQE.RData \
-	--humantree AHBA/data/HumanExpressionTree.RData
+#Rscript create_tree_labels.R \
+#	--outdir data/ \
+#	--mousetree AMBA/data/MouseExpressionTree_DSURQE.RData \
+#	--humantree AHBA/data/HumanExpressionTree.RData
 
 #Define canonical neuroanatomical pairs
 echo "Define canonical neuroanatomical pairs..."
-Rscript create_neuro_pairs.R \
-	--outdir data/ \
-	--outfile MouseHumanMatches_H88M67.csv
+#Rscript create_neuro_pairs.R \
+#	--outdir data/ \
+#	--outfile MouseHumanMatches_H88M67.csv
 
 #Label expression matrices
 echo "Labelling mouse and human expression matrices..."
-#Rscript label_expression_matrices.R --mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv --humanmatrix AHBA/data/HumanExpressionMatrix_Samples_pipeline_v1.csv --mousetree AMBA/data/MouseExpressionTree_DSURQE.RData --humantree AHBA/data/HumanExpressionTree.RData --homologs data/MouseHumanGeneHomologs.csv --outdir data/ --savemouse true --savehuman true
+Rscript label_expression_matrices.R \
+	--mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv \
+	--humanmatrix AHBA/data/HumanExpressionMatrix_samples_pipeline_v1.csv \
+	--mousetree AMBA/data/MouseExpressionTree_DSURQE.RData \
+	--humantree AHBA/data/HumanExpressionTree.RData \
+	--homologs data/MouseHumanGeneHomologs.csv \
+	--outdir data/ \
+	--savemouse true \
+	--savehuman true
 
 #Normalize and aggregate labelled expression matrices
 echo "Processing labelled expression matrices..."
