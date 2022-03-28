@@ -23,6 +23,7 @@
 
 # On MICe machines
 #module purge
+#source AMBA/resample_DSURQE_CCFv3
 
 # Activate the python virtual environment
 source activate_venv

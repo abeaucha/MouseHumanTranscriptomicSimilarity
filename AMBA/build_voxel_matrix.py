@@ -74,7 +74,7 @@ def parse_args():
         '--outdir',
         type = str,
         default = 'data/',
-        help = "Directory in which to save the expression matrix"
+        help = "Directory in which to save the expression matrix."
     )
     
     parser.add_argument(
@@ -82,7 +82,7 @@ def parse_args():
         type = str,
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
-        help = "AMBA dataset to import"
+        help = "AMBA dataset to import."
     )
     
     parser.add_argument(
@@ -90,7 +90,7 @@ def parse_args():
         type = str,
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
-        help = "Mask to apply to expression images"
+        help = "Mask to apply to expression images."
 
     )
     
@@ -99,7 +99,7 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = "Option to transform expression data to log2"
+        help = "Option to transform expression data to log2."
     )
     
     parser.add_argument(
@@ -107,14 +107,15 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = "Option to group multiple ISH experiments per gene"
+        help = "Option to group multiple ISH experiments per gene."
     )
     
     parser.add_argument(
         '--threshold',
         type = float,
         default = 0.2,
-        help = ""
+        help = ("Maximal fraction of empty voxels allowed in an ISH "
+                "image to be included in the final matrix.")
     )
     
     parser.add_argument(
@@ -123,7 +124,7 @@ def parse_args():
         default = 'true',
         choices = ['true', 'false'],
         help = ("Option to impute empty voxels using "
-                "K-nearest neighbours imputation")
+                "K-nearest neighbours imputation.")
     )
     
     parser.add_argument(
@@ -131,7 +132,7 @@ def parse_args():
         type = str,
         default = 'true',
         choices = ['true', 'false'],
-        help = "Option to import image files in parallel"
+        help = "Option to import image files in parallel."
     )
     
     parser.add_argument(
@@ -139,7 +140,7 @@ def parse_args():
         type = int,
         default = mp.cpu_count(),
         help = ("Number of processors to use in parallel. "
-               "Ignored if --parallel set to false.")
+                "Ignored if --parallel set to false.")
     )
     
     args = vars(parser.parse_args())

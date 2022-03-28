@@ -34,21 +34,21 @@ def parse_args():
         type = str,
         default = 'coronal',
         choices = ['coronal', 'sagittal'],
-        help = 'AMBA dataset to import'
+        help = 'AMBA dataset to import.'
     )
 
     parser.add_argument(
         '--outdir',
         type = str,
         default = 'expression/',
-        help = 'Path to directory in which to download the data'
+        help = 'Path to directory in which to download the data.'
     )
     
     parser.add_argument(
         '--metadata',
         type = str,
         default = 'metadata.csv',
-        help = 'File in --outdir containing AMBA metadata'
+        help = 'File in --outdir containing AMBA metadata.'
     )
     
     parser.add_argument(
@@ -56,14 +56,14 @@ def parse_args():
         type = str,
         default = 'false',
         choices = ['true', 'false'],
-        help = 'Option to run in parallel'
+        help = 'Option to run in parallel.'
     )
     
     parser.add_argument(
         '--nproc',
         type = int,
         default = mp.cpu_count(),
-        help = 'Number of CPUs to use in parallel'
+        help = 'Number of CPUs to use in parallel.'
     )
 
     args = vars(parser.parse_args())
