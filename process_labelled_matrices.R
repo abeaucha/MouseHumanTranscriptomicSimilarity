@@ -1,34 +1,44 @@
+# ----------------------------------------------------------------------------
 # process_labelled_matrices.R
-#
 # Antoine Beauchamp
 # Created: August 25th, 2021
-# Edited: March 9th, 2022
+#
+# Description
+# -----------
 
-#Libraries
+# Packages -------------------------------------------------------------------
+
 suppressPackageStartupMessages(library(tidyverse))
-library(optparse)
+suppressPackageStartupMessages(library(optparse))
 
-# Command line arguments 
+# Command line arguments -----------------------------------------------------
 
 option_list <- list(
   make_option("--infile",
-              type = "character"),
+              type = "character",
+              help = paste("Path to CSV file containing labelled expression",
+                           "matrix.")),
   make_option("--scale",
               type = "character",
-              default = "true"),
+              default = "true",
+              help = paste("Option to scale expression data",
+                           "[default %default]")),
   make_option("--aggregate",
               type = "character",
-              default = "false"),
+              default = "false",
+              help = paste("Option to aggregate expression data under a",
+                           "set of atlas labels [default %default]")),
   make_option("--nlabels",
-              type = "integer"),
+              type = "integer",
+              help = paste("Number of labels in the atlas used to",
+                           "aggregate the data. Ignored if --aggregate",
+                           "is false.")),
   make_option("--outdir",
               default = "data/",
-              type = "character")
+              type = "character",
+              help = paste("Directory in which to save processed data.",
+                           "[default %default]"))
 )
-
-
-#Functions
-source("functions/processing_tools.R")
 
 args <- parse_args(OptionParser(option_list = option_list))
 
@@ -44,9 +54,28 @@ if (args[["scale"]] == "false" & args[["aggregate"]] == "false"){
   stop()
 }
 
+# Functions ------------------------------------------------------------------
+
+working_dir <- getwd()
+
+script_dir <- commandArgs() %>% 
+  str_subset("--file=") %>% 
+  str_remove("--file=") %>% 
+  dirname()
+
+path_processing_tools <- file.path(working_dir,
+                                   script_dir,
+                                   "functions",
+                                   "processing_tools.R")
+source(path_processing_tools)
+
+
+# Main -----------------------------------------------------------------------
 
 #Import data
-dfExpression <- suppressMessages(read_csv(args["infile"]))
+dfExpression <- suppressMessages(data.table::fread(args["infile"],
+                                                   header = TRUE)) %>% 
+  as_tibble()
 
 #Extract genes list from data
 genes <- colnames(dfExpression)[!str_detect(colnames(dfExpression), "Region")]
@@ -98,4 +127,4 @@ if (args[["aggregate"]] == "true") {
 }
 
 write_csv(dfExpression,
-          file = str_c(args[["outdir"]],outfile))
+          file = file.path(args[["outdir"]], outfile))
