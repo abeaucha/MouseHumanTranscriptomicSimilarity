@@ -1,10 +1,33 @@
-# MouseHumanMatches.R ---------------------------------------------------------
-#
-#
-#
-# Antoine Beauchamp
+# ----------------------------------------------------------------------------
+# create_neuro_pairs.R
+# Author: Antoine Beauchamp
 # Created: August 4th, 2021
-# Edited: March 14th, 2022
+#
+# Description
+# -----------
+# This script defines a set of canonical neuroanatomical pairs between the
+# mouse and human brain atlases
+
+# Packages -------------------------------------------------------------------
+
+suppressPackageStartupMessages(library(optparse))
+
+# Command line arguments -----------------------------------------------------
+
+option_list(
+  make_option("--outdir",
+              type = "character",
+              default = "data/",
+              help = paste("Directory in which to save the CSV file.",
+                           "[default %default]")),
+  make_option("--outfile",
+              type = "character",
+              default = "MouseHumanMatches_H88M67.csv",
+              help = paste("Name of CSV file containing mouse-human",
+                           "neuroanatomical pairs. [default %default]"))
+)
+
+args <- parse_args(OptionParser(option_list = option_list))
 
 # Mouse labels 67 / Human labels 88 -------------------------------------------
 
@@ -82,7 +105,7 @@ dfMouseHumanMatches_H88M67 <- tibble::tibble(Mouse = c("Claustrum",
                                                        "cerebellar nuclei"))
 
 
-fileout <- "data/MouseHumanMatches_H88M67.csv"
+outfile <- file.path(args[["outdir"]], args[["outfile"]])
 readr::write_csv(x = dfMouseHumanMatches_H88M67, 
-                 file = fileout)
+                 file = outfile)
 
