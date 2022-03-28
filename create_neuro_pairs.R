@@ -14,7 +14,7 @@ suppressPackageStartupMessages(library(optparse))
 
 # Command line arguments -----------------------------------------------------
 
-option_list(
+option_list <- list(
   make_option("--outdir",
               type = "character",
               default = "data/",

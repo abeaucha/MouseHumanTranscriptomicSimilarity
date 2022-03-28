@@ -43,7 +43,7 @@ script_dir <- commandArgs() %>%
 
 path_tools <- file.path(working_dir, script_dir, "functions", "tree_tools.R")
 
-souce(path_tools)
+source(path_tools)
 
 # Mouse labels 134 / Human labels 166 -------------------------------------------
 
