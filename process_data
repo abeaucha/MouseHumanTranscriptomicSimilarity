@@ -2,7 +2,10 @@
 
 #Create atlas labels
 echo "Creating pruned atlas labels from neuroanatomical trees..."
-Rscript create_tree_labels.R
+Rscript create_tree_labels.R \
+	--outdir data/ \
+	--mousetree AMBA/data/MouseExpressionTree_DSURQE.RData \
+	--humantree AHBA/data/HumanExpressionTree.RData
 
 Rscript create_neuro_pairs.R \
 	--outdir data/ \
