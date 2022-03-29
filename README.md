@@ -1,5 +1,4 @@
-### Transcriptomic similarity in the mouse and human brain
-==========================================================
+## Transcriptomic similarity in the mouse and human brain
 
 Antoine Beauchamp
 
