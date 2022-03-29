@@ -10,6 +10,5 @@ source pipeline_AHBA
 source process_data
 source generate_latent_spaces
 
-
 deactivate
 
