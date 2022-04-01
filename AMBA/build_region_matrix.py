@@ -79,6 +79,14 @@ def parse_args():
                 "atlas labels in --labels. Must reside in --imgdir.")
     )
     
+    parser.add_argument(
+        '--verbose',
+        type = str,
+        default = 'true',
+        choices = ['true', 'false'],
+        help = 'Verbosity.'
+    )
+    
     args = vars(parser.parse_args())
     
     return args
@@ -122,7 +130,8 @@ def main():
     #File containing voxel expression matrix
     
     try: 
-        print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
+        if verbose:
+            print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
         #Import voxel expression matrix
         dfExprVoxel = pd.read_csv(os.path.join(datadir, infile))
@@ -153,7 +162,8 @@ def main():
                                .format(mask, imgdir))
     
     #Import image mask, flatten and convert to numpy array
-    print("Importing mask volume: {} ...".format(mask))
+    if verbose:
+        print("Importing mask volume: {} ...".format(mask))
 
     maskVol = volumeFromFile(os.path.join(imgdir, mask))
     maskArray = np.array(maskVol.data.flatten())
@@ -163,7 +173,8 @@ def main():
         raise FileNotFoundError("Label file {} not found in imaging directory {}"
                                .format(labels, imgdir))
     
-    print("Importing DSURQE label volume: {} ...".format(labels))
+    if verbose:
+        print("Importing atlas label volume: {} ...".format(labels))
     
     #Import DSURQE label volume, flatten, and convert to numpy array
     labelVol = volumeFromFile(os.path.join(imgdir, labels))
@@ -177,7 +188,8 @@ def main():
         raise FileNotFoundError("Atlas definitions file {} not found in imaging "
                                 "directory {}".format(labels, imgdir)) 
     
-    print("Importing atlas label definitions: {} ...".format(defs))
+    if verbose:
+        print("Importing atlas label definitions: {} ...".format(defs))
     
     #Import atlas label definitions
     dfAtlasDefs = pd.read_csv(os.path.join(imgdir, defs))
@@ -185,12 +197,13 @@ def main():
     
     # Match labels to voxels -------------------------------------------------
         
-    print("Matching atlas labels to voxels...")
+    if verbose:
+        print("Matching atlas labels to voxels...")
 
-    #Initialize empty string array to match DSURQE regions to voxels
+    #Initialize empty string array to match atlas regions to voxels
     structArray = np.empty(len(labelArrayMasked), dtype = 'U100')
 
-    #Iterate over DSURQE regions and match to voxels
+    #Iterate over atlas regions and match to voxels
     for i, row in dfAtlasDefs.iterrows():
         lab = row['Label']
         indlab = labelArrayMasked == row['Label']
@@ -200,7 +213,7 @@ def main():
         else:
             structArray[indlab] = row['Structure']
     
-    #Assign DSURQE regions to new column in the data frame
+    #Assign atlas regions to new column in the data frame
     dfExprVoxelTranspose['Region'] = structArray
     
     #Remove voxels that are empty
@@ -210,7 +223,8 @@ def main():
     
     # Aggregate expression data ----------------------------------------------
     
-    print("Aggregating expression data...")
+    if verbose:
+        print("Aggregating expression data...")
     
     #Aggregate expression data by ROI
     dfExprRegionTranspose = (dfExprVoxelTranspose
@@ -227,10 +241,9 @@ def main():
 
     # Write ------------------------------------------------------------------
 
-    print("Writing to file...")
+    if verbose:
+        print("Writing to file...")
 
-    quit()
-    
     #Write regional expression matrix to csv
     dfExprRegion.to_csv(os.path.join(datadir, outfile))
     
