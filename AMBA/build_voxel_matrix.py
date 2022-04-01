@@ -143,10 +143,11 @@ def parse_args():
     )
     
     parser.add_argument(
-      '--verbose',
-      type = str,
-      choices = ['true', 'false'],
-      help = 'Verbosity.'
+        '--verbose',
+        type = str,
+        default = 'true',
+        choices = ['true', 'false'],
+        help = 'Verbosity.'
     )
     
     args = vars(parser.parse_args())
