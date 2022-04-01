@@ -70,7 +70,7 @@ def parse_args():
       '--verbose',
       type = str,
       choices = ['true', 'false'],
-      help = 'Verbosity'
+      help = 'Verbosity.'
     )
 
     args = vars(parser.parse_args())
