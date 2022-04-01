@@ -1,5 +1,5 @@
 
-# Allen Mouse Brain Atlas: Imaging files
+### Allen Mouse Brain Atlas: Imaging files
 
 - average_template_200um_mask.mnc: MRI mask in CCFv3 space at 200um resolution
 - average_template_200um.mnc: MRI template in CCFv3 space at 200um resolution
