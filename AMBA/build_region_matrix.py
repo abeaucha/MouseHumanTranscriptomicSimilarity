@@ -16,9 +16,9 @@ and aggregates the expression values for every region in an atlas.
 
 import argparse
 import os
-import numpy as np
-import pandas as pd
-from pyminc.volumes.factory import *
+import numpy                as np
+import pandas               as pd
+from pyminc.volumes.factory import volumeFromFile
 
 # Command line arguments -----------------------------------------------------
 
