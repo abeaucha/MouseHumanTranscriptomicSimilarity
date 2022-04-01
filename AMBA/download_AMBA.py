@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # download_AMBA.py
-# Author: Antoine Beauchamp
+# Authors: Antoine Beauchamp, Yohan Yee
 
 """
 Download in-situ hybridization data sets from the Allen Mouse Brain Atlas
