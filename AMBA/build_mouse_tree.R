@@ -49,7 +49,11 @@ option_list <- list(
               type = "character",
               help = paste("Name of CSV file containing the names of the", 
                            "neuroanatomical regions corresponding to the",
-                           "nodes of the tree in --treefile"))
+                           "nodes of the tree in --treefile")),
+  make_option("--verbose",
+              type = 'character',
+              default = 'true',
+              help = "Verbosity. [default %default]")
 )
 
 args <- parse_args(OptionParser(option_list = option_list))
@@ -87,12 +91,13 @@ dirImaging <- args[["imgdir"]]
 fileExpr <- args[["infile"]]
 fileTree <- args[["treefile"]]
 fileAtlasDefs <- args[["defs"]]
+verbose <- ifelse(args[['verbose']] == 'true', TRUE, FALSE)
 
 #Import expression data
-message("Importing expression data...")
+if (verbose) {message("Importing expression data...")}
 dfExpr <- suppressMessages(read_csv(str_c(dirData, fileExpr)))
 
-message("Generating expression tree...")
+if (verbose) {message("Generating expression tree...")}
 
 #Import DSURQE/AMBA tree from JSON
 treeDefs <- parse_abi_hierarchy(str_c(dirData, fileTree))
@@ -126,7 +131,7 @@ treeMouseExpr$Do(function(node){
 
 # Write ----------------------------------------------------------------------
 
-message(str_c("Writing to file: ", args[["outfile"]], "..."))
+if (verbose) {message(str_c("Writing to file: ", args[["outfile"]], "..."))}
 
 save(treeMouseExpr, 
      file = str_c(dirData, args[["outfile"]]))
