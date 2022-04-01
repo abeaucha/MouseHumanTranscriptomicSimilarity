@@ -31,11 +31,10 @@ genes that are also present in the coronal data set.
 import argparse
 import os
 import warnings
-import numpy as np
-import pandas as pd
-import multiprocessing as mp
-
-from pyminc.volumes.factory import *
+import numpy                as np
+import pandas               as pd
+import multiprocessing      as mp
+from pyminc.volumes.factory import volumeFromFile
 from re                     import sub
 from glob                   import glob
 from tqdm                   import tqdm
@@ -143,6 +142,13 @@ def parse_args():
                 "Ignored if --parallel set to false.")
     )
     
+    parser.add_argument(
+      '--verbose',
+      type = str,
+      choices = ['true', 'false'],
+      help = 'Verbosity.'
+    )
+    
     args = vars(parser.parse_args())
     
     return args
@@ -194,7 +200,7 @@ def importImage(img, mask):
 
 def buildExpressionMatrix(files, mask, log_transform = True,
                           group_experiments = True, threshold = 0.2, 
-                          parallel = True, nproc = None):
+                          parallel = True, nproc = None, verbose = True):
     
     """ 
     Build gene-by-voxel expression matrix
@@ -255,7 +261,8 @@ def buildExpressionMatrix(files, mask, log_transform = True,
 
     #Transform to log2
     if log_transform:
-        print("Applying log2 transform...")
+        if verbose:
+            print("Applying log2 transform...")
         dfExpression = np.log2(dfExpression)
     
     dfExpression.index = (dfExpression.index
@@ -266,7 +273,8 @@ def buildExpressionMatrix(files, mask, log_transform = True,
     
     #Aggregate experiments per gene if flag is set
     if group_experiments:
-        print("Aggregating multiple experiments per gene...")
+        if verbose:
+            print("Aggregating multiple experiments per gene...")
         dfExpression = (dfExpression
                         .groupby(dfExpression.index)
                         .aggregate(np.mean))
@@ -288,8 +296,10 @@ def main():
     outdir = args['outdir']
     dataset = args['dataset']
     mask = args['mask']
+    verbose = True if args['verbose'] == 'true' else False
     
-    print("Importing {} dataset using {} mask".format(dataset, mask))
+    if verbose:
+        print("Importing {} dataset using {} mask".format(dataset, mask))
     
     if (dataset == 'sagittal') and (mask == 'coronal'):
         warnings.warn(("Running with sagittal dataset and coronal mask is "
@@ -325,7 +335,8 @@ def main():
         pathGeneDir = os.path.join(datadir, dataset, '')
         pathGeneFiles = glob(pathGeneDir+'*.mnc')
 
-    print("Building voxel expression matrix...")
+    if verbose:
+        print("Building voxel expression matrix...")
 
     #Mask files
     if mask == 'sagittal':
@@ -343,13 +354,15 @@ def main():
                                          group_experiments = groupexp, 
                                          threshold = args['threshold'], 
                                          parallel = parallel, 
-                                         nproc = args['nproc'])
+                                         nproc = args['nproc'],
+                                         verbose = verbose)
 
     #Impute missing values
     impute = True if args['impute'] == 'true' else False
     if impute:
         
-        print("Imputing missing values using K-nearest neighbours...")
+        if verbose:
+            print("Imputing missing values using K-nearest neighbours...")
         
         #Initialize imputer and transposer
         imputer = KNNImputer(missing_values = np.nan)
@@ -369,7 +382,8 @@ def main():
                                     ), index = genes)
 
     #Write to file
-    print("Writing to file...")
+    if verbose:
+        print("Writing to file...")
     
     outfile = 'MouseExpressionMatrix_voxel_{}_mask{}'.format(dataset, mask)
     
