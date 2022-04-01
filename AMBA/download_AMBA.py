@@ -14,7 +14,7 @@ import requests
 import numpy                as np
 import pandas               as pd
 import multiprocessing      as mp
-from pyminc.volumes.factory import *
+from pyminc.volumes.factory import volumeFromFile, volumeFromDescription
 from zipfile                import ZipFile
 from functools              import partial
 from tqdm                   import tqdm
