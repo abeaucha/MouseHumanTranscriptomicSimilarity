@@ -303,8 +303,9 @@ def main():
         print("Importing {} dataset using {} mask".format(dataset, mask))
     
     if (dataset == 'sagittal') and (mask == 'coronal'):
-        warnings.warn(("Running with sagittal dataset and coronal mask is "
-                       "not ideal. Proceed with caution."))
+        raise Exception("Using the sagittal dataset with the coronal mask "
+                        "results in a lot of empty voxels. Choose another "
+                        "combination.")
     
     #If dataset is sagittal, use only those genes that are also in the
     #coronal set
