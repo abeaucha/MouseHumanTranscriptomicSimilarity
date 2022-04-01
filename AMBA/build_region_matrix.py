@@ -186,7 +186,7 @@ def main():
     
     if os.path.exists(os.path.join(imgdir, defs)) == False:
         raise FileNotFoundError("Atlas definitions file {} not found in imaging "
-                                "directory {}".format(labels, imgdir)) 
+                                "directory {}".format(defs, imgdir)) 
     
     if verbose:
         print("Importing atlas label definitions: {} ...".format(defs))
