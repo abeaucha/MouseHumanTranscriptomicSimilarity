@@ -10,14 +10,14 @@ Download in-situ hybridization data sets from the Allen Mouse Brain Atlas
 
 import os
 import argparse
-import numpy as np
-import pandas as pd
 import requests
-import multiprocessing as mp
+import numpy                as np
+import pandas               as pd
+import multiprocessing      as mp
 from pyminc.volumes.factory import *
-from zipfile import ZipFile
-from functools import partial
-from tqdm import tqdm
+from zipfile                import ZipFile
+from functools              import partial
+from tqdm                   import tqdm
 
 # Functions -------------------------------------------------------------------
 
@@ -65,13 +65,21 @@ def parse_args():
         default = mp.cpu_count(),
         help = 'Number of CPUs to use in parallel.'
     )
+    
+    parser.add_argument(
+      '--verbose',
+      type = str,
+      choices = ['true', 'false'],
+      help = 'Verbosity'
+    )
 
     args = vars(parser.parse_args())
 
     return args
 
 
-def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
+def fetch_metadata(dataset = 'coronal', outdir='./', 
+                   outfile = 'metadata.csv', verbose = True):
 
     """
     Download metadata for in-situ hybridization data sets
@@ -82,7 +90,8 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
         String indicating whether to download the coronal or sagittal
         (default 'coronal')
     outdir: str, optional
-        Directory in which to download the metadata. (default './')
+        Directory in which to download the metadata.
+        (default './')
     outfile: str, optional
         Name of csv file in which to save the metadata. 
         (default 'metadata.csv')
@@ -118,7 +127,8 @@ def fetch_metadata(dataset = 'coronal', outdir='./', outfile = 'metadata.csv'):
         .drop_duplicates()
         .to_csv(outdir+outfile, index=False))
 
-    print('Metadata downloaded at: {}'.format(outdir+outfile))
+    if verbose:
+        print('Metadata downloaded at: {}'.format(outdir+outfile))
     
     return 
 
@@ -192,10 +202,12 @@ def rawtominc_wrapper(infile, outfile = None, keep_raw = False):
     infile: str
     outfile: str, optional
         Name of output MINC file. If None, will use the same name as
-        the RAW file. (default None)
+        the RAW file.
+        (default None)
     keep_raw: bool, optional
         Option to keep RAW file. If False, the input file will be
-        deleted. (default False)
+        deleted.
+        (default False)
 
     Returns
     -------
@@ -245,7 +257,8 @@ def transform_space(infile, outfile = None, voxel_orientation = 'RAS',
         Name of the MINC file to transform.
     outfile: str, optional
         Name of the output MINC file. If None, the input file will be
-        overwritten. (default None)
+        overwritten. 
+        (default None)
     voxel_orientation: str, optional
         (default 'RAS')
     world_space: str, optional
@@ -402,6 +415,7 @@ def download_data(experiment, outdir):
     
     return
     
+    
 # Main -----------------------------------------------------------------------    
 
 def main():
@@ -412,22 +426,26 @@ def main():
     outdir = args['outdir']
     metadata = args['metadata']
     parallel = True if args['parallel'] == 'true' else False
+    verbose = True if args['verbose'] == 'true' else False
    
     #Format the path properly
     outdir = os.path.join(outdir, '')
 
     #If outdir does not exist, create it
     if os.path.exists(outdir) == False:
-        print('Output directory {} not found. Creating it...'.format(outdir))
+        if verbose:
+            print('Output directory {} not found. Creating it...'.format(outdir))
         os.mkdir(outdir)
         
     #If AMBA metadata file not found, download it from the web
     if os.path.isfile(outdir+metadata) == False:
-        print('Metadata file {} not found in {}. Fetching from API...'
-              .format(metadata, outdir))
+        if verbose:
+            print('Metadata file {} not found in {}. Fetching from API...'
+                  .format(metadata, outdir))
         fetch_metadata(dataset = dataset,
                        outdir = outdir,
-                       outfile = metadata)
+                       outfile = metadata,
+                       verbose = verbose)
         
     #Import AMBA metadata
     dfMetadata = pd.read_csv(outdir+metadata, index_col = None)
@@ -445,27 +463,30 @@ def main():
     #Partial version of function for iteration
     download_data_partial = partial(download_data, outdir = outdir)
     
-    size = 1.0 if dataset == 'coronal' else 3.0
+#     size = 1.0 if dataset == 'coronal' else 3.0
 
-    response_flag = 0
-    while response_flag != 1:
-        response = input(('Download will take up approximately {}GB of space.'
-                          'Proceed? (y/n) '.format(size)))
-        if response == 'y':
-            response_flag = 1
-        elif response == 'n':
-            print('Aborting.')
-            quit()
-        else:
-            print('Input not recognized (y/n): {}'.format(response))
+#     response_flag = 0
+#     while response_flag != 1:
+#         response = input(('Download will take up approximately {}GB of space.'
+#                           'Proceed? (y/n) '.format(size)))
+#         if response == 'y':
+#             response_flag = 1
+#         elif response == 'n':
+#             print('Aborting.')
+#             quit()
+#         else:
+#             print('Input not recognized (y/n): {}'.format(response))
+    
+    if verbose:
+        print('Downloading {} AMBA dataset to: {}'.format(dataset, outdir))
         
-    print('Downloading {} AMBA dataset to: {}'.format(dataset, outdir))
     if parallel:
         
         nproc = args['nproc']
         pool = mp.Pool(nproc)
         
-        print('Running in parallel on {} CPUs...'.format(nproc))
+        if verbose:
+            print('Running in parallel on {} CPUs...'.format(nproc))
         
         #Download data in parallel. Show progress bar.
         results_tqdm = []
