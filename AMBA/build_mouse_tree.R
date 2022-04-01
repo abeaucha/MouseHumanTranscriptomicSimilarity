@@ -33,7 +33,7 @@ option_list <- list(
               help = "Directory containing imaging files. [default %default]"),
   make_option("--infile",
               type = "character",
-              help = paste("Name of CSV file containing the voxel-wise",
+              help = paste("Name of CSV file containing the region-wise",
                            "expression matrix.")),
   make_option("--outfile",
               type = "character",
@@ -95,7 +95,9 @@ verbose <- ifelse(args[['verbose']] == 'true', TRUE, FALSE)
 
 #Import expression data
 if (verbose) {message("Importing expression data...")}
-dfExpr <- suppressMessages(read_csv(str_c(dirData, fileExpr)))
+dfExpr <- suppressMessages(data.table::fread(str_c(dirData, fileExpr),
+                                             header = TRUE)) %>% 
+  as_tibble()
 
 if (verbose) {message("Generating expression tree...")}
 
