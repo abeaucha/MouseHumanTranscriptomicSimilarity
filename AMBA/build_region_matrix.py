@@ -94,19 +94,42 @@ def main():
     datadir = args['datadir']
     imgdir = args['imgdir']
     infile = args['infile']
+    outfile = args['outfile']
     mask = args['mask']
     labels = args['labels']
     defs = args['defs']
-   
+    
+    if infile is None:
+        raise Exception("No input file passed to argument --infile")
 
+    if outfile is None:
+        raise Exception("No output file name passed to argument --outfile")
+        
+    if mask is None:
+        raise Exception("No mask file passed to argument --mask")
+        
+    if labels is None:
+        raise Exception("No label file passed to argument --labels")
+        
+    if defs is None:
+        raise Exception("No atlas definitions file passed to argument --defs")
+        
+    datadir = os.path.join(datadir, '')
+    
+ 
     # Import expression data -------------------------------------------------
     
     #File containing voxel expression matrix
-    print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
-    #Import voxel expression matrix
-    dfExprVoxel = pd.read_csv(os.path.join(datadir, infile))
+    try: 
+        print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
+        #Import voxel expression matrix
+        dfExprVoxel = pd.read_csv(os.path.join(datadir, infile))
+    except FileNotFoundError:
+        raise FileNotFoundError("Input file {} not found in data directory {}"
+                               .format(infile, datadir))
+        
     #Extract gene names from data frame
     genes = dfExprVoxel['Gene']
 
@@ -123,12 +146,22 @@ def main():
 
     # Import imaging data ----------------------------------------------------
     
+    imgdir = os.path.join(imgdir, '')
+    
+    if os.path.exists(os.path.join(imgdir, mask)) == False:
+        raise FileNotFoundError("Mask file {} not found in imaging directory {}"
+                               .format(mask, imgdir))
+    
     #Import image mask, flatten and convert to numpy array
     print("Importing mask volume: {} ...".format(mask))
 
     maskVol = volumeFromFile(os.path.join(imgdir, mask))
     maskArray = np.array(maskVol.data.flatten())
     maskVol.closeVolume()
+    
+    if os.path.exists(os.path.join(imgdir, labels)) == False:
+        raise FileNotFoundError("Label file {} not found in imaging directory {}"
+                               .format(labels, imgdir))
     
     print("Importing DSURQE label volume: {} ...".format(labels))
     
@@ -140,9 +173,13 @@ def main():
     #Mask the label array
     labelArrayMasked = labelArray[maskArray == 1]
     
-    print("Importing DSURQE label definitions: {} ...".format(defs))
+    if os.path.exists(os.path.join(imgdir, defs)) == False:
+        raise FileNotFoundError("Atlas definitions file {} not found in imaging "
+                                "directory {}".format(labels, imgdir)) 
     
-    #Import DSURQE label definitions
+    print("Importing atlas label definitions: {} ...".format(defs))
+    
+    #Import atlas label definitions
     dfAtlasDefs = pd.read_csv(os.path.join(imgdir, defs))
     
     
@@ -191,9 +228,11 @@ def main():
     # Write ------------------------------------------------------------------
 
     print("Writing to file...")
+
+    quit()
     
     #Write regional expression matrix to csv
-    dfExprRegion.to_csv(os.path.join(datadir, args['outfile']))
+    dfExprRegion.to_csv(os.path.join(datadir, outfile))
     
     return
     
