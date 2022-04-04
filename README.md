@@ -1,4 +1,4 @@
-# Transcriptomic similarity in the mouse and human brain
+# Whole-brain comparison of rodent and human brains using spatial transcriptomics
 
 Antoine Beauchamp
 
