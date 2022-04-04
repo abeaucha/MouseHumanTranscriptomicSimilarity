@@ -108,3 +108,4 @@ AMBA/data/imaging/MICe_DSURQE.xfm
 AMBA/data/imaging/MICe_DSURQE_grid_0.mnc
 AHBA/data/AHBA_hierarchy_definitions.json
 cross_validation/Model_MultilayerPerceptron_Validation.ipynb
+manuscript/submissions/science_advances/
