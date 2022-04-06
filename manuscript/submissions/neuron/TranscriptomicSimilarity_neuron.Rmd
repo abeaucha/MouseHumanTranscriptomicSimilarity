@@ -2,10 +2,10 @@
 output: 
   pdf_document:
       includes:
-        in_header: TranscriptomicSimilarity_biorxiv_header.tex
-        before_body: TranscriptomicSimilarity_biorxiv_front_matter.tex
+        in_header: TranscriptomicSimilarity_neuron_header.tex
+        before_body: TranscriptomicSimilarity_neuron_front_matter.tex
 bibliography: TranscriptomicSimilarity.bib
-csl: science-advances.csl
+csl: neuron.csl
 ---
 
 ```{r setup, include=FALSE}
