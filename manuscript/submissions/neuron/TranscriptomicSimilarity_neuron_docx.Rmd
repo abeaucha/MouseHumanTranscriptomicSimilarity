@@ -1,9 +1,8 @@
 ---
 output: 
-  word_document: 
-    reference_docx: "template_word_science_advances.docx"
+  word_document
 bibliography: TranscriptomicSimilarity.bib
-csl: science-advances.csl
+csl: neuron.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -18,45 +17,14 @@ library(grid)
 library(gridExtra)
 ```
 
-# FRONT MATTER
+\onehalfspacing
 
-# Title 
 
-**Long title**: Transcriptomic similarity in the mouse and human brain
+# Abstract
 
-**Short title**: Transcriptomic similarity in mouse and human brain
+The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
 
-# Authors
-
-Antoine Beauchamp$^{1,2,3*}$, Yohan Yee$^{1,2,3}$, Ben C. Darwin$^{1,2}$, Armin Raznahan$^{4}$, Rogier B. Mars$^{5,6\dagger}$, Jason P. Lerch$^{1,2,3,5*\dagger}$
-
-# Affiliations
-
-$^1$Mouse Imaging Centre, Toronto, Ontario, Canada.
-
-$^2$The Hospital for Sick Children, Toronto, Ontario, Canada.
-
-$^3$Department of Medical Biophysics, University of Toronto, Toronto, Ontario, Canada.
-
-$^4$Section on Developmental Neurogenomics, Human Genetics Branch, National Institute of Mental Health Intramural Research Program, Bethesda, MD, U.S.A.
-
-$^5$Wellcome Centre for Integrative Neuroimaging, Centre for Functional MRI of the Brain (FMRIB), Nuffield Department of Clinical Neurosciences, John Radcliffe Hospital, University of Oxford, Oxford, United Kingdom.
-
-$^6$Donders Institute for Brain, Cognition and Behaviour, Radboud University Nijmegen, Nijmegen, Netherlands.
-
-$^{\dagger}$These authors contributed equally to this work.
-
-$^{*}$Corresponding author. Email: antoine.beauchamp@sickkids.ca (A.B.); jason.lerch@ndcn.ox.ac.uk (J.P.L.)
-
-# Abstract 
-
-The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Recently, scientists have developed new ways of making these comparisons using data from various modalities. Here we use openly accessible brain-wide transcriptomic data sets to evaluate the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results demonstrate that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. We demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions. We also find that mouse and human striatal regions are strongly conserved. Our results highlight how gene homology can be used as a basis for quantitative comparative neuroanatomy.
-
-# Teaser
-
-The expression patterns of homologous genes can be used to make quantitative comparisons between mouse and human brains.
-
-# MAIN TEXT
+*** 
 
 # Introduction {#intro}
 
@@ -72,19 +40,66 @@ A more promising approach to mouse-human comparisons could be to exploit the spa
 
 Here we examine the patterns of similarity between the mouse and human brain using a common space constructed from spatial gene expression data sets. We begin with an initial set of 2624 homologous genes. Subsequently, we present and evaluate a novel method for improving the resolution of mouse-human neuroanatomical correspondences using a supervised machine learning approach. Using the novel representation of the gene expression common space, i.e. a latent gene expression space, we analyse the similarity of mouse and human isocortical subdivisions and demonstrate that sensorimotor regions exhibit a higher degree of similarity than supramodal regions. Finally, we examine the patterns of transcriptomic similarity at a voxel-wise level in the mouse and human striatum.
 
+
 # Results
 
-## Homologous genes capture broad similarities in the mouse and human brains
+## Homologous genes capture broad similarities in the mouse and human brains {#results-1}
 
 We first examined the pattern of similarities that emerged when comparing mouse and human brain regions on the basis of their gene expression profiles. We constructed a gene expression common space using widely available data sets from the Allen Institute for Brain Science: the Allen Mouse Brain Atlas (AMBA) and the Allen Human Brain Atlas (AHBA) [@lein_genome-wide_2007; @hawrylycz_anatomically_2012]. These data sets provide whole-brain coverage of expression intensity for thousands of genes in the mouse and human genomes. For our purposes we filtered these gene sets to retain only mouse-human homologous genes using a list of orthologues obtained from the NCBI HomoloGene system (NCBI 2018). Prior to analysis, both data sets were pre-processed using a pipeline that included quality control checks, normalization procedures, and aggregation of the expression values under a set of atlas labels. The result was a gene-by-region matrix in either species, describing the normalized expression of 2624 homologous genes across 67 mouse regions and 88 human regions (see [Materials and methods](#materials-methods)). We quantified the degree of similarity between all pairs of mouse and human regions using the Pearson correlation coefficient, resulting in a mouse-human similarity matrix (Fig. 1A). 
 
-We find that the similarity matrix exhibits broad patterns of positive correlation between the mouse and human brains. These clusters of similarity correspond to coarse neuroanatomical regions that are generally well-defined in both species. For instance, we observe that, overall, the mouse isocortex is similar to the human cerebral cortex, with the exception of the hippocampal formation, which forms a unique cluster. Similarly the mouse and human cerebellar hemispheres cluster together, while the cerebellar nuclei show relatively high correlation to each other (0.404) as well as to brain stem structures like the pons (0.359 and 0.371 for the mouse and human nuclei respectively) and myelencephalon (0.318 and 0.374). The associations between broad regions such as these are self-evident in the correlation matrix.
+We find that the similarity matrix exhibits broad patterns of positive correlation between the mouse and human brains. These clusters of similarity correspond to coarse neuroanatomical regions that are generally well-defined in both species. For instance, we observe that, overall, the mouse isocortex is similar to the human cerebral cortex, with the exception of the hippocampal formation, which forms a unique cluster. Similarly the mouse and human cerebellar hemispheres cluster together, while the cerebellar nuclei show relatively high correlation to each other (r = 0.404) as well as to brain stem structures like the pons ($r = 0.359$ and $r = 0.371$ for the mouse and human nuclei respectively) and myelencephalon ($r = 0.318$ and $r = 0.374$). The associations between broad regions such as these are self-evident in the correlation matrix.
 
-Our ability to resolve regional matches on a finer scale is limited when using all homologous genes in this way. This is especially true for regions within the cerebral and cerebellar cortices, which exhibit a high degree of internal homogeneity. This is apparent in the similarity profiles, defined here as the set of correlation values between a given seed region and all target regions in the other species. For example, the human precentral gyrus and cuneus are most strongly correlated to many regions of the mouse isocortex. While the brain maps feature a rostral-caudal gradient (Fig. 1B), the profiles of the two seeds are highly similar despite the regions having very different functions (Fig. 1C). Indeed, the correlation between the similarity profiles of the precentral gyrus and cuneus is 0.980. The similarity profile of human cerebellar crus 1 highlights another example of this homogeneity. The profile of crus 1 is similar to that of all regions of the mouse cerebellum, with an average correlation of 0.269 and a standard deviation of 0.041. Across all regions, the variance of the correlations across cortical regions is 0.0052 while that across cerebellar hemispheric regions is 0.0017, compared with a total variation of 0.0416 across all entries in the matrix. 
+Our ability to resolve regional matches on a finer scale is limited when using all homologous genes in this way. This is especially true for regions within the cerebral and cerebellar cortices, which exhibit a high degree of internal homogeneity. This is apparent in the similarity profiles, defined here as the set of correlation values between a given seed region and all target regions in the other species. For example, the human precentral gyrus and cuneus are most strongly correlated to many regions of the mouse isocortex. While the brain maps feature a rostral-caudal gradient (Fig. 1B), the profiles of the two seeds are highly similar despite the regions having very different functions (Fig. 1C). Indeed, the correlation between the similarity profiles of the precentral gyrus and cuneus is $r = 0.980$. The similarity profile of human cerebellar crus 1 highlights another example of this homogeneity. The profile of crus 1 is similar to that of all regions of the mouse cerebellum, with an average correlation of $r = 0.269$ and a standard deviation of $\sigma = 0.041$. Across all regions, the variance of the correlations across cortical regions is $\sigma^2 = 0.0052$ while that across cerebellar hemispheric regions is $\sigma^2 = 0.0017$, compared with a total variation of $\sigma^2 = 0.0416$ across all entries in the matrix. 
 
 So, although these is some distinguishing power in the profiles of regions at a finer scale, this is much smaller than between coarse anatomical regions. This also true for parts of the broad anatomical systems that are part of the same functional system. This suggests that the regional expression patterns of mouse-human homologous genes can be used to identify general similarities between the brains of the two species even using a simple correlation measure, but the ability to identify finer scale matches might require a more subtle approach.
 
-## A latent gene expression space improves the resolution of mouse-human associations
+
+```{r results1-fig1-import}
+load("Figure1.RData")
+```
+
+```{r results1-fig1-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height = 9.5}
+grid.newpage()
+grid.draw(fig1_grob)
+```
+
+```{r results1-fig1-caption}
+fig1_cap_A <- "(\\textbf{A}) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns are annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows are annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
+fig1_cap_B <- "(\\textbf{B}) Mouse brain coronal slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
+fig1_cap_C <- "(\\textbf{C}) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
+
+fig1_cap <- str_c("\\textbf{Transcriptomic similarity in the mouse and human brains.}",
+                  fig1_cap_A,
+                  fig1_cap_B,
+                  fig1_cap_C,
+                  "Annotation colours correspond to atlas colours from the AMBA and AHBA for mouse and human regions respectively.",
+                  sep = " ")
+```
+
+```{r results1-fig1-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig1_width,
+                      fig.height = fig1_height,
+                      fig.cap = fig1_cap)
+```
+
+```{r results1-fig1-print}
+grid.newpage()
+grid.draw(fig1_grob)
+```
+
+```{r results1-fig1-clean}
+rm(list = ls())
+```
+
+```{r results1-fig1-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+
+## A latent gene expression space improves the resolution of mouse-human associations {#results-2}
 
 In the previous analyses, we showed that the expression profiles of homologous genes capture broad similarities across the mouse and the human for the major subdivisions of the brain. Some information at a finer resolution (e.g. within the isocortex) was also evident, but much less distinctive. Our next goal was to investigate whether it is possible to leverage the gene expression data sets to relate mouse and human brains to one another at a finer regional level. In order to do so, we sought to maximise the informational value in the set of 2624 homologous genes by creating a new latent common space that exploits the regional distinctiveness of the expression profiles.
 
@@ -92,43 +107,223 @@ The approach used in the previous analysis relied on using homologous genes as a
 
 While the model could have been trained using the data from either species, we chose to use the mouse data because it provides continuous coverage of the entire brain and is thus better suited to this purpose. In training the model to perform this classification task, we effectively optimize the network architecture to identify a transformation from the input gene space to a space that encodes information about the delineation between mouse brain regions. To extract this transformation, we removed the output layer from the trained neural network. The resulting architecture defines a transformation from the input space to a lower-dimensional gene expression latent space. We then applied this transformation to the mouse and human gene-by-region expression matrices to obtain representations of the data in the latent common space (Fig. 2B). Finally, we used these gene expression latent common space matrices to compute the new similarity matrix (Fig. 2C). Since the optimization algorithm used to train the perceptron features an inherent degree of stochasticity, we repeated this training and transformation process 500 times to generate a distribution of latent spaces and similarity matrices over training runs.
 
+```{r results2-fig2-import}
+load("Figure2.RData")
+```
+
+```{r results2-fig2-interactive, include=FALSE, echo = FALSE, fig.width=10, fig.height=6.4}
+grid.newpage()
+grid.draw(fig2_grob)
+```
+
+```{r results2-fig2-caption}
+fig2_cap_A <- str_c("(\\textbf{A}) Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
+fig2_cap_B <- "(\\textbf{B}) Once the network is trained, the output layer is removed. The mouse and human regional gene expression matrices are passed through the network, resulting in lower-dimensional latent space representations of the data. The training and transformation process was repeated 500 times."
+fig2_cap_C <- "(\\textbf{C}) A similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 neural network training runs. Similar brain regions exhibit very high correlation values. Column and row annotations as described in Figure 1."
+fig2_cap <- str_c("\\textbf{Creating a new common space.}",
+                  fig2_cap_A,
+                  fig2_cap_B,
+                  fig2_cap_C,
+                  sep = " ")
+```
+
+```{r results2-fig2-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig2_width,
+                      fig.height = fig2_height,
+                      fig.cap = fig2_cap)
+```
+
+```{r results2-fig2-print}
+grid.newpage()
+grid.draw(fig2_grob)
+```
+
+```{r results2-fig2-clean}
+rm(list = ls())
+```
+
+```{r results2-fig2-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+```{r results2-text2}
+#For code chunk navigation purposes
+```
+
 To assess whether the latent space representations of the data improved the resolution of the mouse-human matches, we considered two criteria. The first was whether the similarity profiles of the mouse atlas regions were more localized within the corresponding broad regions of interest (e.g. primary motor area within isocortex), compared with their similarity profiles in the original gene space. We term this the locality criterion. The second criterion was whether the degree of similarity between canonical neuroanatomical homologues improved in this new latent common space. We term this the homology criterion. The locality criterion tells us about our ability to extract finer-scale signal in these profiles, while the homology criterion informs us about our ability to recover expected matches in this finer-scale signal. To evaluate these criteria, we computed ranked similarity profiles for every region in the mouse brain, ordered such that a rank of 1 indicates the most similar human region. In addition, given the difference in absolute value between the input gene space and gene expression latent space correlations, we scaled the similarity profiles to the interval $\left[0, 1\right]$ in order to make comparisons between the spaces.
 
 We evaluated the locality criterion by examining the decay rate of the top of the similarity profiles. We reasoned that the plateau of similarity to a broad brain region, as seen in the anatomically-ordered similarity matrices and profiles (Fig. 1, A and C; Fig. 2C), would correspond to a similar plateau at the head of the rank-ordered profiles. Moreover, the emergence of local signal would manifest as an increase in the range between the peaks and troughs within the broad region. In the rank-ordered profiles, this would correspond to a faster rate of decay at the head of the profile. In order to quantify this decay, we computed the rank at which each region’s similarity profile decreased to a scaled value of 0.75. This was calculated for every mouse region in the initial gene space, as well as in each of the 500 gene expression latent spaces. As a measurement of performance between the two representations of the data, we then took the difference in this rank between each of the latent spaces and the original gene space (Fig. 3A). A negative rank difference indicates an improvement in the latent space.
 
-Examining the structure-wise distributions of these rank differences, we found that for the majority of regions in our mouse atlas, the classification approach resulted in either an improvement in the amount of locality within a broad region, or no difference from the original gene space (Fig. 3, B and C). Specifically, 47 regions (70.1%) had a mean rank difference less than or equal to zero. Additionally, the same number of regions returned non-positive rank differences in at least 80% of latent spaces. A few regions performed considerably worse in the latent spaces, notably the main olfactory bulb (mean of 18.4, s.d. of 12.7), the accessory olfactory bulb (mean of 8.7, s.d. of 11.6), and the cerebellar nuclei (mean of 9.1, s.d. of 8.5). In particular, the main olfactory bulb performed worse in 96.6% of latent spaces. Regions within the cortical subplate and olfactory areas (e.g. endopiriform nucleus, postpiriform transition area) benefited the most from the classification approach, with many regions showing improvements in all latent spaces. While the effects are smaller, the similarity profiles of regions belonging to the isocortex and cerebellar cortex also saw an improvement in locality. In the isocortex, 16 out of 19 regions (84.2%) improved in at least 96% of latent spaces. In the cerebellar cortex, 73.3% of regions saw a similar improvement. In contrast, regions belonging to the cerebral nuclei, the diencephalon, midbrain and hindbrain did not see much improvement in this new common space. For instance, only 13.2% of latent spaces returned a non-positive rank difference in the thalamus. For many such regions the degree of locality appears to be worse in this space, though only by a small number of ranks (e.g. striatum ventral region, thalamus, midbrain raphe nuclei). Indeed, the mean rank difference and standard deviation over these regions and all latent spaces are 1.4 and 3.6. These results demonstrate that the supervised learning approach used here can improve the resolution of neuroanatomical correspondences between the mouse and human brains, though the amount of improvement varies over the brain. Regions that were already well-characterized using the initial set of homologous genes (e.g. subcortical regions) did not benefit tremendously, but numerous regions in the cortical plate and subplate, as well as the cerebellum, saw an improvement in locality in this new common space.
+Examining the structure-wise distributions of these rank differences, we found that for the majority of regions in our mouse atlas, the classification approach resulted in either an improvement in the amount of locality within a broad region, or no difference from the original gene space (Fig. 3, B and C). Specifically, 47 regions (70.1%) had a mean rank difference less than or equal to zero. Additionally, the same number of regions returned non-positive rank differences in at least 80% of latent spaces. A few regions performed considerably worse in the latent spaces, notably the main olfactory bulb ($\mu = 18.4; \sigma = 12.7$), the accessory olfactory bulb ($\mu = 8.7; \sigma = 11.6$), and the cerebellar nuclei ($\mu = 9.1; \sigma = 8.5$). In particular, the main olfactory bulb performed worse in 96.6% of latent spaces. Regions within the cortical subplate and olfactory areas (e.g. endopiriform nucleus, postpiriform transition area) benefited the most from the classification approach, with many regions showing improvements in all latent spaces. While the effects are smaller, the similarity profiles of regions belonging to the isocortex and cerebellar cortex also saw an improvement in locality. In the isocortex, 16 out of 19 regions (84.2%) improved in at least 96% of latent spaces. In the cerebellar cortex, 73.3% of regions saw a similar improvement. In contrast, regions belonging to the cerebral nuclei, the diencephalon, midbrain and hindbrain did not see much improvement in this new common space. For instance, only 13.2% of latent spaces returned a non-positive rank difference in the thalamus. For many such regions the degree of locality appears to be worse in this space, though only by a small number of ranks (e.g. striatum ventral region, thalamus, midbrain raphe nuclei). Indeed, the mean rank difference and standard deviation over these regions and all latent spaces are $\mu = 1.4$ and $\sigma = 3.6$. These results demonstrate that the supervised learning approach used here can improve the resolution of neuroanatomical correspondences between the mouse and human brains, though the amount of improvement varies over the brain. Regions that were already well-characterized using the initial set of homologous genes (e.g. subcortical regions) did not benefit tremendously, but numerous regions in the cortical plate and subplate, as well as the cerebellum, saw an improvement in locality in this new common space.
+
+```{r results2-fig3-import}
+load("Figure3.RData")
+```
+
+```{r results2-fig3-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=6.7}
+grid.newpage()
+grid.draw(fig3_grob)
+```
+
+```{r results2-fig3-caption}
+fig3_cap_A <- "(\\textbf{A}) The amount of local signal within a broadly similar region of the brain for a finer seed region's (e.g. primary motor area) similarity profile can be quantified by the decay rate of the head of the rank-ordered profile. Decay rate was quantified by computing the rank at a similarity of 0.75. This metric was compared between the initial gene expression space (orange line) and every gene expression latent space resulting from repeated training of the neural network (every blue line is a training outcome, heavy blue line serves as an example). A negative difference between these rank metrics indicates an improvement in locality in the latent space."
+fig3_cap_B <- "(\\textbf{B}) Structure-wise distributions of differences in rank at a similarity of 0.75 between the initial gene expression space and the gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Dashed black line at 0 indicates the threshold for improvement in one space over the other. Colours correspond to AMBA annotations as in Figures 1 and 2."
+fig3_cap_C <- "(\\textbf{C}) Proportion of perceptron training runs resulting in an improvement or null difference in the gene expression latent space compared with the initial space. Cortical and cerebellar regions exhibit high proportions of improvement, while subcortical regions are less likely to be improved by the classification process."
+fig3_cap <- str_c("\\textbf{Quantifying improvement in locality in gene expression latent space.}",
+                  fig3_cap_A,
+                  fig3_cap_B,
+                  fig3_cap_C,
+                  sep = " ")
+```
+
+```{r results2-fig3-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig3_width,
+                      fig.height = fig3_height,
+                      fig.cap = fig3_cap)
+```
+
+```{r results2-fig3-print}
+grid.newpage()
+grid.draw(fig3_grob)
+```
+
+```{r results2-fig3-clean}
+rm(list = ls())
+```
+
+```{r results2-fig3-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+```{r results2-text3}
+#For code chunk navigation purposes
+```
 
 While the supervised learning approach improved our ability to identify matches on a finer scale for a number of brain regions, this does not necessarily mean that those improved matches are biologically meaningful. The second criterion for evaluating the performance of the neural network addresses whether this improvement in locality captures what we would expect in terms of known mouse-human homologies. To this end, we examined the degree of similarity between established mouse-human neuroanatomical pairs, both in the initial gene expression space and in the set of latent spaces. We began by establishing a list of 36 canonical mouse-human homologous pairs on the basis of common neuroanatomical labels in our atlases. For each of these regions in the mouse brain, we compared the rank of the canonical human match in the rank-ordered similarity profiles between the latent spaces and the original gene expression space (Fig. 4A). The lower the rank, the more similar the canonical pair, with a rank of 1 indicating maximal similarity. We additionally calculated the proportion of latent spaces in which each mouse region was more similar or as similar to its canonical human match compared with the initial gene space (Fig. 4B).
 
-We find that for most regions in this subset, the classification approach either improves the correspondence or performs as well as the full set of homologous genes. For example, 73% of regions exhibit improved similarity in at least 80% of latent spaces. The improvement is most pronounced for regions in the cortical subplate and isocortex. In particular, the visual areas improve from a rank of 32 to an average of 10, though the variance is much higher in this case. Many regions in the sub-cortex do not benefit from the gene expression latent spaces since the initial gene set was already recapitulating the appropriate match with maximal similarity. Apart from the pallidum and the medulla, each of these regions is maximally similar to its canonical match in at least 90% of latent spaces. In such cases, the classification approach performs as well as the original approach. Finally, although many regions in the cerebellum feature some improvement in the latent spaces, the variation in the rank of the standard human pair is often quite large, indicating some instability in the neural network’s ability to recover these matches. However, while the rank of the canonical pair varies in different instances of the latent space, the top matches for any given cerebellar region are always cerebellar regions. For instance, when the mouse crus 1 is used as the seed region, the human crus 1 is most often assigned a rank between 6 and 9. However, similar proportions in that range occur for the crus 2 and lobules V, VI and VIIB, indicating that these cerebellar regions are swapping ranks in the different latent spaces. Thus while cerebellar regions are reliably associated with other cerebellar regions in the gene expression latent spaces, these associations are not stable over multiple training runs.
+We find that for most regions in this subset, the classification approach either improves the correspondence or performs as well as the full set of homologous genes. For example, 73% of regions exhibit improved similarity in at least 80% of latent spaces. The improvement is most pronounced for regions in the cortical subplate and isocortex. In particular, the visual areas improve from a rank of 32 to an average of 10, though the variance is much higher in this case. Many regions in the sub-cortex do not benefit from the gene expression latent spaces since the initial gene set was already recapitulating the appropriate match with maximal similarity. Apart from the pallidum and the medulla, each of these regions is maximally similar to its canonical match in at least 90% of latent spaces. In such cases, the classification approach performs as well as the original approach. Finally, although many regions in the cerebellum feature some improvement in the latent spaces, the variation in the rank of the standard human pair is often quite large, indicating some instability in the neural network’s ability to recover these matches. However, while the rank of the canonical pair varies in different instances of the latent space, the top matches for any given cerebellar region are always cerebellar regions. For instance, when the mouse crus 1 is used as the seed region, the human crus 1 is most often assigned a rank between 6 and 9. However, similar proportions in that range occur for the crus 2 and lobules V, VI and VIIB, indicating that these cerebellar regions are swapping ranks in the different latent spaces. Thus while cerebellar regions are reliably associated with other cerebellar regions in the gene expression latent spaces, these associations are not stable over multiple training runs. 
+
+
+```{r results2-fig4-import}
+load("Figure4.RData")
+```
+
+```{r results2-fig4-interactive, include=FALSE, echo=FALSE, fig.width=7.6, fig.height=6.5}
+grid.newpage()
+grid.draw(fig4_grob)
+```
+
+```{r results2-fig4-caption}
+fig4_cap_A <- "(\\textbf{A}) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Mouse region names are coloured according to the AMBA palette."
+fig4_cap_B <- "(\\textbf{B}) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured voxels correspond to regions with no established canonical human match."
+fig4_cap <- str_c("\\textbf{Recovering canonical neuroanatomical pairs in gene expression space.}",
+                  fig4_cap_A,
+                  fig4_cap_B,
+                  sep = " ")
+```
+
+```{r results2-fig4-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig4_width,
+                      fig.height = fig4_height,
+                      fig.cap = fig4_cap)
+```
+
+```{r results2-fig4-print}
+grid.newpage()
+grid.draw(fig4_grob)
+```
+
+```{r results2-fig4-clean}
+rm(list = ls())
+```
+
+```{r results2-fig4-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+```{r results2-text4}
+#For code chunk navigation purposes
+```
 
 Together, these results demonstrate that the multi-layer peceptron classification approach improves our ability to resolve finer scale mouse-human neuroanatomical matches within the broadly similar regions obtained using the initial gene expression space. By training a classifier to predict the atlas labels in one species, we were able to generate a new common space that amplified the amount of local signal within broadly similar regions while also improving our ability to recover known mouse-human neuroanatomical pairs. 
 
 
-## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas
+## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas  {#results-3}
 
 It is well established that the brains of most, if not all, extant mammalian species follow a common organizational blueprint inherited from an early mammalian ancestor [@kaas_reconstructing_2011]. A number of cortical subdivisions have consistently been identified in members of many distantly related mammalian species [@krubitzer_magnificent_2007] and hypothesized to have been present in the common ancestor of all mammals [@kaas_reconstructing_2011]. While it is clear that basic sensorimotor cortical regions are found in the majority of mammals, including mice and humans, there is much debate about the extent to which cortical areas involved in supramodal processing are conserved across mammalian taxa. Although some supramodal regions were likely present in the earliest mammals, including some cingulate regions and an orbitofrontal cortex [@kaas_reconstructing_2011], since the divergence of mouse and human lineages some 80 million years ago, the primate neocortex has undergone substantial expansion and re-organization [@kaas_evolution_2012]. Indeed, when comparing the human neocortex even to primate model species, this is the likely locus of areas that cannot be easily translated between species [@mars_whole_2018]. As a result, it is important to investigate whether our between-species mapping is more successful in somatosensory areas than supramodal areas.
 
-We assessed the similarity between mouse and human isocortical areas using the pairwise correlations in each of the gene expression latent spaces returned from the multi-layer perceptron. For every region in the mouse isocortex, we evaluated the distribution of maximal correlation values over latent spaces (Fig. 5A). While the region-wise variance for each isocortical area was large, we found that, on average, sensorimotor regions exhibited higher maximal correlation values than supramodal regions. The mouse primary somatosensory and motor areas have the highest average maximal correlation values, with $0.94 \pm 0.04$ (mean $\pm$ 95% C.I.) and $0.93 \pm 0.04$ respectively. We additionally examined the distributions of maximal correlation, grouped by cortex type (Fig. 5B). To generate these distributions, we computed average maximal correlation values by cortex type in each of the latent spaces. Here too we find that that sensorimotor regions are associated with higher maximal correlation values on average ($0.89 \pm 0.04$), compared with supramodal areas ($0.85 \pm 0.03$). These distributions demonstrate that sensorimotor isocortical regions exhibit more similarity overall on the basis of homologous gene expression than do supramodal regions. 
+We assessed the similarity between mouse and human isocortical areas using the pairwise correlations in each of the gene expression latent spaces returned from the multi-layer perceptron. For every region in the mouse isocortex, we evaluated the distribution of maximal correlation values over latent spaces (Fig. 5A). While the region-wise variance for each isocortical area was large, we found that, on average, sensorimotor regions exhibited higher maximal correlation values than supramodal regions. The mouse primary somatosensory and motor areas have the highest average maximal correlation values, with $r = 0.94 \pm 0.04$ and $r = 0.93 \pm 0.04$ respectively. We additionally examined the distributions of maximal correlation, grouped by cortex type (Fig. 5B). To generate these distributions, we computed average maximal correlation values by cortex type in each of the latent spaces. Here too we find that that sensorimotor regions are associated with higher maximal correlation values on average ($r = 0.89 \pm 0.04$), compared with supramodal areas ($r = 0.85 \pm 0.03$). These distributions demonstrate that sensorimotor isocortical regions exhibit more similarity overall on the basis of homologous gene expression than do supramodal regions. 
 
 While we found that sensorimotor isocortical areas in the mouse brain were more similar to human brain regions than supramodal areas, the distributions of maximal correlation do not speak to the neuroanatomical patterns of organization for these matches. To understand how the similarity patterns of mouse and human cortical subdivisions were organized, we used hierarchical clustering to cluster mouse and human isocortical regions on the basis of their similarity profiles in the average gene expression latent space (Fig. 5C). This allows us to examine the similarity of regions to one another within and across brains at multiple levels simultaneously. 
 
 At a high level, we find a striking segregation of the mouse isocortex into one main cluster that corresponds to regions that are primarily engaged in sensorimotor processing and separate clusters of regions that are supramodal. All of the sensorimotor areas cluster together, but three supramodal areas also form part of this cluster: the retrosplenial area, the posterior parietal association areas, and the anterior cingulate cortex. Of these, the retrosplenial area is the most different, being the first to separate out from the other regions. In fact, the retrosplenial area is the mouse isocortical region with the smallest correlation values (Fig. 5A). The mouse sensorimotor cluster is characterized by high correlation values to human sensorimotor regions like the precentral gyrus, the cuneus, and the postcentral gyrus, as well as low correlation values to the piriform cortex and paraterminal gyrus. 
 
-At this level of clustering, the remaining mouse supramodal subdivisions form two clusters. These both exhibit low similarity to the human somatosensory and visual areas, but the cluster containing the infralimbic and perirhinal areas additionally exhibits low correlation values with the precentral gyrus, anterior paracentral lobule, and transverse gyri. The human cortical regions do not segregate as cleanly into sensorimotor and supramodal clusters. Under a similar level of description of four clusters of areas, the majority of areas belong to a large cluster that includes a mix of cortical types. However, at a lower level of the hierarchy, if the number of clusters is increased to five, this large cluster breaks up into two smaller clusters that feature some delineation between supramodal and sensorimotor areas, which are primarily motor and auditory in nature (e.g. precentral gyrus, Heschl’s gyrus). Interestingly, the postcentral gyrus, i.e. primary somatosensory area, forms a separate cluster with a set of visual areas such as the cuneus and lingual gyrus. These regions exhibit very similar correlation profiles to the mouse isocortical regions, including maximal correlation to the mouse primary somatosensory area, with an average of 0.92. The cluster is characterized by high correlations to the mouse sensorimotor cluster and low correlations to the mouse supramodal clusters. Overall the human sensorimotor isocortical regions are loosely organized in clusters that contain sensory-visual areas and auditory-motor areas.
+At this level of clustering, the remaining mouse supramodal subdivisions form two clusters. These both exhibit low similarity to the human somatosensory and visual areas, but the cluster containing the infralimbic and perirhinal areas additionally exhibits low correlation values with the precentral gyrus, anterior paracentral lobule, and transverse gyri. The human cortical regions do not segregate as cleanly into sensorimotor and supramodal clusters. Under a similar level of description of four clusters of areas, the majority of areas belong to a large cluster that includes a mix of cortical types. However, at a lower level of the hierarchy, if the number of clusters is increased to five, this large cluster breaks up into two smaller clusters that feature some delineation between supramodal and sensorimotor areas, which are primarily motor and auditory in nature (e.g. precentral gyrus, Heschl’s gyrus). Interestingly, the postcentral gyrus, i.e. primary somatosensory area, forms a separate cluster with a set of visual areas such as the cuneus and lingual gyrus. These regions exhibit very similar correlation profiles to the mouse isocortical regions, including maximal correlation to the mouse primary somatosensory area, with an average of $r = 0.92$. The cluster is characterized by high correlations to the mouse sensorimotor cluster and low correlations to the mouse supramodal clusters. Overall the human sensorimotor isocortical regions are loosely organized in clusters that contain sensory-visual areas and auditory-motor areas.
 
 We additionally ran hierarchical clustering on the isocortical similarity matrix in the original homologous gene space. While the cluster annotations were not substantially different in this space, we observed that the Euclidean distances within and between clusters were smaller compared with the latent space clustering, further confirming that the perceptron classification approach improves the segregation of brain regions in the gene expression common space (Fig. 5D). 
 
 Overall, we observe a greater degree of similarity between mouse and human cortical regions involved in basic sensorimotor processing compared with supramodal or association areas. This is in line with the large body of existing research that suggests that sensory and motor areas of the cortex are conserved across the brains of mammals. While sensorimotor areas exhibit a greater degree of similarity than supramodal areas, the neuroanatomical pattern of correspondences obtained using mouse-human homologous genes is not at the level of individual cortical areas. Still, using a clustering approach we identified clear distinctions in the patterns of similarity between sensorimotor and supramodal areas, especially for regions in the mouse isocortex.
 
+```{r results3-fig5-import}
+load("Figure5.RData")
+```
 
-## Transcriptomic comparison of the mouse and human striatum
+```{r results3-fig5-interactive, include=FALSE, echo=FALSE, fig.width=10, fig.height=7.6}
+grid.newpage()
+grid.draw(fig5_grob)
+```
+
+```{r results3-fig5-caption}
+fig5_cap_A <- "(\\textbf{A}) Maximal correlation distributions of mouse isocortical regions. Points and error bars represent mean and 95% confidence interval over latent space samples."
+fig5_cap_B <- "(\\textbf{B}) Distributions of average maximal correlation for sensorimotor and supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
+fig5_cap_C <- "(\\textbf{C}) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal. Four clusters were chosen for visualization using the elbow method." 
+fig5_cap_D <- c("(\\textbf{D}) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space.")
+fig5_cap <- str_c("\\textbf{Similarity of mouse-human isocortical regions.}",
+                  fig5_cap_A,
+                  fig5_cap_B,
+                  fig5_cap_C,
+                  fig5_cap_D,
+                  sep = " ")
+```
+
+```{r results3-fig5-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig5_width,
+                      fig.height = fig5_height,
+                      fig.cap = fig5_cap)
+```
+
+```{r results3-fig5-print}
+grid.newpage()
+grid.draw(fig5_grob)
+```
+
+```{r results3-fig5-clean}
+rm(list = ls())
+```
+
+```{r results3-fig5-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+## Transcriptomic comparison of the mouse and human striatum {#results-4}
 
 We have focused here on comparing mouse and human brain organization using transcriptomic data, with a latent space based on homologous genes as the common space between the two species. To date, common space comparisons between the mouse and human brain have only been performed using functional connectivity [@balsters_primate_2020; @schaeffer_divergence_2020]. As a case in point, Balsters et al. (2020) compared mouse and human striatal organization using this measure. They found that the nucleus accumbens was highly conserved between mice and humans, and that voxels in the posterior part of the human putamen were significantly similar to the lateral portion of their mouse caudoputamen parcellation. Additionally, they report that 85% of voxels in the human striatum were not significantly similar to any of their mouse striatal seeds, and that 25% of human striatal voxels were significantly dissimilar compared with the mouse. These differences were understandable, as they involved parts of the human striatum that connected to parts of prefrontal cortex that have no known homolog in the mouse [@neubert_comparison_2014]. However, it is not necessarily the case that between-species differences in connectivity are associated with distinct architectonic or molecular signatures. Therefore, we investigated the patterns of similarity between the mouse and human striata on the basis of gene expression using the neural network latent space representations. 
 
 We first identified the striatal regions present in the Allen human dataset: the caudate, the putamen, and the nucleus accumbens. We evaluated the correlation between the microarray samples in these regions and every region in the mouse atlas. Based on these correlation values, we focused our analysis on the four mouse regions that were consistently the most similar across all latent spaces: the caudoputamen, the nucleus accumbens, the fundus of striatum, and the olfactory tubercle. For each of the human striatal regions, we then calculated the average correlation over the samples to each of the mouse targets. We examined the distribution of these average correlation values over the latent spaces (Fig. 6A). We find that the human caudate and putamen consistently exhibit the strongest degree of similarity to the mouse caudoputamen. The median of the distribution for the caudate-caudoputamen pairs is 0.95 and 0.97 for the putamen-caudoputamen pairs, with modal values of 0.94 and 0.97, respectively. All latent spaces return correlations greater than 0.9 for caudate-caudoputamen and putamen-caudoputamen pairs. Beyond this expected top match, the caudate and putamen both exhibit high similarity to the nucleus accumbens and the fundus of striatum, with mean correlation values of about 0.80. Neither of these target regions is consistently more similar to the mouse caudoputamen over all latent spaces.
 
-While the similarity of the caudate and the putamen to the caudoputamen is unsurprising, the story is not as clear for the human nucleus accumbens. We find that the standard deviation of the correlation calculated over all mouse targets is much lower (0.04) compared with the equivalent standard deviations for the caudate (0.09) and putamen (0.10), indicating less specificity to any one mouse striatal target. In particular, the human nucleus accumbens isn’t as specifically similar to the mouse nucleus accumbens in the way that the caudate and putamen are similar to the caudoputamen. The mouse target distributions are right-shifted compared with those for the caudate and putamen, with mean values of 0.90, 0.89, and 0.89 for the mouse nucleus accumbens, caudoputamen, and fundus of striatum, respectively. The human accumbens also exhibits a high degree of similarity to the mouse olfactory tubercle, the distribution of which is also right-shifted compared with the caudate and putamen. 
+While the similarity of the caudate and the putamen to the caudoputamen is unsurprising, the story is not as clear for the human nucleus accumbens. We find that the variance in correlation calculated over all mouse targets is much lower ($\sigma = 0.04$) compared with the equivalent variances for the caudate ($\sigma = 0.09$) and putamen ($\sigma = 0.10$), indicating less specificity to any one mouse striatal target. In particular, the human nucleus accumbens isn’t as specifically similar to the mouse nucleus accumbens in the way that the caudate and putamen are similar to the caudoputamen. The mouse target distributions are right-shifted compared with those for the caudate and putamen, with mean values of 0.90, 0.89, and 0.89 for the mouse nucleus accumbens, caudoputamen, and fundus of striatum, respectively. The human accumbens also exhibits a high degree of similarity to the mouse olfactory tubercle, the distribution of which is also right-shifted compared with the caudate and putamen. 
 
 Given the high correlation of the human caudate and putamen to the mouse caudoputamen, as well as the finding reported by Balsters et al. about the similarity of the lateral caudoputamen to the putamen, we were curious as to whether we could identify sub-regional patterns of similarity in the caudoputamen and other striatal regions using these gene expression data. To probe this question, we first examined the average latent space correlation between each voxel in the mouse striatum and every region in the human atlas. We created brain maps for the human regions that exhibited the highest mean correlation values, averaged over mouse striatal voxels: the caudate, the putamen, the nucleus accumbens, and the septal nuclei (Fig. 6B). We find that voxels in the caudoputamen exhibit a homogeneous pattern of similarity to both the caudate and the putamen. On average, voxels in the caudoputamen have a correlation of 0.95 to the caudate and 0.94 to the putamen, with standard deviations of 0.04 and 0.05 respectively. The caudate and putamen are associated with correlations of at least 0.90 in 88% and 84% of caudoputamen voxels. A number of voxels are also highly similar to the human nucleus accumbens, with an average correlation value of 0.90 and 55% of voxels returning a correlation of at least 0.9. The caudoputamen voxels most similar to the nucleus accumbens lie in the ventral-rostral part of the region. Of course, voxels in the mouse nucleus accumbens are also highly similar to the human nucleus accumbens, with an average of 0.90 and standard deviation of 0.06. While the human nucleus accumbens is the most strongly correlated region, a number of voxels also exhibit reasonably strong correlations to the substantia innominata, the septal nuclei, and the amygdala. Indeed, 91% of voxels in the accumbens are correlated at a value of 0.7 or higher to the substantia innominata. The equivalent percentages for the septal nuclei and amygdala are 78% and 74% respectively. 
 
@@ -136,8 +331,50 @@ We additionally examined the proportion of latent spaces in which each voxel in 
 
 Overall, we observe a strong association between the mouse caudoputamen and both the human caudate and putamen. While we find a subtle pattern of specificity to either region among voxels in the caudoputamen on the basis of maximal similarity, the high degree of similarity in the correlation values to each region suggests that the majority of voxels in the caudoputamen are equally similar to the caudate and the putamen on the basis of the expression of mouse-human homologous genes. We also find that the nucleus accumbens is well conserved across species. However the region also exhibits patterns of similarity that go beyond the simple one-to-one match. The human accumbens features similar correlation values to the mouse caudoputamen and fundus of striatum, in addition to the accumbens proper, with no sharp distinction between these regions. It also exhibits a larger degree of similarity to the mouse olfactory tubercle. This is also seen in the mouse striatum, where voxels in the accumbens and the olfactory tubercle map onto the human accumbens.
 
+```{r results4-fig6-import}
+load("Figure6.RData")
+```
 
-# Discussion
+```{r results4-fig6-interactive, include=FALSE, echo=FALSE, fig.width = 8, fig.height = 6.8}
+grid.newpage()
+grid.draw(fig6_grob)
+```
+
+```{r results4-fig6-caption}
+fig6_cap_A <- "(\\textbf{A}) Distributions over gene expression latent spaces of region-wise average correlation values for mouse and human striatal pairs. Human regions were chosen based on the AHBA ontology. Mouse target regions were chosen to be those with the highest average correlation values."
+fig6_cap_B <- "(\\textbf{B}) Latent space averaged correlations between voxels in the mouse striatum and human target regions. Target regions were selected based on the highest mean correlation across all striatal voxels."
+fig6_cap_C <- "(\\textbf{C}) Proportions of latent spaces in which mouse striatal voxels are maximally similar to human target regions."
+fig6_cap <- str_c("\\textbf{Similarity among mouse and human striatal regions.}",
+                  fig6_cap_A,
+                  fig6_cap_B,
+                  fig6_cap_C,
+                  sep = " ")
+```
+
+```{r results4-fig6-options}
+knitr::opts_chunk$set(include = TRUE,
+                      echo = FALSE,
+                      fig.width = fig6_width,
+                      fig.height = fig6_height,
+                      fig.cap = fig6_cap)
+```
+
+```{r results4-fig6-print}
+grid.newpage()
+grid.draw(fig6_grob)
+```
+
+```{r results4-fig6-clean}
+rm(list = ls())
+```
+
+```{r results4-fig6-options-reset, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE)
+```
+
+
+# Discussion {#discussion}
 
 We have demonstrated how spatial transcriptomic patterns of homologous genes can be used to make quantitative comparisons between the mouse and human brain. We showed that using homologous genes as a common space allows one to easily identify coarse similarities in brain structures across species, but that more fine-scaled parcellations, such as at the level of cortical areas, are more complex. Despite this limitation, the approach still allows for a formal assessment of different patterns of between-species similarity in primary compared to supramodal regions, identifications of distinct clusters of cortical territories across species, and comparison of between-species similarities at the transcriptomic level to those observed using other modalities. We will discuss our observations in the context of the importance of the mouse as a model for human neuroscience below.
 
@@ -195,247 +432,3 @@ This manuscript, including all figures, was generated programmatically using R M
 # References
 
 <div id="refs"></div>
-
-# Acknowledgments
-
-We thank C. Hammill, D.J. Fernandes, E. Anagnostou, B.J. Nieman, and E. Sibille for providing advice and for interesting conceptual discussions.
-**Funding:** This study was supported by the Canadian Institutes of Health Research (doctoral funding and foreign study award for A.B.). The Wellcome Centre for Integrative Neuroimaging is supported by core funding from the Wellcome Trust (203139/Z/16/Z).
-**Author contributions:** A.B. analyzed and visualized data, and wrote the manuscript with input from all authors. Y.Y. developed scripts for downloading the data sets. B.C.D. provided input and guidance on working with artificial neural networks. A.R. provided guidance for obtaining homologous gene sets. R.B.M. and J.P.L. conceived and supervised the project.
-**Competing interests:** The authors declare that they have no competing interests.
-**Data and materials availability:** This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All scripts and additional data needed to generate this analysis, including figures and manuscript, are accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/.
-
-# Figures and Tables
-
-
-```{r results1-fig1-import}
-load("Figure1.RData")
-```
-
-```{r results1-fig1-caption}
-fig1_cap_A <- "(\\textbf{A}) Similarity matrix displaying the correlation between 67 mouse regions and 88 human regions based on the expression of 2624 homologous genes. Columns are annotated with 11 broad mouse regions: Cortical subplate (CTXsp), olfactory areas (OLF), hippocampal formation (HPF), isocortex, cerebral nuclei (CNU), interbrain (IB), midbrain (MB), pons (P), medulla (MY), cerebellar cortex (CBX), cerebellar nuclei (CBN). Rows are annotated with 16 broad human regions: Claustrum (Cl), limbic lobe (LL), frontal lobe (FL), insula (Ins), occipital lobe (OL), parietal lobe (PL), temporal lobe (TL), amygdala (Amg), basal ganglia (BG), basal forebrain (BF), diencephalon (DIE), mesencephalon (MES), pons, myelencephalon (MY), cerebellar cortex (CbCx), cerebellar nuclei (CbN). Broad patterns of similarity are evident between coarsely defined brain regions, while correlation patterns are mostly homogeneous within these regions."
-fig1_cap_B <- "(\\textbf{B}) Mouse brain coronal slices showing similarity profiles for the human precentral gyrus, cuneus and crus I. Correlation patterns for the precentral gyrus and cuneus are highly similar to one another and broadly similar to most isocortical regions. The crus I is homogeneously similar to the mouse cerebellum."
-fig1_cap_C <- "(\\textbf{C}) Anatomically-ordered line charts displaying the similarity profiles for the seed regions in (B). Dashed vertical lines indicate the canonical mouse homologue for each human seed."
-
-fig1_cap <- str_c("\\textbf{Transcriptomic similarity in the mouse and human brains.}",
-                  fig1_cap_A,
-                  fig1_cap_B,
-                  fig1_cap_C,
-                  "Annotation colours correspond to atlas colours from the AMBA and AHBA for mouse and human regions respectively.",
-                  sep = " ")
-```
-
-```{r results1-fig1-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig1_width,
-                      fig.height = fig1_height,
-                      fig.cap = fig1_cap)
-```
-
-```{r results1-fig1-print}
-grid.newpage()
-grid.draw(fig1_grob)
-```
-
-```{r results1-fig1-clean}
-rm(list = ls())
-```
-
-```{r results1-fig1-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-```{r results2-fig2-import}
-load("Figure2.RData")
-```
-
-```{r results2-fig2-caption}
-fig2_cap_A <- str_c("(\\textbf{A}) Voxel-wise expression maps from 2624 homologous genes in the AMBA were used to train the neural network to classify each mouse voxel into one of 67 atlas regions.", sep = " ")
-fig2_cap_B <- "(\\textbf{B}) Once the network is trained, the output layer is removed. The mouse and human regional gene expression matrices are passed through the network, resulting in lower-dimensional latent space representations of the data. The training and transformation process was repeated 500 times."
-fig2_cap_C <- "(\\textbf{C}) A similarity matrix displaying the gene expression latent space correlation between mouse and human regions, averaged over 500 neural network training runs. Similar brain regions exhibit very high correlation values. Column and row annotations as described in Fig. 1."
-fig2_cap <- str_c("\\textbf{Creating a new common space.}",
-                  fig2_cap_A,
-                  fig2_cap_B,
-                  fig2_cap_C,
-                  sep = " ")
-```
-
-```{r results2-fig2-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig2_width,
-                      fig.height = fig2_height,
-                      fig.cap = fig2_cap)
-```
-
-```{r results2-fig2-print}
-grid.newpage()
-grid.draw(fig2_grob)
-```
-
-```{r results2-fig2-clean}
-rm(list = ls())
-```
-
-```{r results2-fig2-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-```{r results2-fig3-import}
-load("Figure3.RData")
-```
-
-```{r results2-fig3-caption}
-fig3_cap_A <- "(\\textbf{A}) The amount of local signal within a broadly similar region of the brain for a finer seed region's (e.g. primary motor area) similarity profile can be quantified by the decay rate of the head of the rank-ordered profile. Decay rate was quantified by computing the rank at a similarity of 0.75. This metric was compared between the initial gene expression space (orange line) and every gene expression latent space resulting from repeated training of the neural network (every blue line is a training outcome, heavy blue line serves as an example). A negative difference between these rank metrics indicates an improvement in locality in the latent space."
-fig3_cap_B <- "(\\textbf{B}) Structure-wise distributions of differences in rank at a similarity of 0.75 between the initial gene expression space and the gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Dashed black line at 0 indicates the threshold for improvement in one space over the other. Colours correspond to AMBA annotations as in Fig. 1 and 2."
-fig3_cap_C <- "(\\textbf{C}) Proportion of perceptron training runs resulting in an improvement or null difference in the gene expression latent space compared with the initial space. Cortical and cerebellar regions exhibit high proportions of improvement, while subcortical regions are less likely to be improved by the classification process."
-fig3_cap <- str_c("\\textbf{Quantifying improvement in locality in gene expression latent space.}",
-                  fig3_cap_A,
-                  fig3_cap_B,
-                  fig3_cap_C,
-                  sep = " ")
-```
-
-```{r results2-fig3-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig3_width,
-                      fig.height = fig3_height,
-                      fig.cap = fig3_cap)
-```
-
-```{r results2-fig3-print}
-grid.newpage()
-grid.draw(fig3_grob)
-```
-
-```{r results2-fig3-clean}
-rm(list = ls())
-```
-
-```{r results2-fig3-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-```{r results2-fig4-import}
-load("Figure4.RData")
-```
-
-```{r results2-fig4-caption}
-fig4_cap_A <- "(\\textbf{A}) Comparison between the ranks of canonical human matches for mouse seed regions between the initial gene expression space and gene expression latent spaces. Points and error bars represent mean and 95% confidence interval. Mouse region names are coloured according to the AMBA palette."
-fig4_cap_B <- "(\\textbf{B}) Proportion of latent spaces resulting in an improvement or null difference compared with the initial gene space. Uncoloured voxels correspond to regions with no established canonical human match."
-fig4_cap <- str_c("\\textbf{Recovering canonical neuroanatomical pairs in gene expression space.}",
-                  fig4_cap_A,
-                  fig4_cap_B,
-                  sep = " ")
-```
-
-```{r results2-fig4-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig4_width,
-                      fig.height = fig4_height,
-                      fig.cap = fig4_cap)
-```
-
-```{r results2-fig4-print}
-grid.newpage()
-grid.draw(fig4_grob)
-```
-
-```{r results2-fig4-clean}
-rm(list = ls())
-```
-
-```{r results2-fig4-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-```{r results3-fig5-import}
-load("Figure5.RData")
-```
-
-```{r results3-fig5-caption}
-fig5_cap_A <- "(\\textbf{A}) Maximal correlation distributions of mouse isocortical regions. Points and error bars represent mean and 95% confidence interval over latent space samples."
-fig5_cap_B <- "(\\textbf{B}) Distributions of average maximal correlation for sensorimotor and supramodal isocortical areas in each gene expression latent space. Grey lines correspond to individual latent spaces."
-fig5_cap_C <- "(\\textbf{C}) Hierarchical clustering of mouse and human isocortical regions based on average latent space correlation values. Mouse regions are annotated as sensorimotor or supramodal. Four clusters were chosen for visualization using the elbow method." 
-fig5_cap_D <- c("(\\textbf{D}) Within-cluster sum of squared distances for different numbers of mouse and human isocortical clusters in the average latent space and initial homologous gene space.")
-fig5_cap <- str_c("\\textbf{Similarity of mouse-human isocortical regions.}",
-                  fig5_cap_A,
-                  fig5_cap_B,
-                  fig5_cap_C,
-                  fig5_cap_D,
-                  sep = " ")
-```
-
-```{r results3-fig5-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig5_width,
-                      fig.height = fig5_height,
-                      fig.cap = fig5_cap)
-```
-
-```{r results3-fig5-print}
-grid.newpage()
-grid.draw(fig5_grob)
-```
-
-```{r results3-fig5-clean}
-rm(list = ls())
-```
-
-```{r results3-fig5-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-```{r results4-fig6-import}
-load("Figure6.RData")
-```
-
-```{r results4-fig6-caption}
-fig6_cap_A <- "(\\textbf{A}) Distributions over gene expression latent spaces of region-wise average correlation values for mouse and human striatal pairs. Human regions were chosen based on the AHBA ontology. Mouse target regions were chosen to be those with the highest average correlation values."
-fig6_cap_B <- "(\\textbf{B}) Latent space averaged correlations between voxels in the mouse striatum and human target regions. Target regions were selected based on the highest mean correlation across all striatal voxels."
-fig6_cap_C <- "(\\textbf{C}) Proportions of latent spaces in which mouse striatal voxels are maximally similar to human target regions."
-fig6_cap <- str_c("\\textbf{Similarity among mouse and human striatal regions.}",
-                  fig6_cap_A,
-                  fig6_cap_B,
-                  fig6_cap_C,
-                  sep = " ")
-```
-
-```{r results4-fig6-options}
-knitr::opts_chunk$set(include = TRUE,
-                      echo = FALSE,
-                      fig.width = fig6_width,
-                      fig.height = fig6_height,
-                      fig.cap = fig6_cap)
-```
-
-```{r results4-fig6-print}
-grid.newpage()
-grid.draw(fig6_grob)
-```
-
-```{r results4-fig6-clean}
-rm(list = ls())
-```
-
-```{r results4-fig6-options-reset, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
-                      include = FALSE)
-```
-
-
-# Supplementary Materials
-
