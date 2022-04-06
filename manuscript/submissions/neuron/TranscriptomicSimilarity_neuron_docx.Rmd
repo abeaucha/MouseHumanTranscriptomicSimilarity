@@ -1,8 +1,6 @@
 ---
 output: 
   word_document
-bibliography: TranscriptomicSimilarity.bib
-csl: neuron.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -24,7 +22,6 @@ library(gridExtra)
 
 The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
 
-*** 
 
 # Introduction {#intro}
 
@@ -429,6 +426,3 @@ Given the stochasticity inherent in training the network (e.g. random weight ini
 This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All of the code and additional data needed to generate this analysis, including figures and manuscript, is accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/. 
 
 
-# References
-
-<div id="refs"></div>
