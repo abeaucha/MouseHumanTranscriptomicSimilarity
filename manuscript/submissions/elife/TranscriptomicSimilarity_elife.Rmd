@@ -429,6 +429,14 @@ Given the stochasticity inherent in training the network (e.g. random weight ini
 
 This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All of the code and additional data needed to generate this analysis, including figures and manuscript, is accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/. 
 
+# Acknowledgments {#acknowledgments}
+
+We thank C. Hammill, D.J. Fernandes, E. Anagnostou, B.J. Nieman, and E. Sibille for providing advice and for interesting conceptual discussions. This study was supported by the Canadian Institutes of Health Research (doctoral funding and foreign study award for A.B.). The Wellcome Centre for Integrative Neuroimaging is supported by core funding from the Wellcome Trust (203139/Z/16/Z).
+
+# Competing interests {#competing-interests}
+
+The authors declare that they have no competing interests.
+
 
 # References
 
