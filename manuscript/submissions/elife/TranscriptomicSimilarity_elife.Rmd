@@ -2,8 +2,8 @@
 output: 
   pdf_document:
       includes:
-        in_header: TranscriptomicSimilarity_biorxiv_header.tex
-        before_body: TranscriptomicSimilarity_biorxiv_front_matter.tex
+        in_header: TranscriptomicSimilarity_elife_header.tex
+        before_body: TranscriptomicSimilarity_elife_front_matter.tex
 bibliography: TranscriptomicSimilarity.bib
 csl: science-advances.csl
 ---
