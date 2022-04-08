@@ -5,7 +5,7 @@ output:
         in_header: TranscriptomicSimilarity_elife_header.tex
         before_body: TranscriptomicSimilarity_elife_front_matter.tex
 bibliography: TranscriptomicSimilarity.bib
-csl: science-advances.csl
+csl: elife.csl
 ---
 
 ```{r setup, include=FALSE}
