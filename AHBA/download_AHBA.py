@@ -37,6 +37,14 @@ def parse_args():
         help = "Directory in which to download the data"
     )
     
+    parser.add_argument(
+        '--verbose',
+        type = str,
+        default = 'true',
+        choices = ['true', 'false'],
+        help = "Verbosity"
+    )
+    
     args = vars(parser.parse_args())
     
     return args
@@ -48,6 +56,7 @@ def main():
     #Get command line arguments
     args = parse_args()
     outdir = args['outdir']
+    verbose = True if args['verbose'] == 'true' else False
     
     #Format the path properly
     outdir = os.path.join(outdir, '')
@@ -56,7 +65,8 @@ def main():
         os.mkdir(outdir)
         
     #Download AHBA hierarchical ontology as JSON
-    print("Downloading AHBA hierarchical ontology...")
+    if verbose:
+        print("Downloading AHBA hierarchical ontology...")
     hierarchy_url = ('http://api.brain-map.org/api/v2/'
                      'structure_graph_download/10.json')
     hierarchy_url_get = requests.get(hierarchy_url)
@@ -70,7 +80,8 @@ def main():
         os.mkdir(outdir)
 
     #Download microarray data
-    print("Downloading AHBA microarray data...")
+    if verbose:
+        print("Downloading AHBA microarray data...")
     files = abagen.fetch_microarray(donors = 'all', data_dir = outdir)
 
     return
