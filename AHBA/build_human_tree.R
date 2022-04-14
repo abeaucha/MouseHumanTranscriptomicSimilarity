@@ -17,36 +17,40 @@ suppressPackageStartupMessages(library(optparse))
 # Command line arguments -----------------------------------------------------
 
 option_list <- list(
-  make_option("--datadir",
-              type = "character",
-              default = "data/",
+  make_option('--datadir',
+              type = 'character',
+              default = 'data/',
               help = paste("Directory containing expression matrix CSV files.",
                            "[default %default]")),
-  make_option("--infile",
-              type = "character",
+  make_option('--infile',
+              type = 'character',
               help = paste("Name of CSV file containing the sample-wise",
                            "expression matrix.")),
-  make_option("--outfile",
-              type = "character",
-              default = "HumanExpressionTree.RData",
+  make_option('--outfile',
+              type = 'character',
+              default = 'HumanExpressionTree.RData',
               help = paste("Name of .RData file in which to export the tree.",
                            "[default %default]")),
-  make_option("--samplefile",
-              type = "character",
+  make_option('--samplefile',
+              type = 'character',
               help = "Name of CSV file containing sample information."),
-  make_option("--treefile",
-              type = "character",
+  make_option('--treefile',
+              type = 'character',
               help = paste("Name of JSON file containing hierarchical ontology.",
-                           "[default %default]"))
+                           "[default %default]")),
+  make_option('--verbose',
+              type = 'character',
+              default = 'true',
+              help = "Verbosity. [default %default]")
 )
 
 args <- parse_args(OptionParser(option_list = option_list))
 
-if (is.null(args[["infile"]])){
+if (is.null(args[['infile']])){
   stop("Argument --infile empty with no default.")
 }
 
-if (is.null(args[["samplefile"]])){
+if (is.null(args[['samplefile']])){
   stop("Argument --samplefile empty with no default.")
 }
 
@@ -55,26 +59,27 @@ if (is.null(args[["samplefile"]])){
 working_dir <- getwd()
 
 script_dir <- commandArgs() %>% 
-  str_subset("--file=") %>% 
-  str_remove("--file=") %>%
+  str_subset('--file=') %>% 
+  str_remove('--file=') %>%
   dirname()  
 
 path_tree_tools <- str_c(working_dir, 
                          script_dir, 
-                         "../functions/tree_tools.R", 
-                         sep = "/")
+                         '../functions/tree_tools.R', 
+                         sep = '/')
 
 source(path_tree_tools)
 
 
 # Map microarray samples to tree nodes ---------------------------------------
 
-dirData <- args[["datadir"]]
-fileExpr <- args[["infile"]]
-fileSampleInfo <- args[["samplefile"]]
-fileTreeDefs <- args[["treefile"]]
+dirData <- args[['datadir']]
+fileExpr <- args[['infile']]
+fileSampleInfo <- args[['samplefile']]
+fileTreeDefs <- args[['treefile']]
+verbose <- ifelse(args[['verbose']] == 'true', TRUE, FALSE)
 
-message("Mapping microarray samples to the AHBA ontology...")
+if (verbose) {message("Mapping microarray samples to the AHBA ontology...")}
 
 #Load AHBA sample information
 dfSampleInfo <- suppressMessages(read_csv(file.path(dirData,fileSampleInfo)))
@@ -86,16 +91,16 @@ treeHumanDefs <- parse_abi_hierarchy(file.path(dirData, fileTreeDefs))
 #Otherwise this messes with the sample assignment
 treeHumanDefs$Do(function(node){
   if(isLeaf(node)){
-    if("vermis" %in% node$path){
-      node$name <- str_c("vermal ", node$name)
+    if('vermis' %in% node$path){
+      node$name <- str_c('vermal ', node$name)
     }
   }
 })
 
 
 dfSampleInfo <- dfSampleInfo %>% 
-  mutate(structure_name = ifelse(str_detect(structure_acronym, "^Ve"), 
-                                 str_c("vermal ", structure_name), 
+  mutate(structure_name = ifelse(str_detect(structure_acronym, '^Ve'), 
+                                 str_c('vermal ', structure_name), 
                                  structure_name)) 
 
 #Assign AHBA samples to nodes on the tree
@@ -108,8 +113,8 @@ treeHumanDefs$Do(function(node){
 
 #Aggregate samples up the tree
 treeHumanDefs$Do(function(node){
-  node$samples <- c(node$samples, unlist(Aggregate(node, "samples", c)))
-}, traversal = "post-order")
+  node$samples <- c(node$samples, unlist(Aggregate(node, 'samples', c)))
+}, traversal = 'post-order')
 
 #The aggregation generates duplicate samples and NAs. Remove those
 treeHumanDefs$Do(function(node){
@@ -122,11 +127,11 @@ Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 
 # Add gene expression values to the tree -------------------------------------
 
-message("Adding gene expression data to the tree...")
+if (verbose) {message("Adding gene expression data to the tree...")}
 
 #Import sample expression matrix
 matHumanExpr <- suppressMessages(read_csv(str_c(file.path(dirData, fileExpr)))) %>% 
-  column_to_rownames("Gene") %>% 
+  column_to_rownames('Gene') %>% 
   as.matrix()
 
 #Aggregate sample expression values at each node
@@ -148,8 +153,8 @@ treeHumanExpr$Do(function(node){
 
 # Write to file --------------------------------------------------------------
 
-message(str_c("Writing to file: ", args[["outfile"]], "..."))
+if (verbose) {message(str_c("Writing to file: ", args[['outfile']], "..."))}
 
 save(treeHumanExpr,
-     file = file.path(dirData, args[["outfile"]]))
+     file = file.path(dirData, args[['outfile']]))
 
