@@ -121,10 +121,10 @@ if (verbose) {message("Writing to file...")}
 
 #Write gene expression matrix
 exprfile <- paste0('HumanExpressionMatrix_samples_pipeline_v', args[['version']], '.csv')
-write_csv(x = listData[['GeneExpression']],
-          file = paste0(dirData, exprfile))
+data.table::fwrite(x = listData[['GeneExpression']],
+                   file = paste0(dirData, exprfile))
 
 #Write sample information
 samplefile <- paste0('SampleInformation_pipeline_v', args[['version']], '.csv')
-write_csv(x = listData[['SampleInfo']],
-          file = paste0(dirData, samplefile))
+data.table::fwrite(x = listData[['SampleInfo']],
+                   file = paste0(dirData, samplefile))
