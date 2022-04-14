@@ -211,28 +211,34 @@ importDonorData <- function(path, donor, verbose = TRUE){
   
   #Microarray probe (rows) expression across all samples (cols)
   pathProbeExpr <- str_c(path, "MicroarrayExpression.csv")
-  dfProbeExpression <- suppressMessages(read_csv(pathProbeExpr, 
-                                                 col_names = F)) %>% 
-    rename(ProbeID = X1)
+  dfProbeExpression <- suppressMessages(data.table::fread(pathProbeExpr,
+                                                          header = FALSE)) %>% 
+  as_tibble() %>% 
+  rename(ProbeID = X1)
   
   #Microarray probe information
   pathProbeInfo <- str_c(path, "Probes.csv")
-  dfProbeInfo <- suppressMessages(read_csv(pathProbeInfo)) %>% 
+  dfProbeInfo <- suppressMessages(data.table::fread(pathProbeInfo,
+                                                    header = TRUE)) %>% 
+    as_tibble() %>% 
     select(ProbeID = probe_id,
            Gene = gene_symbol,
            EntrezID = entrez_id)
   
   #Sample information
   pathSampleInfo <- str_c(path, "SampleAnnot.csv")
-  dfSampleInfo <- suppressMessages(read_csv(pathSampleInfo)) %>% 
+  dfSampleInfo <- suppressMessages(data.table::fread(pathSampleInfo,
+                                                     header = TRUE)) %>% 
+    as_tibble() %>% 
     mutate(SampleID = str_c(structure_id, slab_num, well_id, sep = "-"),
            Donor = donor)
   
   pathIntensityFilter <- str_c(path, "PACall.csv")
-  dfIntensityFilter <- suppressMessages(read_csv(pathIntensityFilter,
-                                                 col_names = F)) %>% 
+  dfIntensityFilter <- suppressMessages(data.table::fread(pathIntensityFilter,
+                                                          header = FALSE)) %>% 
+    as_tibble() %>% 
     rename(ProbeID = X1)
-  
+    
   #Label expression data columns with sample IDs
   colnames(dfProbeExpression)[2:ncol(dfProbeExpression)] <- dfSampleInfo$SampleID
   colnames(dfIntensityFilter)[2:ncol(dfIntensityFilter)] <- dfSampleInfo$SampleID
