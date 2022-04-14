@@ -82,7 +82,10 @@ verbose <- ifelse(args[['verbose']] == 'true', TRUE, FALSE)
 if (verbose) {message("Mapping microarray samples to the AHBA ontology...")}
 
 #Load AHBA sample information
-dfSampleInfo <- suppressMessages(read_csv(file.path(dirData,fileSampleInfo)))
+dfSampleInfo <- suppressMessages(data.table::fread(file.path(dirData, 
+                                                             fileSampleInfo),
+                                                   header = TRUE)) %>% 
+  as_tibble()
 
 #Load the human tree definitions
 treeHumanDefs <- parse_abi_hierarchy(file.path(dirData, fileTreeDefs))
@@ -130,7 +133,9 @@ Prune(treeHumanDefs, pruneFun = function(node){length(node$samples) != 0})
 if (verbose) {message("Adding gene expression data to the tree...")}
 
 #Import sample expression matrix
-matHumanExpr <- suppressMessages(read_csv(str_c(file.path(dirData, fileExpr)))) %>% 
+matHumanExpr <- suppressMessages(data.table::fread(file.path(dirData, fileExpr),
+                                                   header = TRUE)) %>% 
+  as_tibble() %>% 
   column_to_rownames('Gene') %>% 
   as.matrix()
 
