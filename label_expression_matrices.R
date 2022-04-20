@@ -114,13 +114,16 @@ path_processing_tools <- file.path(working_dir,
 source(path_processing_tools)
 
 
-#' Label voxels/samples with neuroanatomical regions
+#' Label observations with neuroanatomical regions
 #'
-#' @param measurements 
-#' @param tree 
-#' @param treefield 
+#' @param measurements (character vector) Unique identifiers for measurements
+#' being labelled.
+#' @param tree (data.tree tree) A tree whose leaf nodes are the labels you 
+#' want to assign to the measurements.
+#' @param treefield (character scalar) The name of the tree field that contains
+#' the measurement identifiers for each node.
 #'
-#' @return
+#' @return (character vector) The neuroanatomical labels for each measurement.
 labelRegions <- function(measurements, tree, treefield){
   
   #Get a list of all measurements and their corresponding ROIs
