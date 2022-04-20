@@ -13,7 +13,7 @@ module purge
 source activate_venv
 
 #Download and process AMBA data
-source pipeline_AMBA
+source build_AMBA_data
 
 #Download and process AHBA data
 source pipeline_AHBA
