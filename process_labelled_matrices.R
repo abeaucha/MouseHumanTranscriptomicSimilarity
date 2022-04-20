@@ -92,11 +92,12 @@ source(path_processing_tools)
 # Main -----------------------------------------------------------------------
 
 verbose <- ifelse(args[["verbose"]] == 'true', TRUE, FALSE)
+infile <- args[['infile']]
 
 if(verbose){message("Importing data...")}
 
 #Import data
-dfExpression <- suppressMessages(data.table::fread(args[["infile"]],
+dfExpression <- suppressMessages(data.table::fread(infile,
                                                    header = TRUE)) %>% 
   as_tibble()
 
@@ -119,7 +120,7 @@ if (args[["scale"]] == "true") {
     as_tibble() %>% 
     bind_cols(dfLabels)
   
-  outfile <- args[["infile"]] %>% 
+  outfile <- infile %>% 
     basename() %>% 
     str_replace(".csv", "_scaled.csv")
   
@@ -142,7 +143,7 @@ if (args[["aggregate"]] == "true") {
     summarise_all(mean) %>% 
     ungroup()
   
-  outfile <- args[["infile"]] %>% 
+  outfile <- infile %>% 
     basename() %>% 
     str_extract("^[a-zA-Z]*") %>% 
     str_c("_ROI_", labels, ".csv")
@@ -155,5 +156,5 @@ if (args[["aggregate"]] == "true") {
 
 if(verbose){message("Writing to file...")}
 
-write_csv(dfExpression,
-          file = file.path(args[["outdir"]], outfile))
+data.table::fwrite(dfExpression,
+                   file = file.path(args[["outdir"]], outfile))
