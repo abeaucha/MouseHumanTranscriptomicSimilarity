@@ -47,7 +47,11 @@ option_list <- list(
               type = "character",
               default = "true",
               help = paste("Option to save labelled human data to file",
-                           "[default %default]"))
+                           "[default %default]")),
+  make_option("--verbose",
+              default = "true",
+              type = "character",
+              help = "[default %default]")
 )
 
 
@@ -114,7 +118,7 @@ labelRegions <- function(measurements, tree, treefield){
 }
 
 
-# Paths ----------------------------------------------------------------------
+# Init -----------------------------------------------------------------------
 
 #Parse command line args
 args <- parse_args(OptionParser(option_list = option_list))
@@ -144,6 +148,7 @@ fileMouseTree <- args[["mousetree"]]
 fileHumanMat <- args[["humanmatrix"]]
 fileHumanTree <- args[["humantree"]]
 homologs <- args[["homologs"]]
+verbose <- ifelse(args[["verbose"]] == 'true', TRUE, FALSE)
 
 if (!file.exists(fileMouseMat)) {
   stop("Mouse file ", fileMouseMat, " not found")
@@ -165,15 +170,15 @@ if (!file.exists(homologs)) {
   stop("Homologs file ", homologs, " not found")
 }
 
-message("Labelling data from mouse file: ", fileMouseMat)
-message("Labelling data from human file: ", fileHumanMat)
+if (verbose) {message("Labelling data from mouse file: ", fileMouseMat)}
+if (verbose) {message("Labelling data from human file: ", fileHumanMat)}
 
 maskFlag <- str_extract(fileMouseMat, "mask[a-z]+")
 
 
 # Importing and processing ---------------------------------------------------
 
-message("Importing data...")
+if (verbose) {message("Importing data...")}
 
 #Import expression matrices
 dfExprMouse <- suppressMessages(data.table::fread(fileMouseMat, 
@@ -207,7 +212,7 @@ colnames(dfExprMouse) <- str_c("V", colnames(dfExprMouse))
 
 # Build the mouse data tree --------------------------------------------------
 
-message("Importing mouse data tree...")
+if (verbose) {message("Importing mouse data tree...")}
 
 #Load DSURQE atlas and mask
 dsurqe <- mincGetVolume("AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc")
@@ -252,7 +257,7 @@ dfExprMouse <- dfExprMouse[, (colnames(dfExprMouse) %in% treeMouseVoxels)]
 
 # Build the human data tree ---------------------------------------------------
 
-message("Importing human data tree...")
+if (verbose) {message("Importing human data tree...")}
 
 #Load human tree
 #Samples are already mapped to nodes
@@ -271,7 +276,7 @@ dfExprHuman <- dfExprHuman[,colnames(dfExprHuman) %in% treeHumanSamples]
 
 # Assign regional labels ------------------------------------------------------
 
-message("Assigning labels...")
+if (verbose) {message("Assigning labels...")}
 
 #Transpose data frames
 dfExprMouse <- dfExprMouse %>% as.matrix() %>% t()
@@ -328,7 +333,7 @@ rownames(dfExprHuman) <- NULL
 
 # Write to file --------------------------------------------------------------
 
-message("Writing to file...")
+if (verbose) {message("Writing to file...")}
 
 if (args[["savemouse"]] == "true") {
   outFileMouse <- fileMouseMat %>% 
