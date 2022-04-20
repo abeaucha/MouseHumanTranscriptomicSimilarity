@@ -334,12 +334,12 @@ if (args[["savemouse"]] == "true") {
   outFileMouse <- fileMouseMat %>% 
     basename() %>% 
     str_replace(".csv", "_labelled.csv")
-  write_csv(dfExprMouse, file = str_c(args[["outdir"]], outFileMouse))
+  data.table::fwrite(dfExprMouse, file = str_c(args[['outdir']], outFileMouse))
 }
 
 if (args[["savehuman"]] == "true"){
   outFileHuman <- fileHumanMat %>% 
     basename() %>% 
     str_replace(".csv", "_labelled.csv")
-  write_csv(dfExprHuman, file = str_c(args[["outdir"]], outFileHuman))
+  data.table::fwrite(dfExprHuman, file = str_c(args[['outdir']], outFileHuman))
 }
