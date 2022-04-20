@@ -2,9 +2,16 @@
 # label_expression_matrices.R 
 # Antoine Beauchamp
 # 
+# Label voxel-wise and sample-wise expression matrices
+#
 # Description
 # -----------
-# 
+# This script does two things:
+# 1. It intersects the mouse and human gene sets with a set of homologous
+#    genes
+# 2. It labels the mouse and human voxel- and sample-wise expression matrices
+#    with neuroanatomical labels from multiple sets of labels at different
+#    levels of granularity in the neuroanatomical hierarchy. 
 
 # Libraries ------------------------------------------------------------------
 suppressPackageStartupMessages(library(tidyverse))
