@@ -3,16 +3,16 @@
 module purge
 
 #If venv does not exist, create it
-if [ ! -d "project_env" ]; then
+if [ ! -d ".venv" ]; then
 	echo "Initializing python virtual environment..."
 
 	#Create the venv
-	python3 -m venv project_env
+	python3 -m venv .venv
 
 	echo "Installing python packages..."
 
 	#Activate the venv
-	source project_env/bin/activate
+	source .venv/bin/activate
 
 	#Upgrade pip
 	echo "Upgrading pip..."
@@ -31,4 +31,4 @@ fi
 module load minc-toolkit/1.9.18.1-mp7vcse r/3.6.3-zlk4uk6 r-packages/2022-01-26
 
 #Activate the python venv
-source project_env/bin/activate
+source .venv/bin/activate
