@@ -1,4 +1,4 @@
-#' Title
+#' Intersect gene homologs
 #'
 #' @param data 
 #' @param homologs 
@@ -134,13 +134,17 @@ imputer <- function(data, strategy = "mean", axis = "columns"){
   if (axis == "rows"){
     
     for(i in 1:nrow(data)){
-      if(any(is.na(data[i,]))){ data[i,is.na(data[i,])] <- impute(data[i,], na.rm = TRUE) }
+      if(any(is.na(data[i,]))){
+        data[i,is.na(data[i,])] <- impute(data[i,], na.rm = TRUE)
+        }
     }
     
   } else {
     
     for (i in 1:ncol(data)){
-      if(any(is.na(data[,i]))){data[is.na(data[i,]),i] <- impute(data[,i], na.rm = TRUE)}
+      if(any(is.na(data[,i]))){
+        data[is.na(data[i,]),i] <- impute(data[,i], na.rm = TRUE)
+        }
     }
     
   }
@@ -153,26 +157,38 @@ scaler <- function(data, scale = TRUE, axis = "columns"){
   
   if (axis == "columns"){
     
-    colMeansMat <- matrix(colMeans(data), nrow = nrow(data), ncol = ncol(data), byrow = T)
+    colMeansMat <- matrix(colMeans(data), 
+                          nrow = nrow(data), 
+                          ncol = ncol(data), 
+                          byrow = T)
     out <- data - colMeansMat
     
     if (scale == TRUE){
       
       sigma <- sqrt(colSums(out^2)/(nrow(data)-1))
-      sigmaMat <- matrix(sigma, nrow = nrow(data), ncol = ncol(data), byrow = T)
+      sigmaMat <- matrix(sigma, 
+                         nrow = nrow(data), 
+                         ncol = ncol(data), 
+                         byrow = T)
       out <- out/sigmaMat
       
     } 
     
   } else if (axis == "rows") {
     
-    rowMeansMat <- matrix(rowMeans(data), nrow = nrow(data), ncol = ncol(data), byrow = F)
+    rowMeansMat <- matrix(rowMeans(data), 
+                          nrow = nrow(data), 
+                          ncol = ncol(data), 
+                          byrow = F)
     out <- data - rowMeansMat
     
     if (scale == TRUE){
       
       sigma <- sqrt(rowSums(out^2)/(ncol(data)-1))
-      sigmaMat <- matrix(sigma, nrow = nrow(data), ncol = ncol(data), byrow = F)
+      sigmaMat <- matrix(sigma, 
+                         nrow = nrow(data), 
+                         ncol = ncol(data), 
+                         byrow = F)
       out <- out/sigmaMat
       
     }
