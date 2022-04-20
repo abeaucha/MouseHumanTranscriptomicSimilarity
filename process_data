@@ -29,7 +29,7 @@ Rscript label_expression_matrices.R \
 echo "Processing labelled expression matrices..."
 
 echo "Normalizing mouse voxel expression matrix..."
-Rscript process_labelled_matrices.R \
+Rscript process_labelled_matrix.R \
 	--infile data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv \
 	--scale true \
 	--aggregate false \
@@ -37,7 +37,7 @@ Rscript process_labelled_matrices.R \
 	--verbose true
 
 echo "Normalizing human sample expression matrix..."
-Rscript process_labelled_matrices.R \
+Rscript process_labelled_matrix.R \
 	--infile data/HumanExpressionMatrix_samples_pipeline_v1_labelled.csv \
 	--scale true \
 	--aggregate false \
@@ -45,7 +45,7 @@ Rscript process_labelled_matrices.R \
 	--verbose true
 
 echo "Normalizing and aggregating mouse voxel expression matrix..."
-Rscript process_labelled_matrices.R \
+Rscript process_labelled_matrix.R \
 	--infile data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv \
 	--scale true \
 	--aggregate true \
@@ -54,7 +54,7 @@ Rscript process_labelled_matrices.R \
 	--verbose true
 
 echo "Normalizing and aggregating human sample expression matrix..."
-Rscript process_labelled_matrices.R \
+Rscript process_labelled_matrix.R \
 	--infile data/HumanExpressionMatrix_samples_pipeline_v1_labelled.csv \
 	--scale true \
 	--aggregate true \
