@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ----------------------------------------------------------------------------
-# pipeline_AHBA
+# build_AHBA_data
 # Author: Antoine Beauchamp
 #
 # Pipeline to generate necessary data files from the Allen Human Brain Atlas

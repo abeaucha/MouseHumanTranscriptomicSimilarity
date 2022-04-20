@@ -16,7 +16,7 @@ source activate_venv
 source build_AMBA_data
 
 #Download and process AHBA data
-source pipeline_AHBA
+source build_AHBA_data
 
 #Jointly process AMBA and AHBA expression matrices
 source process_expression_data
