@@ -7,7 +7,7 @@ source activate_venv
 
 source pipeline_AMBA
 source pipeline_AHBA
-source process_data
+source process_expression_data
 source generate_latent_spaces
 
 deactivate

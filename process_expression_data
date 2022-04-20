@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# ----------------------------------------------------------------------------
+# process_data
+# 
+
 #Create atlas labels
 echo "Creating pruned atlas labels from neuroanatomical trees..."
 Rscript create_tree_labels.R \
