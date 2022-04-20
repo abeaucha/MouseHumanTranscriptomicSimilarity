@@ -47,7 +47,9 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 
 def parse_args():
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    )
     
     parser.add_argument(
         "--datadir",
