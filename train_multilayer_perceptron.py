@@ -8,7 +8,17 @@ Train a multi-layer perceptron
 
 Description
 -----------
+This script trains a multi-layer perceptron neural network to classify mouse
+voxels into a specified number of neuroanatomical atlas regions. 
 
+Once the network is trained, the final layer is removed to obtain the
+transformation from the input space to the latent space defined by the last
+hidden layer. 
+
+The modified network architecture is used to transform aggregated regional
+mouse and human gene expression matrices from the input space into the latent
+space. An option also exists to transform voxel- and sample-wise expression
+matrices as well.
 """
 
 # Packages -------------------------------------------------------------------
