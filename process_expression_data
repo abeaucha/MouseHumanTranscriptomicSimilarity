@@ -1,8 +1,23 @@
 #!/bin/bash
 
 # ----------------------------------------------------------------------------
-# process_data
-# 
+# process_expression_data
+# Author: Antoine Beauchamp
+#
+# Pipeline to process mouse and human gene expression data sets.
+#
+# Pipeline steps:
+# 1. Create a set of atlas labels at multiple levels of granularity using
+#    the neuroanatomical trees.
+# 2. Create a CSV file containing mouse-human canonical neuroanatomical pairs.
+# 3. Intersect mouse and human gene sets with mouse-human gene homologs
+#    (in label_expression_matrices.R)
+# 4. Label mouse voxel-wise and human sample-wise expression matrices with 
+#    neuroanatomical labels at multiple levels in the hierarchy.
+# 5. Normalize mouse voxel-wise expression matrix.
+# 6. Normalize human sample-wise expression matrix.
+# 7. Normalize and aggregate mouse expression matrix under 67 atlas labels.
+# 8. Normalize and aggregate human expression matrix under 88 atlas labels.
 
 #Create atlas labels
 echo "Creating pruned atlas labels from neuroanatomical trees..."
