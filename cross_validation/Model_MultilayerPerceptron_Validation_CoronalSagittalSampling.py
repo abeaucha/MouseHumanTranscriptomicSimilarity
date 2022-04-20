@@ -1,13 +1,14 @@
-#! /usr/bin/env/ python3
-
 # ----------------------------------------------------------------------------
-#
-#
-#
-#
+# Model_MultilayerPerceptron_Validation_CoronalSagittalSampling.py
+# Author: Antoine Beauchamp
 # Created: February 3rd, 2021
-# Edited: March 2nd, 2021
-# ----------------------------------------------------------------------------
+
+"""
+Implement cross-validation 
+
+Description
+-----------
+"""
 
 # Packages -------------------------------------------------------------------
 
@@ -33,19 +34,25 @@ from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
 
-
-# Functions --------------------------------------------------------------------
+# Functions ------------------------------------------------------------------
 
 def parse_args():
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    )
     
     parser.add_argument(
         "--labels",
         type = str,
         default = 'region5',
-        choices = ['region5', 'region11', 'region28', 'region46', 'region67', 'region130'],
-        help = "Class of labels on which to train [default region5]"
+        choices = ['region5', 
+                   'region11', 
+                   'region28', 
+                   'region46', 
+                   'region67', 
+                   'region130'],
+        help = "Class of labels on which to train."
     )
     
     parser.add_argument(
@@ -53,7 +60,7 @@ def parse_args():
         nargs = "*",
         type = int,
         default = [500],
-        help = "List containing the number of hidden units to tune over [default [500]]"
+        help = "List containing the number of hidden units to tune over."
     )
 
     parser.add_argument(
@@ -61,7 +68,7 @@ def parse_args():
         nargs = "*",
         type = int,
         default = [4],
-        help = "List containing the number of hidden layers to tune over [default [4]]"
+        help = "List containing the number of hidden layers to tune over."
     )
 
     parser.add_argument(
@@ -69,7 +76,7 @@ def parse_args():
         nargs = "*",
         type = float,
         default = [0.],
-        help = "List containing dropout rates to tune over [default [0.]]"
+        help = "List containing dropout rates to tune over."
     )
 
     parser.add_argument(
@@ -77,28 +84,28 @@ def parse_args():
         nargs = "*",
         type = float,
         default = [1e-6],
-        help = "List containing weight decay values to tune over [default [1e-6]]"
+        help = "List containing weight decay values to tune over."
     )
 
     parser.add_argument(
         "--nsamples",
         type = int,
         default = 1,
-        help = "Number of times to train and evaluate each hyperparameter combination [default 1]"
+        help = "Number of times to train and evaluate each hyperparameter combination."
     )
 
     parser.add_argument(
         "--nepochs",
         type = int,
         default = 200,
-        help = "Number of epochs to train over [default 200]"
+        help = "Number of epochs to train over."
     )
 
     parser.add_argument(
         "--learningrate",
         type = float,
         default = 1e-5,
-        help = "Learning rate during training [default 1e-5]"
+        help = "Learning rate during training."
     )
 
     parser.add_argument(
@@ -106,7 +113,7 @@ def parse_args():
         type = str,
         default = 'false',
         choices = ['true', 'false'],
-        help = "Flag to indicate whether to compute confusion matrices [default false]"
+        help = "Flag to indicate whether to compute confusion matrices."
     )
     
     parser.add_argument(
@@ -122,8 +129,6 @@ def parse_args():
     return args
     
     
-
-
 def buildTrainValidationSets(coronal, sagittal, seed = None):
     
     """ """
