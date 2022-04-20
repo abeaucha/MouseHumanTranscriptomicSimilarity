@@ -3,6 +3,7 @@ abagen
 numpy
 scipy
 pandas
+datatable
 requests
 pyminc
 tqdm
