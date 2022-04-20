@@ -13,7 +13,9 @@
 #    with neuroanatomical labels from multiple sets of labels at different
 #    levels of granularity in the neuroanatomical hierarchy. 
 
-# Libraries ------------------------------------------------------------------
+
+# Packages -------------------------------------------------------------------
+
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(RMINC))
 suppressPackageStartupMessages(library(data.tree))
@@ -60,6 +62,34 @@ option_list <- list(
               type = "character",
               help = "[default %default]")
 )
+
+
+#Parse command line args
+args <- parse_args(OptionParser(option_list = option_list))
+
+if (is.null(args[["mousematrix"]])){
+  stop("No input file given to --mousematrix")
+}
+
+if (is.null(args[["humanmatrix"]])){
+  stop("No input file given to --humanmatrix")
+}
+
+
+if (!(args[["savemouse"]] %in% c("true", "false"))) {
+  stop(paste("Argument --savemouse must be one of [true, false] (got ", 
+             args[["savemouse"]], ")"))
+}
+
+if (!(args[["savehuman"]] %in% c("true", "false"))) {
+  stop(paste("Argument --savehuman must be one of [true, false] (got ", 
+             args[["savehuman"]], ")"))
+}
+
+if (!(args[['verbose']] %in% c('true', 'false'))) {
+  stop(paste("Argument --verbose must be onoe of [true, false] (got ",
+             args[['verbose']], ")"))
+}
 
 
 # Functions ------------------------------------------------------------------
@@ -125,30 +155,7 @@ labelRegions <- function(measurements, tree, treefield){
 }
 
 
-# Init -----------------------------------------------------------------------
-
-#Parse command line args
-args <- parse_args(OptionParser(option_list = option_list))
-
-if (is.null(args[["mousematrix"]])){
-  stop("No input file given to --mousematrix")
-}
-
-if (is.null(args[["humanmatrix"]])){
-  stop("No input file given to --humanmatrix")
-}
-
-
-if (!(args[["savemouse"]] %in% c("true", "false"))) {
-  stop(paste("Argument --savemouse must be one of [true, false] (got ", 
-             args[["savemouse"]], ")"))
-}
-
-if (!(args[["savehuman"]] %in% c("true", "false"))) {
-  stop(paste("Argument --savehuman must be one of [true, false] (got ", 
-             args[["savehuman"]], ")"))
-}
-
+# Main -----------------------------------------------------------------------
 
 fileMouseMat <- args[["mousematrix"]]
 fileMouseTree <- args[["mousetree"]]
@@ -259,7 +266,6 @@ pruneAnatTree(treeMouse, nodes = cutAtNodes, method = "AtNode")
 #Filter expression data for voxels that are in the pruned tree
 treeMouseVoxels <- unlist(treeMouse$Get("voxels", filterFun = isLeaf))
 dfExprMouse <- dfExprMouse[, (colnames(dfExprMouse) %in% treeMouseVoxels)]
-
 
 
 # Build the human data tree ---------------------------------------------------
