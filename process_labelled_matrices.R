@@ -47,11 +47,18 @@ option_list <- list(
 args <- parse_args(OptionParser(option_list = option_list))
 
 if (!(args[["scale"]] %in% c("true", "false"))) {
-  stop()
+  stop(paste("Argument --scale must be onoe of [true, false] (got ",
+             args[['scale']], ")"))
 }
 
 if (!(args[["aggregate"]] %in% c("true", "false"))) {
-  stop()
+  stop(paste("Argument --aggregate must be onoe of [true, false] (got ",
+             args[['aggregate']], ")"))
+}
+
+if (!(args[['verbose']] %in% c('true', 'false'))) {
+  stop(paste("Argument --verbose must be onoe of [true, false] (got ",
+             args[['verbose']], ")"))
 }
 
 if (args[["scale"]] == "false" & args[["aggregate"]] == "false"){
