@@ -3,13 +3,20 @@
 # Antoine Beauchamp
 # Created: August 25th, 2021
 #
+# Process a labelled gene expression matrix
+#
 # Description
 # -----------
+# This script implements processing for a labelled gene expression matrix
+# by scaling the matrix, aggregating expression under a set of labels, or 
+# both.
+
 
 # Packages -------------------------------------------------------------------
 
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(optparse))
+
 
 # Command line arguments -----------------------------------------------------
 
@@ -64,6 +71,7 @@ if (!(args[['verbose']] %in% c('true', 'false'))) {
 if (args[["scale"]] == "false" & args[["aggregate"]] == "false"){
   stop(paste("Both --scale and --aggregate were false. This does nothing."))
 }
+
 
 # Functions ------------------------------------------------------------------
 
