@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# process_labelled_matrices.R
+# process_labelled_matrix.R
 # Antoine Beauchamp
 # Created: August 25th, 2021
 #
