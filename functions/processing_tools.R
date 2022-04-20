@@ -116,36 +116,6 @@ intersectGeneHomologs <- function(data, homologs){
 }
 
 
-
-normalizeExprData <- function(data){
-  
-  require(data.tree)
-  
-  if(is.data.frame(data)){
-    
-    out <- data %>% 
-      column_to_rownames("Gene") %>% 
-      as.matrix() %>% 
-      scale %>% 
-      as_tibble(rownames = "Gene")
-    
-  } else if (isTree(data)){
-    
-    out <- Clone(data)
-    out$Do(function(node){
-      node$Expression = scale(node$Expression)
-      node$Expression = as.numeric(node$Expression)
-    })
-    
-  } else {
-    stop("`data` is neither a data frame nor a data tree.",
-         call. = FALSE)
-  }
-  
-  return(out)
-  
-}
-
 isTree <- function(x){
   any(class(x) == "Node") & 
     any(class(x) == "R6")
