@@ -214,7 +214,7 @@ importDonorData <- function(path, donor, verbose = TRUE){
   dfProbeExpression <- suppressMessages(data.table::fread(pathProbeExpr,
                                                           header = FALSE)) %>% 
   as_tibble() %>% 
-  rename(ProbeID = X1)
+  rename(ProbeID = V1)
   
   #Microarray probe information
   pathProbeInfo <- str_c(path, "Probes.csv")
@@ -237,7 +237,7 @@ importDonorData <- function(path, donor, verbose = TRUE){
   dfIntensityFilter <- suppressMessages(data.table::fread(pathIntensityFilter,
                                                           header = FALSE)) %>% 
     as_tibble() %>% 
-    rename(ProbeID = X1)
+    rename(ProbeID = V1)
     
   #Label expression data columns with sample IDs
   colnames(dfProbeExpression)[2:ncol(dfProbeExpression)] <- dfSampleInfo$SampleID
