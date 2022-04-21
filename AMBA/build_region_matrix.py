@@ -18,6 +18,7 @@ import argparse
 import os
 import numpy                as np
 import pandas               as pd
+from datatable              import fread
 from pyminc.volumes.factory import volumeFromFile
 
 # Command line arguments -----------------------------------------------------
@@ -135,7 +136,9 @@ def main():
             print("Importing gene-by-voxel expression matrix: {} ...".format(infile))
     
         #Import voxel expression matrix
-        dfExprVoxel = pd.read_csv(os.path.join(datadir, infile))
+        dfExprVoxel = (fread(os.path.join(datadir, infile), header = True)
+                       .to_pandas())
+                       
     except FileNotFoundError:
         raise FileNotFoundError("Input file {} not found in data directory {}"
                                .format(infile, datadir))
