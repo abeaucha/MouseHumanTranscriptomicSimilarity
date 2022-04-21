@@ -29,6 +29,7 @@ import pickle
 import argparse
 import sys
 import os
+from datatable import fread
 
 import torch
 import torch.nn.functional as F
@@ -192,10 +193,13 @@ def main():
     print("Importing data...")
 
     #Import data
-    dfExprVoxel = pd.read_csv(filepath_voxel)
-    dfExprMouse = pd.read_csv(filepath_mouse)
-    dfExprHuman = pd.read_csv(filepath_human)
-
+    dfExprVoxel = (fread(filepath_voxel, header = True)
+                   .to_pandas())
+    dfExprMouse = (fread(filepath_mouse, header = True)
+                   .to_pandas())
+    dfExprHuman = (fread(filepath_human, header = True)
+                   .to_pandas())
+    
     # Process data ------------------------------------------------------------
 
     print("Preparing data for learning...")
@@ -338,7 +342,7 @@ def main():
         "_L2"+str(args['L2'])+".csv"
     
         #Write confusion matrix to file
-        dfConfusionMat.to_csv(os.path.join(outdir, fileConfMat), 
+        dfConfusionMat.to_csv(os.path.join(outdir, fileConfMat),
                               index = False)
 
 
@@ -377,9 +381,9 @@ def main():
     "_HumanProb_"+args['humandata'].capitalize()+'.csv'
     
     #Write probability data to file
-    dfPredictionsMouse.to_csv(os.path.join(outdir, fileMouseProb), 
+    dfPredictionsMouse.to_csv(os.path.join(outdir, fileMouseProb),
                               index = False)
-    dfPredictionsHuman.to_csv(os.path.join(outdir, fileHumanProb), 
+    dfPredictionsHuman.to_csv(os.path.join(outdir, fileHumanProb),
                               index = False)
     
     # Extract hidden layer for mouse/human data ------------------------------
@@ -423,7 +427,9 @@ def main():
         file_voxel_human = ("HumanExpressionMatrix_"
                             "samples_pipeline_v1_labelled.csv")
         filepath_voxel_human = os.path.join(datadir, file_voxel_human)
-        dfExprVoxelHuman = pd.read_csv(filepath_voxel_human)
+        
+        dfExprVoxelHuman = (fread(filepath_voxel_human, header = True)
+                            .to_pandas())
         indLabelsHuman = dfExprVoxelHuman.columns.str.match('Region')
         dfInputVoxelHuman = dfExprVoxelHuman.loc[:, ~indLabels]
         X_VoxelHuman = dftx.fit_transform(dfInputVoxelHuman)['X']
@@ -442,9 +448,9 @@ def main():
         "_L2"+str(args['L2'])+\
         "_HumanVoxelTx.csv"
 
-        dfMouseVoxelTransformed.to_csv(os.path.join(outdir,fileMouseVoxelTx), 
+        dfMouseVoxelTransformed.to_csv(os.path.join(outdir,fileMouseVoxelTx),
                                        index = False)
-        dfHumanVoxelTransformed.to_csv(os.path.join(outdir,fileHumanVoxelTx), 
+        dfHumanVoxelTransformed.to_csv(os.path.join(outdir,fileHumanVoxelTx),
                                        index = False)
         
 if __name__ == "__main__":
