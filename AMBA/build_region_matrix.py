@@ -106,6 +106,7 @@ def main():
     mask = args['mask']
     labels = args['labels']
     defs = args['defs']
+    verbose = True if args['verbose'] == 'true' else False
     
     if infile is None:
         raise Exception("No input file passed to argument --infile")
