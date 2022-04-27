@@ -22,7 +22,6 @@ library(gridExtra)
 
 \onehalfspacing
 
-
 # Abstract
 
 The ever-increasing use of mouse models in preclinical neuroscience research calls for an improvement in the methods used to translate findings between mouse and human brains. Using openly accessible brain-wide transcriptomic data sets, we evaluated the similarity of mouse and human brain regions on the basis of homologous gene expression. Our results suggest that mouse-human homologous genes capture broad patterns of neuroanatomical organization, but that the resolution of cross-species correspondences can be improved using a novel supervised machine learning approach. Using this method, we demonstrate that sensorimotor subdivisions of the neocortex exhibit greater similarity between species, compared with supramodal subdivisions, and that mouse isocortical regions separate into sensorimotor and supramodal clusters based on their similarity to human cortical regions. We also find that mouse and human striatal regions are strongly conserved, with the mouse caudoputamen exhibiting an equal degree of similarity to both the human caudate and putamen.
@@ -43,7 +42,6 @@ A more promising approach to mouse-human comparisons could be to exploit the spa
 
 Here we examine the patterns of similarity between the mouse and human brain using a common space constructed from spatial gene expression data sets. We begin with an initial set of 2624 homologous genes. Subsequently, we present and evaluate a novel method for improving the resolution of mouse-human neuroanatomical correspondences using a supervised machine learning approach. Using the novel representation of the gene expression common space, i.e. a latent gene expression space, we analyse the similarity of mouse and human isocortical subdivisions and demonstrate that sensorimotor regions exhibit a higher degree of similarity than supramodal regions. Finally, we examine the patterns of transcriptomic similarity at a voxel-wise level in the mouse and human striatum.
 
-
 # Results
 
 ## Homologous genes capture broad similarities in the mouse and human brains {#results-1}
@@ -55,7 +53,6 @@ We find that the similarity matrix exhibits broad patterns of positive correlati
 Our ability to resolve regional matches on a finer scale is limited when using all homologous genes in this way. This is especially true for regions within the cerebral and cerebellar cortices, which exhibit a high degree of internal homogeneity. This is apparent in the similarity profiles, defined here as the set of correlation values between a given seed region and all target regions in the other species. For example, the human precentral gyrus and cuneus are most strongly correlated to many regions of the mouse isocortex. While the brain maps feature a rostral-caudal gradient (Fig. 1B), the profiles of the two seeds are highly similar despite the regions having very different functions (Fig. 1C). Indeed, the correlation between the similarity profiles of the precentral gyrus and cuneus is $r = 0.980$. The similarity profile of human cerebellar crus 1 highlights another example of this homogeneity. The profile of crus 1 is similar to that of all regions of the mouse cerebellum, with an average correlation of $r = 0.269$ and a standard deviation of $\sigma = 0.041$. Across all regions, the variance of the correlations across cortical regions is $\sigma^2 = 0.0052$ while that across cerebellar hemispheric regions is $\sigma^2 = 0.0017$, compared with a total variation of $\sigma^2 = 0.0416$ across all entries in the matrix. 
 
 So, although these is some distinguishing power in the profiles of regions at a finer scale, this is much smaller than between coarse anatomical regions. This also true for parts of the broad anatomical systems that are part of the same functional system. This suggests that the regional expression patterns of mouse-human homologous genes can be used to identify general similarities between the brains of the two species even using a simple correlation measure, but the ability to identify finer scale matches might require a more subtle approach.
-
 
 ```{r results1-fig1-import}
 load("Figure1.RData")
@@ -100,7 +97,6 @@ rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE)
 ```
-
 
 ## A latent gene expression space improves the resolution of mouse-human associations {#results-2}
 
@@ -212,7 +208,6 @@ While the supervised learning approach improved our ability to identify matches 
 
 We find that for most regions in this subset, the classification approach either improves the correspondence or performs as well as the full set of homologous genes. For example, 73% of regions exhibit improved similarity in at least 80% of latent spaces. The improvement is most pronounced for regions in the cortical subplate and isocortex. In particular, the visual areas improve from a rank of 32 to an average of 10, though the variance is much higher in this case. Many regions in the sub-cortex do not benefit from the gene expression latent spaces since the initial gene set was already recapitulating the appropriate match with maximal similarity. Apart from the pallidum and the medulla, each of these regions is maximally similar to its canonical match in at least 90% of latent spaces. In such cases, the classification approach performs as well as the original approach. Finally, although many regions in the cerebellum feature some improvement in the latent spaces, the variation in the rank of the standard human pair is often quite large, indicating some instability in the neural network’s ability to recover these matches. However, while the rank of the canonical pair varies in different instances of the latent space, the top matches for any given cerebellar region are always cerebellar regions. For instance, when the mouse crus 1 is used as the seed region, the human crus 1 is most often assigned a rank between 6 and 9. However, similar proportions in that range occur for the crus 2 and lobules V, VI and VIIB, indicating that these cerebellar regions are swapping ranks in the different latent spaces. Thus while cerebellar regions are reliably associated with other cerebellar regions in the gene expression latent spaces, these associations are not stable over multiple training runs. 
 
-
 ```{r results2-fig4-import}
 load("Figure4.RData")
 ```
@@ -258,7 +253,6 @@ knitr::opts_chunk$set(echo = TRUE,
 ```
 
 Together, these results demonstrate that the multi-layer peceptron classification approach improves our ability to resolve finer scale mouse-human neuroanatomical matches within the broadly similar regions obtained using the initial gene expression space. By training a classifier to predict the atlas labels in one species, we were able to generate a new common space that amplified the amount of local signal within broadly similar regions while also improving our ability to recover known mouse-human neuroanatomical pairs. 
-
 
 ## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas  {#results-3}
 
@@ -376,7 +370,6 @@ knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE)
 ```
 
-
 # Discussion {#discussion}
 
 We have demonstrated how spatial transcriptomic patterns of homologous genes can be used to make quantitative comparisons between the mouse and human brain. We showed that using homologous genes as a common space allows one to easily identify coarse similarities in brain structures across species, but that more fine-scaled parcellations, such as at the level of cortical areas, are more complex. Despite this limitation, the approach still allows for a formal assessment of different patterns of between-species similarity in primary compared to supramodal regions, identifications of distinct clusters of cortical territories across species, and comparison of between-species similarities at the transcriptomic level to those observed using other modalities. We will discuss our observations in the context of the importance of the mouse as a model for human neuroscience below.
@@ -391,13 +384,11 @@ An advantage of the approach presented here is that it can, in principle, be app
 
 The power of a formal understanding of similarities and differences between brains at different levels of organization is evident. In fundamental neuroscience, it will help translate results from data types that cannot be obtained in humans to the human brain [@barron_cross-species_2021]. In translational neuroscience, it will, in a negative sense, help establish the limits of the translational paradigm by showing which aspects of the human brain cannot be understood using the model species [@liu_functional_2021]. In a positive sense, it will also help by establishing and improving our understanding of the many aspects in which the model and human brain do concur [@mandino_triple-network_2021]. More ambitious still, it can provide a way in which highly diverse manifestations of certain disease syndromes (e.g. autism spectrum disorder) [@simonoff_psychiatric_2008; @grzadzinski_dsm-5_2013] and the availability of many distinct model strains [@ellegood_clustering_2015], each hypothesized to capture a distinct aspect of a multi-dimensional clinical syndrome, can be related to one another. Ultimately, we believe that using the mapping of homologous gene expression between species can be an important part of building a transform that maps information obtained using mice to humans and vice versa.
 
-
 # Materials and methods {#materials-methods}
 
 ## Mouse gene expression data
 
 We used the adult mouse whole-brain in-situ hybridization data sets from the Allen Mouse Brain Atlas [@lein_genome-wide_2007]. Specifically, we used 3D expression grid data, i.e. expression data aligned to the Allen Mouse Brain Common Coordinate Framework (CCFv3)[@wang_allen_2020] and summarized under a grid at a resolution of $200\mu m$. We downloaded the gene expression "energy" volumes from both the coronal and sagittal in-situ hybridization experiments as a sequence of 32-bit float values using the Allen Institute's API (http://help.brain-map.org/display/api/Downloading+3-D+Expression+Grid+Data). These volumes were subsequently reshaped into 3D images in the MINC format. Origin, extents, and spacing were defined such that the image was RAS-oriented, with the origin at the point where the anterior commissure crosses the midline. The MINC images from the coronal and sagittal data sets were then processed separately using the Python programming language. The sagittal data set was first filtered to keep only those genes that were also present in the coronal set. Images were imported using the `pyminc` package, masked and reshaped to form an experiment-by-voxel expression matrix. We pre-processed this data by first applying a `log2` transformation for consistency with the human data set. For those genes associated with more than one in-situ hybridization experiment, we averaged the expression of each voxel across the experiments. We subsequently filtered out genes for which more than 20% of voxels contained missing values. Finally, we applied a K-nearest neighbours algorithm to impute the remaining missing values. The result of this pre-processing pipeline was a gene-by-voxel expression matrix with 3958 genes and 61315 voxels for the coronal data set and a matrix with 3619 genes and 26317 voxels for the sagittal data set. 
-
 
 ## Human gene expression data
 
@@ -430,7 +421,6 @@ Given the stochasticity inherent in training the network (e.g. random weight ini
 ## Data and code availability
 
 This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All of the code and additional data needed to generate this analysis, including figures and manuscript, is accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/. 
-
 
 # References
 
