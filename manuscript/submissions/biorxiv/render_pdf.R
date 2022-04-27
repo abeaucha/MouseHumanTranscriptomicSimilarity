@@ -1,5 +1,14 @@
+# ----------------------------------------------------------------------------
+# render_pdf.R
+# Antoine Beauchamp
+#
+# Render .pdf file from .Rmd file
 
-library(optparse)
+# Packages -------------------------------------------------------------------
+
+suppressPackageStartupMessages(library(optparse))
+
+# Command line arguments -----------------------------------------------------
 
 option_list <- list(
   make_option("--infile",
@@ -8,7 +17,7 @@ option_list <- list(
 
 args <- parse_args(OptionParser(option_list = option_list))
 
-infile <- args[["infile"]]
+# Main -----------------------------------------------------------------------
 
 Sys.setenv(RSTUDIO_PANDOC="/usr/lib/rstudio-server/bin/pandoc")
-rmarkdown::render(infile, output_format = 'pdf_document')
+rmarkdown::render(args[["infile"]], output_format = 'pdf_document')
