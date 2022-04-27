@@ -1,10 +1,17 @@
 #!/bin/bash
 
+# ----------------------------------------------------------------------------
+# compile_manuscript
+# Author: Antoine Beauchamp
+#
+# Compile manuscript PDF from markdown files
+
+#Figure markdown files
 markdown_files=(*_AMBA_legend.Rmd)
 markdown_files+=(*_figure*.Rmd)
 
+#Extract R code from .Rmd files and execute
 echo "Generating figures..."
-
 for file in ${markdown_files[@]};
 do
 	Rscript extract_code.R --infile $file
@@ -12,17 +19,17 @@ do
 	r_file="${file/".Rmd"/".R"}"
 	
 	echo "Executing ${r_file} ..."
-#	Rscript $r_file 
+	Rscript $r_file 
 	
 	rm $r_file
-	
+
+	#Remove artefact files
 	if [ -f Rplots.pdf ]; 
 	then
 		rm Rplots.pdf
 	fi
 done
 
+#Render the manuscript PDF
 echo "Rendering manuscript..."
-
 Rscript render_pdf.R --infile TranscriptomicSimilarity_biorxiv.Rmd
-
