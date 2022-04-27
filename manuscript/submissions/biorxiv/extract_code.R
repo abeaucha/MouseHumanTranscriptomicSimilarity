@@ -1,7 +1,14 @@
+# ----------------------------------------------------------------------------
+# extract_code.R
+# Antoine Beauchamp
+#
+# Extract R code from .Rmd file
 
+# Packages -------------------------------------------------------------------
 
-library(optparse)
-library(stringr)
+suppressPackageStartupMessages(library(optparse))
+
+# Command line arguments -----------------------------------------------------
 
 option_list <- list(
   make_option("--infile",
@@ -10,15 +17,17 @@ option_list <- list(
 
 args <- parse_args(OptionParser(option_list = option_list))
 
+# Main -----------------------------------------------------------------------
+
 infile <- args[["infile"]]
 
 if (is.null(infile)){
-  stop("No input file provided") 
+  stop("No input file provided.") 
 }
 
-if (!str_detect(infile, ".Rmd$")) {
+if (!stringr::str_detect(infile, ".Rmd$")) {
   stop("Input file must been an R Markdown file with extension .Rmd. Received: ", infile)
 }
 
-outfile <- str_replace(infile, ".Rmd", ".R")
+outfile <- stringr::str_replace(infile, ".Rmd", ".R")
 knitr::purl(input = infile, output = outfile)
