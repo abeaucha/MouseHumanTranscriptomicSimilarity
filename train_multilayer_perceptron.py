@@ -257,6 +257,13 @@ def main():
     weight_decay = args['L2']
     max_epochs = args['nepochs']
     learning_rate = args['learningrate']
+    
+    if is_available() == True:
+        print("GPU available. Training network using GPU...")
+        device = 'cuda'
+    else:
+        print("GPU unavailable. Training network using CPU...")
+        device = 'cpu'
 
     #Define network architecture
     class ClassifierModule(nn.Module):
@@ -301,16 +308,11 @@ def main():
                           LRScheduler(policy=OneCycleLR,
                                       total_steps=max_epochs,
                                       cycle_momentum=False,  
-                                      max_lr=learning_rate))] 
-        )
+                                      max_lr=learning_rate))],
+        device = device)
 
     
     # Train the network ------------------------------------------------------
-    
-    if is_available() == True:
-        print("GPU available. Training network using GPU...")
-    else:
-        print("GPU unavailable. Training network using CPU...")
     
     #Fit the network
     net.fit(X, y)
@@ -324,6 +326,7 @@ def main():
     #Match the dummy variable labels to the region names
     dfLabels['DummyVariable'] = y
     dfLabelsUnique = dfLabels.sort_values('DummyVariable').drop_duplicates()
+    
     
     # Compute training confusion matrix --------------------------------------
     
