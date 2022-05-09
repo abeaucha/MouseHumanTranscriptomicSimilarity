@@ -25,7 +25,7 @@ matrices as well.
 
 import pandas as pd
 import numpy as np
-import pickle
+import random
 import argparse
 import sys
 import os
@@ -151,6 +151,12 @@ def parse_args():
                 "modified MLP.")
     )
     
+    parser.add_argument(
+        '--seed',
+        type = int,
+        help = ("Random seed")
+    )
+    
     args = vars(parser.parse_args())
     
     return args
@@ -239,6 +245,18 @@ def main():
     # Initialize the network --------------------------------------------------
 
     print("Initializing neural network...")
+    
+    seed = args['seed']
+    if seed is not None:
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        random.seed(seed)
+    
+    #Get network parameters from command line args
+    hidden_units = args['nunits']
+    weight_decay = args['L2']
+    max_epochs = args['nepochs']
+    learning_rate = args['learningrate']
 
     #Define network architecture
     class ClassifierModule(nn.Module):
@@ -269,15 +287,6 @@ def main():
                 X = F.softmax(self.output(X), dim = -1)
 
             return X
-
-
-    #Get network parameters from command line args
-    hidden_units = args['nunits']
-    weight_decay = args['L2']
-    max_epochs = args['nepochs']
-    learning_rate = args['learningrate']
-
-    np.random.seed(123)
 
     #Create the classifier
     net = NeuralNetClassifier(
