@@ -14,7 +14,7 @@ We explore the idea of using the brain-wide spatial expression patterns of mouse
 
 All aspects of this project, including downloading and analyzing the data, generating figures, and rendering the final manuscript, were done in a programmatic manner that is automatically re-createable. 
 
-The manuscript can be generated from scratch in its entirety using the following steps:
+The manuscript can be generated in its entirety from scratch using the following steps:
 
 1. Source the `pipeline_main` shell script. This pipeline is responsible for downloading and processing the spatial transcriptomics data, as well as training the perceptron neural network. 
 2. Source the `compile_manuscript` shell script in the manuscript sub-directory of interest (e.g. manuscript/submissions/biorxiv/). This script runs all analyses for the paper, generates all associated figures, and renders the final PDF. 
