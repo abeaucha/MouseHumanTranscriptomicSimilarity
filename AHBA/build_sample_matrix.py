@@ -36,7 +36,8 @@ def parse_args():
         '--datadir',
         type = str,
         default = 'data/',
-        help = "Directory containing the AHBA data sets. If the data are not found, they will be downloaded."
+        help = ("Directory containing the AHBA data sets. If the data are not 
+                 found, they will be downloaded.")
     )
     
     parser.add_argument(
@@ -135,15 +136,20 @@ def get_sample_metadata(data_dir, donors):
         samplefile = os.path.join(data_dir, donor_dir, 'SampleAnnot.csv')
         df_sample = pd.read_csv(samplefile)
     
-        sample_ids = df_sample.apply(lambda x: '%s-%s-%s' % (x['structure_id'], x['slab_num'], x['well_id']), 
-                                 axis = 1)
+        sample_ids = (df_sample
+                      .apply(lambda x: '%s-%s-%s' % (x['structure_id'], 
+                                                     x['slab_num'], 
+                                                     x['well_id']), 
+                             axis = 1))
         df_sample['SampleID'] = sample_ids
     
         df_sample['Donor'] = row['donorID']
     
         sample_data.append(df_sample)
         
-    df_samples = pd.concat(sample_data, axis = 0, ignore_index = True)
+    df_samples = pd.concat(sample_data, 
+                           axis = 0, 
+                           ignore_index = True)
     
     return df_samples
     
