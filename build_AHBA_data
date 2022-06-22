@@ -19,9 +19,22 @@ source activate_venv
 
 # Download AHBA data from the web
 echo "Downloading AHBA data..."
-python3 AHBA/download_AHBA.py --outdir AHBA/data/
+#python3 AHBA/download_AHBA.py \
+#	--outdir AHBA/data/
 
-# Build sample expression matrix 
+# Build sample expression matrix
+echo "Building human gene-by-sample expression matrix..." 
+python3 AHBA/build_sample_matrix.py \
+	--datadir AHBA/data/microarray/ \
+	--outdir AHBA/data/ \
+	--donorsfile AHBA/data/donors.csv \
+    --ibf_threshold 0.5 \
+    --probe-selection diff_stability \
+    --donor-probes aggregate \
+    --sample-norm srs \
+    --gene-norm srs \
+    --verbose true
+
 #echo "Building human gene-by-sample expression matrix..."
 #Rscript AHBA/build_sample_matrix.R \
 #	--microarraydir AHBA/data/microarray/ \
@@ -30,12 +43,20 @@ python3 AHBA/download_AHBA.py --outdir AHBA/data/
 #	--verbose true
 
 # Build sample tree
-#echo "Building human neuroanatomical tree..."
-#Rscript AHBA/build_human_tree.R \
-#	--datadir AHBA/data/ \
-#	--infile HumanExpressionMatrix_samples_pipeline_v1.csv \
-#	--samplefile SampleInformation_pipeline_v1.csv \
-#	--treefile AHBA_hierarchy_definitions.json \
-#	--outfile HumanExpressionTree.RData
+# echo "Building human neuroanatomical tree..."
+# Rscript AHBA/build_human_tree.R \
+# 	--datadir AHBA/data/ \
+# 	--infile HumanExpressionMatrix_samples_pipeline_v1.csv \
+# 	--samplefile SampleInformation_pipeline_v1.csv \
+# 	--treefile AHBA_hierarchy_definitions.json \
+# 	--outfile HumanExpressionTree.RData
+    
+echo "Building human neuroanatomical tree..."
+Rscript AHBA/build_human_tree.R \
+	--datadir AHBA/data/ \
+	--infile HumanExpressionMatrix_samples_pipeline_abagen.csv \
+	--samplefile SampleInformation_pipeline_abagen.csv \
+	--treefile AHBA_hierarchy_definitions.json \
+	--outfile HumanExpressionTree.RData
 
 deactivate
