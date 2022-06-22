@@ -36,8 +36,8 @@ def parse_args():
         '--datadir',
         type = str,
         default = 'data/',
-        help = ("Directory containing the AHBA data sets. If the data are not 
-                 found, they will be downloaded.")
+        help = ("Directory containing the AHBA data sets. If the data are not ",
+                "found, they will be downloaded.")
     )
     
     parser.add_argument(
@@ -89,7 +89,7 @@ def parse_args():
     )
     
     parser.add_argument(
-        '--gene_norm',
+        '--gene-norm',
         type = str,
         default = 'srs',
         help = ("")

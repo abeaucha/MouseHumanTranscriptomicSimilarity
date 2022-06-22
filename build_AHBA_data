@@ -28,7 +28,7 @@ python3 AHBA/build_sample_matrix.py \
 	--datadir AHBA/data/microarray/ \
 	--outdir AHBA/data/ \
 	--donorsfile AHBA/data/donors.csv \
-    --ibf_threshold 0.5 \
+    --ibf-threshold 0.5 \
     --probe-selection diff_stability \
     --donor-probes aggregate \
     --sample-norm srs \
