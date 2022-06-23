@@ -436,8 +436,10 @@ def main():
         dfMouseVoxelTransformed = pd.DataFrame(net.predict_proba(X))
         dfMouseVoxelTransformed['Region'] = dfLabels[labelcol]
         
+#         file_voxel_human = ("HumanExpressionMatrix_"
+#                             "samples_pipeline_v1_labelled.csv")
         file_voxel_human = ("HumanExpressionMatrix_"
-                            "samples_pipeline_v1_labelled.csv")
+                            "samples_pipeline_abagen_labelled_scaled.csv")
         filepath_voxel_human = os.path.join(datadir, file_voxel_human)
         
         dfExprVoxelHuman = (fread(filepath_voxel_human, header = True)
