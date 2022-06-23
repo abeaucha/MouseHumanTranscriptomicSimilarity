@@ -51,12 +51,12 @@ python3 AHBA/build_sample_matrix.py \
 # 	--treefile AHBA_hierarchy_definitions.json \
 # 	--outfile HumanExpressionTree.RData
     
-# echo "Building human neuroanatomical tree..."
-# Rscript AHBA/build_human_tree.R \
-# 	--datadir AHBA/data/ \
-# 	--infile HumanExpressionMatrix_samples_pipeline_abagen.csv \
-# 	--samplefile SampleInformation_pipeline_abagen.csv \
-# 	--treefile AHBA_hierarchy_definitions.json \
-# 	--outfile HumanExpressionTree.RData
+echo "Building human neuroanatomical tree..."
+Rscript AHBA/build_human_tree.R \
+	--datadir AHBA/data/ \
+	--infile HumanExpressionMatrix_samples_pipeline_abagen.csv \
+	--samplefile SampleInformation_pipeline_abagen.csv \
+	--treefile AHBA_hierarchy_definitions.json \
+	--outfile HumanExpressionTree.RData
 
 deactivate

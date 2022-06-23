@@ -196,11 +196,7 @@ def main():
                                                     sim_threshold = sim_threshold,
                                                     sample_norm = sample_norm,
                                                     gene_norm = gene_norm,
-#                                                     corrected_mni = False, #This breaks the code. I think this is also where samples get filtered. 
                                                     verbose = verbose_int)
-    
-    print(expression.shape)
-    quit()
     
     if verbose:
         print("Getting sample metadata...")
