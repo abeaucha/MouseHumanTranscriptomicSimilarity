@@ -12,7 +12,7 @@ do
 	r_file="${file/".Rmd"/".R"}"
 	
 	echo "Executing ${r_file} ..."
-#	Rscript $r_file 
+	Rscript $r_file 
 	
 	rm $r_file
 	
