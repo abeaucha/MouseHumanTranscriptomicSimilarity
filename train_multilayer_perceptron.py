@@ -34,7 +34,7 @@ from datatable import fread
 import torch
 import torch.nn.functional as F
 from torch                    import nn
-from torch.optim              import AdamW
+from torch.optim              import SGD
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
@@ -300,8 +300,8 @@ def main():
             ClassifierModule(input_units = X.shape[1],
                              output_units = len(np.unique(y)),
                              hidden_units = hidden_units),
-            train_split = None,
-            optimizer = AdamW,
+#             train_split = None,
+            optimizer = SGD,
             optimizer__weight_decay = weight_decay,
             max_epochs = max_epochs,
             callbacks = [('lr_scheduler',
