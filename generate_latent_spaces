@@ -35,26 +35,26 @@ do
 	 --voxeltransform true \
 	 --seed $i
 
- mv ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L21e-06.csv \
-	 ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L21e-06_$i.csv
+ mv ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L20.0.csv \
+	 ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L20.0_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanProb_Region88.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanProb_Region88_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanTx_Region88.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanTx_Region88_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseProb_Region67.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseProb_Region67_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseTx_Region67.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseTx_Region67_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67_$i.csv
 
-mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseVoxelTx.csv \
-	${outdir}MLP_Region67_Layers3_Units200_L21e-06_MouseVoxelTx_$i.csv
+mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx_$i.csv
 
-mv ${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanVoxelTx.csv \
-	${outdir}MLP_Region67_Layers3_Units200_L21e-06_HumanVoxelTx_$i.csv
+mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx_$i.csv
 
 done
 
