@@ -28,9 +28,9 @@ do
 	 --mousedata region67 \
 	 --humandata region88 \
 	 --nunits 200 \
-	 --L2 1e-6 \
-	 --nepochs 200 \
-	 --learningrate 1e-5 \
+	 --L2 0 \
+	 --nepochs 50 \
+	 --learningrate 0.01 \
 	 --confusionmatrix true \
 	 --voxeltransform true \
 	 --seed $i
