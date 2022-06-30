@@ -1,0 +1,61 @@
+#!/bin/bash -l
+
+# ----------------------------------------------------------------------------
+# generate_latent_spaces
+# Author: Antoine Beauchamp
+#
+# This script generates 500 gene expression latent spaces by repeatedly 
+# training the multi-layer perceptron neural network and using the network
+# architecture to transform the input space into the latent space.
+
+source activate_venv
+
+outdir=data/MLP_outcomes/
+
+if [ ! -d "$outdir" ]; then
+	mkdir "$outdir"
+fi
+
+
+for i in {1..500}
+do
+ echo "Iteration $i"
+
+ python3 train_multilayer_perceptron.py \
+	 --datadir data/ \
+	 --outdir $outdir \
+	 --labels region67 \
+	 --mousedata region67 \
+	 --humandata region88 \
+	 --nunits 200 \
+	 --L2 0 \
+	 --nepochs 50 \
+	 --learningrate 0.01 \
+	 --confusionmatrix true \
+	 --voxeltransform true \
+	 --seed $i
+
+ mv ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L20.0.csv \
+	 ${outdir}MLP_ConfusionMatrix_Training_Region67_Layers3_Units200_L20.0_$i.csv
+
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88_$i.csv
+
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88_$i.csv
+
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67_$i.csv
+
+ mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67_$i.csv
+
+mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx_$i.csv
+
+mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx_$i.csv
+
+done
+
+deactivate
