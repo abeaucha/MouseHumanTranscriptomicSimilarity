@@ -35,6 +35,7 @@ import torch
 import torch.nn.functional as F
 from torch                    import nn
 from torch.optim              import SGD
+from torch.optim              import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
@@ -131,6 +132,12 @@ def parse_args():
         type = float,
         default = 1e-5,
         help = "Learning rate during training."
+    )
+    
+    parser.add_argument(
+        '--totalsteps',
+        type = int,
+        help = "Number of steps to use in optimizer."
     )
     
     parser.add_argument(
@@ -256,7 +263,11 @@ def main():
     hidden_units = args['nunits']
     weight_decay = args['L2']
     max_epochs = args['nepochs']
+    total_steps = args['totalsteps']
     learning_rate = args['learningrate']
+    
+    if total_steps is None:
+        total_steps = max_epochs
     
     if is_available() == True:
         print("GPU available. Training network using GPU...")
@@ -300,13 +311,14 @@ def main():
             ClassifierModule(input_units = X.shape[1],
                              output_units = len(np.unique(y)),
                              hidden_units = hidden_units),
-#             train_split = None,
+            train_split = None,
             optimizer = SGD,
+#             optimizer = AdamW,
             optimizer__weight_decay = weight_decay,
             max_epochs = max_epochs,
             callbacks = [('lr_scheduler',
                           LRScheduler(policy=OneCycleLR,
-                                      total_steps=max_epochs,
+                                      total_steps=total_steps,
                                       cycle_momentum=False,  
                                       max_lr=learning_rate))],
         device = device)
