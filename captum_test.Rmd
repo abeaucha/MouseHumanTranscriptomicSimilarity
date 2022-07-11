@@ -1,0 +1,50 @@
+---
+title: "Untitled"
+author: "Antoine Beauchamp"
+date: '2022-07-05'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(reticulate)
+Sys.unsetenv('RETICULATE_PYTHON')
+use_virtualenv('./.venv', required = TRUE)
+```
+
+```{r}
+virtualenv_list('./.venv')
+```
+
+```{r}
+import('numpy')
+```
+
+
+```{python}
+import numpy as np
+```
+
+
+```{python}
+import pandas as pd
+import numpy as np
+import random
+import os
+from datatable import fread
+
+import torch
+import torch.nn.functional as F
+from torch import nn
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import OneCycleLR
+
+from skorch import NeuralNetClassifier
+from skorch.callbacks import LRScheduler
+from skorch.helper import DataFrameTransformer
+```
+
