@@ -23,19 +23,18 @@ matrices as well.
 
 # Packages -------------------------------------------------------------------
 
-import pandas as pd
-import numpy as np
+import pandas                 as pd
+import numpy                  as np
 import random
 import argparse
 import sys
 import os
-from datatable import fread
+from datatable                import fread
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional    as F
 from torch                    import nn
 from torch.optim              import SGD
-from torch.optim              import AdamW
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
@@ -43,7 +42,7 @@ from skorch                   import NeuralNetClassifier
 from skorch.callbacks         import LRScheduler
 from skorch.helper            import DataFrameTransformer
 
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics          import accuracy_score, confusion_matrix
 
 # Functions ------------------------------------------------------------------
 
@@ -313,7 +312,6 @@ def main():
                              hidden_units = hidden_units),
             train_split = None,
             optimizer = SGD,
-#             optimizer = AdamW,
             optimizer__weight_decay = weight_decay,
             max_epochs = max_epochs,
             callbacks = [('lr_scheduler',
