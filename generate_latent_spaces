@@ -30,7 +30,7 @@ do
 	 --nunits 200 \
 	 --L2 0 \
 	 --nepochs 25 \
-     --totalsteps 50 \
+	 --totalsteps 50 \
 	 --learningrate 0.01 \
 	 --confusionmatrix false \
 	 --voxeltransform true \
