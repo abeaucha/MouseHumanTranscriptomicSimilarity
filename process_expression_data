@@ -80,3 +80,10 @@ Rscript process_labelled_matrix.R \
 	--nlabels 88 \
 	--outdir data/ \
 	--verbose true
+
+#Create a mouse voxel-wise expression matrix with only isocortical labels
+Rscript subset_labels.R
+
+#Copy aggregated expression matrices into isocortical data dir
+cp data/MouseExpressionMatrix_ROI_Region67_scaled.csv data/isocortex/
+cp data/HumanExpressionMatrix_ROI_Region88_scaled.csv data/isocortex/
