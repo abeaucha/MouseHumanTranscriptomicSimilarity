@@ -17,7 +17,7 @@ if [ ! -d "$outdir" ]; then
 fi
 
 
-for i in {1..200}
+for i in {1..500}
 do
  echo "Iteration $i"
 
