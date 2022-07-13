@@ -36,7 +36,7 @@ Rscript create_neuro_pairs.R \
 echo "Labelling mouse and human expression matrices..."
 Rscript label_expression_matrices.R \
 	--mousematrix AMBA/data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed.csv \
-	--humanmatrix AHBA/data/HumanExpressionMatrix_samples_pipeline_v1.csv \
+	--humanmatrix AHBA/data/HumanExpressionMatrix_samples_pipeline_abagen.csv \
 	--mousetree AMBA/data/MouseExpressionTree_DSURQE.RData \
 	--humantree AHBA/data/HumanExpressionTree.RData \
 	--homologs data/MouseHumanGeneHomologs.csv \
@@ -57,7 +57,7 @@ Rscript process_labelled_matrix.R \
 
 echo "Normalizing human sample expression matrix..."
 Rscript process_labelled_matrix.R \
-	--infile data/HumanExpressionMatrix_samples_pipeline_v1_labelled.csv \
+	--infile data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv \
 	--scale true \
 	--aggregate false \
 	--outdir data/ \
@@ -74,7 +74,7 @@ Rscript process_labelled_matrix.R \
 
 echo "Normalizing and aggregating human sample expression matrix..."
 Rscript process_labelled_matrix.R \
-	--infile data/HumanExpressionMatrix_samples_pipeline_v1_labelled.csv \
+	--infile data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv \
 	--scale true \
 	--aggregate true \
 	--nlabels 88 \

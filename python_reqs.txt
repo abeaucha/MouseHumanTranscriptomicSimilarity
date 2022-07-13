@@ -1,5 +1,5 @@
 jupyter
-abagen
+git+https://github.com/abeaucha/abagen@dev
 numpy
 scipy
 pandas

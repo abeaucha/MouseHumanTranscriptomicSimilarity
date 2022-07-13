@@ -23,18 +23,18 @@ matrices as well.
 
 # Packages -------------------------------------------------------------------
 
-import pandas as pd
-import numpy as np
+import pandas                 as pd
+import numpy                  as np
 import random
 import argparse
 import sys
 import os
-from datatable import fread
+from datatable                import fread
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional    as F
 from torch                    import nn
-from torch.optim              import AdamW
+from torch.optim              import SGD
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
@@ -42,7 +42,7 @@ from skorch                   import NeuralNetClassifier
 from skorch.callbacks         import LRScheduler
 from skorch.helper            import DataFrameTransformer
 
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics          import accuracy_score, confusion_matrix
 
 # Functions ------------------------------------------------------------------
 
@@ -131,6 +131,12 @@ def parse_args():
         type = float,
         default = 1e-5,
         help = "Learning rate during training."
+    )
+    
+    parser.add_argument(
+        '--totalsteps',
+        type = int,
+        help = "Number of steps to use in optimizer."
     )
     
     parser.add_argument(
@@ -256,7 +262,11 @@ def main():
     hidden_units = args['nunits']
     weight_decay = args['L2']
     max_epochs = args['nepochs']
+    total_steps = args['totalsteps']
     learning_rate = args['learningrate']
+    
+    if total_steps is None:
+        total_steps = max_epochs
     
     if is_available() == True:
         print("GPU available. Training network using GPU...")
@@ -301,12 +311,12 @@ def main():
                              output_units = len(np.unique(y)),
                              hidden_units = hidden_units),
             train_split = None,
-            optimizer = AdamW,
+            optimizer = SGD,
             optimizer__weight_decay = weight_decay,
             max_epochs = max_epochs,
             callbacks = [('lr_scheduler',
                           LRScheduler(policy=OneCycleLR,
-                                      total_steps=max_epochs,
+                                      total_steps=total_steps,
                                       cycle_momentum=False,  
                                       max_lr=learning_rate))],
         device = device)
@@ -436,8 +446,10 @@ def main():
         dfMouseVoxelTransformed = pd.DataFrame(net.predict_proba(X))
         dfMouseVoxelTransformed['Region'] = dfLabels[labelcol]
         
+#         file_voxel_human = ("HumanExpressionMatrix_"
+#                             "samples_pipeline_v1_labelled.csv")
         file_voxel_human = ("HumanExpressionMatrix_"
-                            "samples_pipeline_v1_labelled_scaled.csv")
+                            "samples_pipeline_abagen_labelled_scaled.csv")
         filepath_voxel_human = os.path.join(datadir, file_voxel_human)
         
         dfExprVoxelHuman = (fread(filepath_voxel_human, header = True)
