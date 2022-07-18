@@ -279,6 +279,7 @@ def main():
 
     #Define network architecture
     class ClassifierModule(nn.Module):
+        
         def __init__(
             self,
             input_units,
@@ -294,7 +295,6 @@ def main():
             self.hidden2 = nn.Linear(hidden_units, hidden_units)
             self.hidden3 = nn.Linear(hidden_units, hidden_units)
             self.output = nn.Linear(hidden_units, output_units)
-
 
         def forward(self, X, **kwargs):
             X = F.relu(self.hidden1(X))
