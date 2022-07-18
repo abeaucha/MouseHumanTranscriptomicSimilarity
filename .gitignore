@@ -37,3 +37,4 @@ manuscript/submissions/elife/Figure6_ss_*.mnc
 manuscript/submissions/elife/*.RData
 data/isocortex/
 data/MLP_outcomes_isocortex/
+data/isocortex_scaled/
