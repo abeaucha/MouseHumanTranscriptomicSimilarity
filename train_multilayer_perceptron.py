@@ -425,8 +425,6 @@ def main():
     #Write to file
     integrated_grads.to_csv(file_integrated_grads, index = False)
     
-    quit()
-    
     
     # Predict label probabilities for mouse/human data -----------------------
         
