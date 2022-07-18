@@ -10,7 +10,7 @@
 
 source activate_venv
 
-outdir=data/MLP_outcomes_isocortex/
+outdir=data/MLP_outcomes_isocortex_scaled/
 
 if [ ! -d "$outdir" ]; then
 	mkdir "$outdir"
@@ -22,7 +22,7 @@ do
  echo "Iteration $i"
 
  python3 train_multilayer_perceptron.py \
-	 --datadir data/isocortex/ \
+	 --datadir data/isocortex_scaled/ \
 	 --outdir $outdir \
 	 --labels region67 \
 	 --mousedata region67 \
