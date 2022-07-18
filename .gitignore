@@ -18,7 +18,6 @@ data/MLP_outcomes/
 AMBA/to_clean/
 AMBA/data/to_clean/
 logs/
-analyses/
 machine_learning/
 data/to_clean/
 data/MouseHumanMatches_H88M67.csv
@@ -36,3 +35,4 @@ manuscript/submissions/science_advances/
 manuscript/submissions/elife/Figure6_ss_*.mnc
 manuscript/submissions/elife/*.RData
 .ipynb_checkpoints/
+analyses/captum_test.ipynb
