@@ -14,7 +14,7 @@ data/MouseExpressionMatrix_*.csv
 data/TreeLabels.RData
 data/TreeLabelsReordered.RData
 .venv/
-data/MLP_outcomes/
+data/MLP_outcomes*/
 AMBA/to_clean/
 AMBA/data/to_clean/
 logs/
@@ -35,6 +35,4 @@ cross_validation/Model_MultilayerPerceptron_Validation.ipynb
 manuscript/submissions/science_advances/
 manuscript/submissions/elife/Figure6_ss_*.mnc
 manuscript/submissions/elife/*.RData
-data/isocortex/
-data/MLP_outcomes_isocortex/
-data/isocortex_scaled/
+data/isocortex*/
