@@ -103,12 +103,14 @@ rm(dfExprMouse, dfExprHuman)
 
 ```{r import-latent-space}
 #Path to MLP files
-pathMLP <- "../../../data/MLP_outcomes_isocortex/"
+pathMLP <- "../../../data/MLP_outcomes_isocortex_v2/"
 
 #Files containing latent space representations
 filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
 filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+```
 
+```{r import-latent-space}
 #Import the mouse latent space data
 listMouseLatentSpace <- map(filesMLP_Mouse,
                             function(x){
@@ -128,6 +130,22 @@ listHumanLatentSpace <- map(filesMLP_Human,
                             })
 ```
 
+```{r}
+labelsCortexMouse <- dfLabelsMouse %>% 
+  filter(Region11 == 'Isocortex') %>% 
+  select(Region67) %>% 
+  distinct() %>% 
+  pull()
+
+structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
+labelsCortexHuman <- dfLabelsHuman %>% 
+  filter(Region16 %in% structsHuman_Cx_16) %>% 
+  filter(!(Region88 %in% c("claustrum", "dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field", "subiculum"))) %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  pull(Region88)
+```
+
 ```{r latent-space-similarity}
 #Compute the latent space similarity matrices
 listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
@@ -135,6 +153,8 @@ listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
                              m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
                              m <- m[,match(listLabelsMouseReordered$Region67_reordered, colnames(m))]
                              m <- m[match(listLabelsHumanReordered$Region88_reordered, rownames(m)),]
+                             m <- m[,colnames(m) %in% labelsCortexMouse]
+                             m <- m[rownames(m) %in% labelsCortexHuman,]
                            })
 names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
@@ -728,6 +748,18 @@ fig5_height <- 7.6
 grid.newpage()
 grid.draw(fig5_grob)
 ```
+
+```{r}
+pdf(file = 'Figure5_isocortex.pdf',
+    width = fig5_width,
+    height = fig5_height)
+
+grid.newpage()
+grid.draw(fig5_grob)
+
+dev.off()
+```
+
 
 ```{r results3-fig5-write}
 fileout <- "Figure5.RData"
