@@ -1,0 +1,165 @@
+---
+title: "Untitled"
+author: "Antoine Beauchamp"
+date: '2022-07-19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+```
+
+```{r}
+files <- list.files('../data/MLP_outcomes/', full.names = T) %>% 
+  str_subset('IntegratedGradients')
+```
+
+```{r}
+latent_space_ids <- files %>% 
+  str_extract('IntegratedGradients_[0-9]+.csv') %>% 
+  str_extract('[0-9]+') %>% 
+  as.integer()
+```
+
+```{r}
+names(files) <- latent_space_ids
+```
+
+```{r}
+df_integrated_grads <- map_dfr(.x = files,
+                               .f = read_csv,
+                               .id = 'LatentSpace',
+                               show_col_types = FALSE) %>% 
+  mutate(LatentSpace = as.integer(LatentSpace)) %>% 
+  arrange(LatentSpace)
+```
+
+```{r}
+df_integrated_grads_long <- df_integrated_grads %>% 
+  pivot_longer(cols = c(-Region, -LatentSpace), names_to = 'Gene', values_to = 'x')
+
+df_integrated_grads_summary <- df_integrated_grads_long %>% 
+  group_by(Region, Gene) %>% 
+  summarise(x_mean = mean(x),
+            x_sd = sd(x),
+            x_sd_lower = x_mean - 2*x_sd,
+            x_sd_upper = x_mean + 2*x_sd) %>% 
+  ungroup()
+```
+
+```{r}
+tmp <- df_integrated_grads_summary %>% 
+  filter(Region == 'Caudoputamen') %>% 
+  mutate(Gene = factor(Gene, levels = Gene[order(x_mean)])) %>% 
+  arrange(desc(Gene))
+```
+
+
+```{r fig.width = 10, fig.height = 5}
+ggplot(tmp, aes(x = Gene, y = x_mean)) + 
+  geom_segment(mapping = aes(yend = 0, xend = Gene),
+               size = 0.1, col = 'grey70') + 
+  geom_hline(yintercept = 0) + 
+  geom_point(size = 0.5) + 
+  scale_x_discrete(expand = expansion(add = 20)) + 
+  theme_bw() + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r fig.width = 10, fig.height = 5}
+tmp %>% 
+  top_n(n = 10, wt = x_mean) %>% 
+  ggplot(aes(x = Gene)) + 
+  geom_pointrange(aes(y = x_mean,
+                      ymin = x_sd_lower,
+                      ymax = x_sd_upper)) + 
+  coord_flip() + 
+  theme_bw() + 
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+homologs <- read_csv('../data/MouseHumanGeneHomologs.csv', 
+                     show_col_types = FALSE)
+```
+
+```{r}
+top_genes <- tmp %>% 
+  top_n(n = 5, wt = x_mean) %>% 
+  left_join(homologs,
+            by = c('Gene' = 'Human')) %>% 
+  pull(Mouse) %>% 
+  as.character()
+```
+
+```{r}
+expr_files <- list.files('../AMBA/data/expression/coronal/', full.names = T)
+```
+
+```{r}
+gene_files <- numeric(length(top_genes))
+for (i in 1:length(top_genes)) {
+  gene_files[i] <- str_subset(expr_files, str_c(top_genes[i], '_'))
+}
+names(gene_files) <- top_genes
+```
+
+```{r}
+anatfile <- '../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc'
+maskfile <- '../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc'
+
+anat <- mincGetVolume(anatfile)
+mask <- mincGetVolume(maskfile)
+```
+
+```{r}
+gene_arrays <- map(.x = gene_files,
+                   .f = function(x){
+                     x <- mincGetVolume(x)
+                     x[mask == 0] <- 0
+                     x[x == -1] <- 0
+                     x <- x/sum(x)
+                     return(x)})
+```
+
+```{r}
+low <- 0.0001
+high <- 0.001
+
+ss_base <- sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400)
+
+for (i in 1:length(gene_arrays)) {
+  
+  if (i == 1) {
+    ss <- ss_base 
+  } else {
+    ss <- ss %>% 
+      sliceSeries() %>% anatomy() 
+  }
+  
+  ss <- ss %>% 
+    overlay(mincArray(gene_arrays[[i]]), low = low, high = high) %>% 
+    addtitle(top_genes[i])
+}
+
+ss <- ss %>% 
+  legend('Expression')
+```
+
+
+```{r fig.width = 8, fig.height = 8}
+draw(ss)
+```
+
+Maybe need to take into account normalization?
