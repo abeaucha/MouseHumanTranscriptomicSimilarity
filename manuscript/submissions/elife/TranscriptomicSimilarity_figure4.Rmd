@@ -336,7 +336,7 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
              size = 2) +  
   coord_flip(ylim = c(0,35)) + 
   scale_y_continuous(breaks = c(1, seq(5, 40, by = 5)),
-                     limits = c(0, 35),
+                     # limits = c(0, 35),
                      expand = c(0,0)) + 
   labs(x = "Mouse region",
        y = "Rank") + 
