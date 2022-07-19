@@ -18,7 +18,6 @@ data/MLP_outcomes*/
 AMBA/to_clean/
 AMBA/data/to_clean/
 logs/
-analyses/
 machine_learning/
 data/to_clean/
 data/MouseHumanMatches_H88M67.csv
