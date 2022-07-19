@@ -34,4 +34,5 @@ cross_validation/Model_MultilayerPerceptron_Validation.ipynb
 manuscript/submissions/science_advances/
 manuscript/submissions/elife/Figure6_ss_*.mnc
 manuscript/submissions/elife/*.RData
+manuscript/submissions/elife/*isocortex.pdf
 data/isocortex*/
