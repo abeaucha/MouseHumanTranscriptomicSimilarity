@@ -336,7 +336,7 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
              size = 2) +  
   coord_flip(ylim = c(0,35)) + 
   scale_y_continuous(breaks = c(1, seq(5, 40, by = 5)),
-                     limits = c(0, 35),
+                     # limits = c(0, 35),
                      expand = c(0,0)) + 
   labs(x = "Mouse region",
        y = "Rank") + 
@@ -503,6 +503,17 @@ fig4_height <- 6.5
 
 grid.newpage()
 grid.draw(fig4_grob)
+```
+
+```{r results2-fig4-pdf}
+pdf(file = 'Figure4.pdf',
+    width = fig4_width,
+    height = fig4_height)
+
+grid.newpage()
+grid.draw(fig4_grob)
+
+dev.off()
 ```
 
 ```{r results2-fig4-write}

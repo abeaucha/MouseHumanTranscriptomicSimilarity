@@ -788,6 +788,17 @@ grid.newpage()
 grid.draw(fig6_grob)
 ```
 
+```{r results4-fig6-pdf}
+pdf(file = 'Figure6.pdf',
+    width = fig6_width,
+    height = fig6_height)
+
+grid.newpage()
+grid.draw(fig6_grob)
+
+dev.off()
+```
+
 ```{r results4-fig6-write}
 fileout <- "Figure6.RData"
 save(fig6_grob,

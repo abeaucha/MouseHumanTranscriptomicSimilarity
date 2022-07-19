@@ -722,6 +722,16 @@ grid.newpage()
 grid.draw(fig1_grob)
 ```
 
+```{r results1-fig1-pdf}
+pdf(file = 'Figure1.pdf',
+    width = fig1_width,
+    height = fig1_height)
+
+grid.newpage()
+grid.draw(fig1_grob)
+
+dev.off()
+```
 
 ```{r results1-fig1-write}
 #Save figure 1 grob
