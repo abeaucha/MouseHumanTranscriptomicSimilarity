@@ -1,7 +1,7 @@
 suppressPackageStartupMessages(library(tidyverse))
 
 infile <- 'data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
-outfile <- 'data/isocortex/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
+outfile <- 'data/isocortex_v1/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
 
 data.table::fread(infile, header = TRUE) %>% 
   as_tibble() %>% 
@@ -9,7 +9,7 @@ data.table::fread(infile, header = TRUE) %>%
   data.table::fwrite(outfile)
 
 infile <- 'data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'
-outfile <- 'data/isocortex_scaled/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'
+outfile <- 'data/isocortex_v2/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'
 
 data.table::fread(infile, header = TRUE) %>% 
   as_tibble() %>% 
@@ -17,7 +17,7 @@ data.table::fread(infile, header = TRUE) %>%
   data.table::fwrite(outfile)
 
 infile <- 'data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv'
-outfile <- 'data/isocortex_scaled/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv'
+outfile <- 'data/isocortex_v2/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv'
 
 data.table::fread(infile, header = TRUE) %>% 
   as_tibble() %>% 
