@@ -10,22 +10,23 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(tidyverse)
-library(data.tree)
-library(pheatmap)
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(pheatmap))
 suppressPackageStartupMessages(library(RColorBrewer))
 suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(viridis))
 ```
 
 ```{r}
-source("../../../functions/tree_tools.R")
-source("../../../functions/buildSimilarityMatrix.R")
+source('../functions/tree_tools.R')
+source('../functions/buildSimilarityMatrix.R')
 ```
 
 ```{r import-basic}
 #Import data
-dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
-dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv"))
+dfExprMouse <- suppressMessages(read_csv('../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'))
+dfExprHuman <- suppressMessages(read_csv('../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv'))
 
 #Extract labels from data frames
 dfLabelsMouse <- dfExprMouse %>% select(contains("Region"))
@@ -35,10 +36,10 @@ dfLabelsHuman <- dfExprHuman %>% select(contains("Region"))
 rm(dfExprMouse, dfExprHuman)
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
-load("../../../data/TreeLabelsReordered.RData")
+load("../data/TreeLabelsReordered.RData")
 
 #Import MICe data tree
-load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
+load("../AMBA/data/MouseExpressionTree_DSURQE.RData")
 treeMouse <- Clone(treeMouseExpr)
 rm(treeMouseExpr)
 
@@ -48,7 +49,7 @@ pruneAnatTree(treeMouse,
               method = "AtNode")
 
 #Import AHBA data tree
-load("../../../AHBA/data/HumanExpressionTree.RData")
+load("../AHBA/data/HumanExpressionTree.RData")
 treeHuman <- Clone(treeHumanExpr)
 rm(treeHumanExpr)
 
@@ -168,13 +169,11 @@ heatmapBreaks <- seq(heatmapRange[1], heatmapRange[2], length.out = paletteLengt
 heatmapPalette_cluster <- magma(n = 100, direction = 1, begin = 0.35) #Not bad
 ```
 
-
-
-# Isocortical subtree
+# Whole brain
 
 ```{r import-latent-space}
 #Path to MLP files
-pathMLP <- "../../../data/MLP_outcomes_isocortex/"
+pathMLP <- "../data/MLP_outcomes/"
 
 #Files containing latent space representations
 filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
@@ -214,19 +213,22 @@ arraySimLatentSpace <- array(unlist(listSimLatentSpace),
                                      length(listSimLatentSpace)))
 
 #Compute the average matrix
-matSim_H88M67_MLP_mean_subtree <- rowMeans(arraySimLatentSpace, dims = 2)
-rownames(matSim_H88M67_MLP_mean_subtree) <- listLabelsHumanReordered$Region88_reordered
-colnames(matSim_H88M67_MLP_mean_subtree) <- listLabelsMouseReordered$Region67_reordered
+matSim_H88M67_MLP_mean <- rowMeans(arraySimLatentSpace, dims = 2)
+rownames(matSim_H88M67_MLP_mean) <- listLabelsHumanReordered$Region88_reordered
+colnames(matSim_H88M67_MLP_mean) <- listLabelsMouseReordered$Region67_reordered
+
+matSim_H88M67_MLP_mean <- matSim_H88M67_MLP_mean[,colnames(matSim_H88M67_MLP_mean) %in% labelsCortexMouse]
+matSim_H88M67_MLP_mean <- matSim_H88M67_MLP_mean[rownames(matSim_H88M67_MLP_mean) %in% labelsCortexHuman,]
 ```
 
 ```{r}
-matSim_H88M67_MLP_mean_subtree <- matSim_H88M67_MLP_mean_subtree[,colnames(matSim_H88M67_MLP_mean_subtree) %in% labelsCortexMouse]
-matSim_H88M67_MLP_mean_subtree <- matSim_H88M67_MLP_mean_subtree[rownames(matSim_H88M67_MLP_mean_subtree) %in% labelsCortexHuman,]
+matSim_original <- matSim_H88M67_MLP_mean
 ```
 
-```{r}
+
+```{r import-latent-space}
 #Generate similarity matrix heatmap and convert to ggplot object
-fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean_subtree,
+fig2_heatmap_ggplot <- pheatmap(matSim_original,
                                 color = heatmapPalette,
                                 breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
@@ -242,20 +244,84 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean_subtree,
 ```
 
 ```{r}
+fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_original), 
+                                cluster_cols = T, cluster_rows = T,
+                                cutree_rows = 4, cutree_cols = 4,
+                                treeheight_col = 30, treeheight_row = 30,
+                                color = heatmapPalette_cluster,
+                                legend = T, 
+                                # annotation_row = dfAnnotations,
+                                # annotation_legend = T,
+                                annotation_names_row = F, 
+                                annotation_colors = heatmapAnnotationColours,
+                                fontsize_row = 6, fontsize_col = 6) %>% 
+  as.ggplot()
+```
+
+
+
+# Isocortical subtree (version 1)
+
+```{r import-latent-space}
+#Path to MLP files
+pathMLP <- "../data/MLP_outcomes_isocortex_v1/"
+
+#Files containing latent space representations
+filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
+filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+
+#Import the mouse latent space data
+listMouseLatentSpace <- map(filesMLP_Mouse,
+                            function(x){
+                              suppressMessages(read_csv(x)) %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+#Import the human latent space data
+listHumanLatentSpace <- map(filesMLP_Human,
+                            function(x){
+                              suppressMessages(read_csv(x)) %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
+                           function(x1, x2){
+                             m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
+                             m <- m[,match(listLabelsMouseReordered$Region67_reordered, colnames(m))]
+                             m <- m[match(listLabelsHumanReordered$Region88_reordered, rownames(m)),]
+                           })
+names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
+rm(listMouseLatentSpace, listHumanLatentSpace)
+
+#To create an average similarity matrix, first concat the similarity matrices into a 3D array
+arraySimLatentSpace <- array(unlist(listSimLatentSpace),
+                             dim = c(length(listLabelsHumanReordered$Region88_reordered),
+                                     length(listLabelsMouseReordered$Region67_reordered),
+                                     length(listSimLatentSpace)))
+
 #Compute the average matrix
-matSim_H88M67_MLP_sd <- apply(arraySimLatentSpace, c(1,2), FUN = sd)
-rownames(matSim_H88M67_MLP_sd) <- listLabelsHumanReordered$Region88_reordered
-colnames(matSim_H88M67_MLP_sd) <- listLabelsMouseReordered$Region67_reordered
+matSim_isocortex_v1 <- rowMeans(arraySimLatentSpace, dims = 2)
+rownames(matSim_isocortex_v1) <- listLabelsHumanReordered$Region88_reordered
+colnames(matSim_isocortex_v1) <- listLabelsMouseReordered$Region67_reordered
+```
+
+```{r}
+matSim_isocortex_v1 <- matSim_isocortex_v1[,colnames(matSim_isocortex_v1) %in% labelsCortexMouse]
+matSim_isocortex_v1 <- matSim_isocortex_v1[rownames(matSim_isocortex_v1) %in% labelsCortexHuman,]
 ```
 
 ```{r}
 #Generate similarity matrix heatmap and convert to ggplot object
-fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_sd,
-                                # color = heatmapPalette,
-                                # breaks = heatmapBreaks,
+fig2_heatmap_ggplot <- pheatmap(matSim_isocortex_v1,
+                                color = heatmapPalette,
+                                breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
                                 border_color = "white",
-                                show_rownames = F, show_colnames = F,
+                                show_rownames = T, show_colnames = T,
                                 annotation_row = dfAnnotationHuman,
                                 annotation_col = dfAnnotationMouse,
                                 annotation_colors = annotation_colours,
@@ -265,9 +331,8 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_sd,
   as.ggplot()
 ```
 
-
 ```{r}
-fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_H88M67_MLP_mean_subtree), 
+fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_isocortex_v1), 
                                 cluster_cols = T, cluster_rows = T,
                                 cutree_rows = 4, cutree_cols = 4,
                                 treeheight_col = 30, treeheight_row = 30,
@@ -283,19 +348,18 @@ fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_H88M67_MLP_mean_subtree),
 
 
 
-# Whole brain
+
+
+# Isocortical subtree (version 2)
 
 ```{r import-latent-space}
 #Path to MLP files
-pathMLP <- "../../../data/MLP_outcomes/"
+pathMLP <- "../data/MLP_outcomes_isocortex_v2/"
 
 #Files containing latent space representations
 filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
 filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
-```
 
-
-```{r import-latent-space}
 #Import the mouse latent space data
 listMouseLatentSpace <- map(filesMLP_Mouse,
                             function(x){
@@ -313,9 +377,7 @@ listHumanLatentSpace <- map(filesMLP_Human,
                                 as.matrix() %>% 
                                 t()
                             })
-```
 
-```{r}
 listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
                            function(x1, x2){
                              m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
@@ -324,9 +386,7 @@ listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
                            })
 names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
 rm(listMouseLatentSpace, listHumanLatentSpace)
-```
 
-```{r}
 #To create an average similarity matrix, first concat the similarity matrices into a 3D array
 arraySimLatentSpace <- array(unlist(listSimLatentSpace),
                              dim = c(length(listLabelsHumanReordered$Region88_reordered),
@@ -334,19 +394,19 @@ arraySimLatentSpace <- array(unlist(listSimLatentSpace),
                                      length(listSimLatentSpace)))
 
 #Compute the average matrix
-matSim_H88M67_MLP_mean <- rowMeans(arraySimLatentSpace, dims = 2)
-rownames(matSim_H88M67_MLP_mean) <- listLabelsHumanReordered$Region88_reordered
-colnames(matSim_H88M67_MLP_mean) <- listLabelsMouseReordered$Region67_reordered
+matSim_isocortex_v2 <- rowMeans(arraySimLatentSpace, dims = 2)
+rownames(matSim_isocortex_v2) <- listLabelsHumanReordered$Region88_reordered
+colnames(matSim_isocortex_v2) <- listLabelsMouseReordered$Region67_reordered
 ```
 
 ```{r}
-matSim_H88M67_MLP_mean <- matSim_H88M67_MLP_mean[,colnames(matSim_H88M67_MLP_mean) %in% labelsCortexMouse]
-matSim_H88M67_MLP_mean <- matSim_H88M67_MLP_mean[rownames(matSim_H88M67_MLP_mean) %in% labelsCortexHuman,]
+matSim_isocortex_v2 <- matSim_isocortex_v2[,colnames(matSim_isocortex_v2) %in% labelsCortexMouse]
+matSim_isocortex_v2 <- matSim_isocortex_v2[rownames(matSim_isocortex_v2) %in% labelsCortexHuman,]
 ```
 
 ```{r}
 #Generate similarity matrix heatmap and convert to ggplot object
-fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
+fig2_heatmap_ggplot <- pheatmap(matSim_isocortex_v2,
                                 color = heatmapPalette,
                                 breaks = heatmapBreaks,
                                 cluster_cols = F, cluster_rows = F,
@@ -362,12 +422,12 @@ fig2_heatmap_ggplot <- pheatmap(matSim_H88M67_MLP_mean,
 ```
 
 ```{r}
-fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_H88M67_MLP_mean), 
+fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_isocortex_v2), 
                                 cluster_cols = T, cluster_rows = T,
                                 cutree_rows = 4, cutree_cols = 4,
                                 treeheight_col = 30, treeheight_row = 30,
-                                color = heatmapPalette,
-                                legend = T, 
+                                color = heatmapPalette_cluster,
+                                legend = F, 
                                 # annotation_row = dfAnnotations,
                                 # annotation_legend = T,
                                 annotation_names_row = F, 
@@ -375,4 +435,5 @@ fig5_heatmap_ggplot <- pheatmap(mat = t(matSim_H88M67_MLP_mean),
                                 fontsize_row = 6, fontsize_col = 6) %>% 
   as.ggplot()
 ```
+
 
