@@ -36,3 +36,4 @@ manuscript/submissions/elife/Figure6_ss_*.mnc
 manuscript/submissions/elife/*.RData
 .ipynb_checkpoints/
 analyses/captum_test.ipynb
+analyses/*.html
