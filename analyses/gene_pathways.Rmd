@@ -1,0 +1,141 @@
+---
+title: "Untitled"
+author: "Antoine Beauchamp"
+date: '2022-07-25'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# Path to gene set data
+annotation_file_remote <- 
+  paste0("http://download.baderlab.org/EM_Genesets/",
+         "November_01_2019/Mouse/symbol/GO/MOUSE_GO_bp_no_GO_iea_symbol.gmt")
+
+# Where we should save the file
+annotation_file_local <- "../data/MOUSE_GO_bp_no_GO_iea_symbol.gmt"
+
+# Download it if it doesn't exist
+if (!file.exists(annotation_file_local)) {
+  download.file(annotation_file_remote, annotation_file_local)
+} else {
+  cat(glue("File already exists: {annotation_file_local}\n", .trim=F))
+}
+```
+
+```{r}
+library(tmod)
+```
+```{r}
+# Load GMT file into a tmod object
+mappings <- tmodImportMSigDB(file = annotation_file_local, format = "gmt")
+
+# this object is a list. See what it contains
+names(mappings)
+```
+```{r}
+library(tidyverse)
+```
+
+```{r}
+homologs <- read_csv('../data/MouseHumanGeneHomologs.csv', show_col_types = FALSE)
+mouse_homologs <- homologs$Mouse
+print(length(mouse_homologs))
+```
+There are 3331 genes in our homologous set. 
+
+
+```{r}
+# df_human <- as_tibble(data.table::fread('../AHBA/data/HumanExpressionMatrix_samples_pipeline_abagen.csv', header = TRUE))
+
+mouse_genes <- list.files('../AMBA/data/expression/sagittal/') %>% 
+  str_remove('_[0-9]+.mnc') %>% 
+  unique()
+```
+
+We can examine what number of homologous genes fall into the Nervous System Development module. This module has 2237 genes. 
+
+```{r}
+# Define number of target genes in module, and print
+b <- mappings$MODULES2GENES[["NERVOUS SYSTEM DEVELOPMENT%GOBP%GO:0007399"]] %>% 
+  intersect(mouse_homologs) %>% 
+  length 
+print(b)
+```
+There are 709 homologous genes in this module. 
+
+```{r}
+# Define number of total genes in module, and print
+B <- mappings$MODULES2GENES[["NERVOUS SYSTEM DEVELOPMENT%GOBP%GO:0007399"]] %>% 
+  length 
+print(B)
+```
+The total number of genes in the module is 2237. 
+
+How many homologous genes are in the full gene set? 
+
+```{r}
+# Define number of genes in target set, and print
+n <- mouse_homologs %>% 
+  intersect(mappings$GENES$ID) %>% 
+  length 
+print(n)
+```
+How big is the full gene set?
+
+
+```{r}
+# Define number of genes in background set, and print
+N <- mappings$GENES %>% 
+  pull(ID) %>% 
+  length 
+print(N)
+```
+
+Now we can examine over-representation by taking the quotient of these ratios. The idea is to compare the proportion of homologous genes in the module set to the proportion of homologous genes in the entire set. 
+
+```{r}
+E <- (b/B)/(n/N) # ratio of proportions
+print(E)
+```
+By chance, we expect this proportion to be 1. Thus the homologous genes are over-represented in the module set that we specified. Next we want to associate some statistics to this. 
+
+This follows the hypergeometric distribution. We can take 10000 random draws from the null distribution and compare to our true value. 
+
+```{r}
+hist(rhyper(10000, B, N-B, n), 20,
+     xlab = "Number of Nervous System Development genes", xlim=c(300,1000))
+abline(v=b,col="red")
+```
+Then the probability of getting this under the null distribution is
+
+```{r}
+phyper(b-1, B, N-B, n, lower.tail = F)
+```
+This was only for the nervous system development module. We want to repeat this process for every module in our set. 
+
+```{r}
+results <- tmodHGtest(fg = mouse_homologs,
+                      bg = mappings$GENES$ID,
+                      mset = mappings,
+                      qval = 1.1,
+                      order.by = 'pval',
+                      filter = T)
+```
+
+```{r}
+results %>% 
+  as_tibble() %>% 
+  separate(ID, sep = '%', into = c('Name', 'Source', 'Identifier')) %>% 
+  select(Identifier, Title, b, B, n, N, E, P.Value, adj.P.Val) %>% 
+  arrange(P.Value)
+```
+
+
+
+
+
