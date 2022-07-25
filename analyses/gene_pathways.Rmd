@@ -1,14 +1,27 @@
 ---
-title: "Untitled"
+title: "Homologous gene enrichment"
 author: "Antoine Beauchamp"
 date: '2022-07-25'
-output: html_document
+output: 
+  html_document:
+    theme: paper
+    highlight: pygments
+    toc: true
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Packages
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(tmod))
+```
+
+# Import gene sets
 
 ```{r}
 # Path to gene set data
@@ -16,118 +29,112 @@ annotation_file_remote <-
   paste0("http://download.baderlab.org/EM_Genesets/",
          "November_01_2019/Mouse/symbol/GO/MOUSE_GO_bp_no_GO_iea_symbol.gmt")
 
-# Where we should save the file
+#Output file
 annotation_file_local <- "../data/MOUSE_GO_bp_no_GO_iea_symbol.gmt"
 
 # Download it if it doesn't exist
 if (!file.exists(annotation_file_local)) {
   download.file(annotation_file_remote, annotation_file_local)
-} else {
-  cat(glue("File already exists: {annotation_file_local}\n", .trim=F))
 }
-```
 
-```{r}
-library(tmod)
-```
-```{r}
 # Load GMT file into a tmod object
 mappings <- tmodImportMSigDB(file = annotation_file_local, format = "gmt")
 
-# this object is a list. See what it contains
-names(mappings)
-```
-```{r}
-library(tidyverse)
+homologous_genes <- read_csv('../data/MouseHumanGeneHomologs.csv', 
+                             show_col_types = FALSE) %>% 
+  pull(Mouse)
 ```
 
-```{r}
-homologs <- read_csv('../data/MouseHumanGeneHomologs.csv', show_col_types = FALSE)
-mouse_homologs <- homologs$Mouse
-print(length(mouse_homologs))
-```
-There are 3331 genes in our homologous set. 
+# Enrichment in one module
 
 
-```{r}
-# df_human <- as_tibble(data.table::fread('../AHBA/data/HumanExpressionMatrix_samples_pipeline_abagen.csv', header = TRUE))
-
-mouse_genes <- list.files('../AMBA/data/expression/sagittal/') %>% 
-  str_remove('_[0-9]+.mnc') %>% 
-  unique()
-```
+Here we consider the module "Nervouss System Development". This module has an associated gene set. 
 
 We can examine what number of homologous genes fall into the Nervous System Development module. This module has 2237 genes. 
 
 ```{r}
-# Define number of target genes in module, and print
-b <- mappings$MODULES2GENES[["NERVOUS SYSTEM DEVELOPMENT%GOBP%GO:0007399"]] %>% 
-  intersect(mouse_homologs) %>% 
-  length 
-print(b)
-```
-There are 709 homologous genes in this module. 
-
-```{r}
-# Define number of total genes in module, and print
+#Number of genes in the module
 B <- mappings$MODULES2GENES[["NERVOUS SYSTEM DEVELOPMENT%GOBP%GO:0007399"]] %>% 
   length 
 print(B)
 ```
-The total number of genes in the module is 2237. 
-
-How many homologous genes are in the full gene set? 
+There are 2237 genes associated with this module. We want to identify the number of genes in this module that are also part of the homologous gene subset: 
 
 ```{r}
-# Define number of genes in target set, and print
-n <- mouse_homologs %>% 
-  intersect(mappings$GENES$ID) %>% 
+#Number of homologous genes in the module
+b <- homologous_genes %>% 
+  intersect(mappings$MODULES2GENES[["NERVOUS SYSTEM DEVELOPMENT%GOBP%GO:0007399"]]) %>% 
   length 
-print(n)
+print(b)
 ```
-How big is the full gene set?
-
+There are 709 homologous genes in this module.
 
 ```{r}
-# Define number of genes in background set, and print
+b/B
+```
+This corresponds to a proportion of about 32%. Now how many genes are in the full annotated set? And how many of those genes are also in the homologous gene set? 
+
+```{r}
+# Number of genes in the entire set
 N <- mappings$GENES %>% 
   pull(ID) %>% 
   length 
 print(N)
 ```
 
-Now we can examine over-representation by taking the quotient of these ratios. The idea is to compare the proportion of homologous genes in the module set to the proportion of homologous genes in the entire set. 
+```{r}
+# Number of homologous genes in the entire set
+n <- homologous_genes %>% 
+  intersect(mappings$GENES$ID) %>% 
+  length 
+print(n)
+```
+```{r}
+n/N
+```
+
+This proportion is about 17%, rather than 32%. We can examine over-representation of the homologous genes in the module set by taking the quotient of these ratios. The idea is to compare the proportion of homologous genes in the module set to the proportion of homologous genes in the entire set. If there is no relationship between the homologous gene set and the module set, we expect the proportions to be the same and the ratio to be 1. 
 
 ```{r}
 E <- (b/B)/(n/N) # ratio of proportions
 print(E)
 ```
-By chance, we expect this proportion to be 1. Thus the homologous genes are over-represented in the module set that we specified. Next we want to associate some statistics to this. 
-
-This follows the hypergeometric distribution. We can take 10000 random draws from the null distribution and compare to our true value. 
+We find that the homologous genes are over-represented in the module set that we specified. However there is some statistical variation to this, so we need to compare it to a null distribution. The null distribution for a ratio of this kind is the hypergeometric distribution. Sampling the distribution 10,000 times, we can examine where our true value falls compared with the null. 
 
 ```{r}
-hist(rhyper(10000, B, N-B, n), 20,
-     xlab = "Number of Nervous System Development genes", xlim=c(300,1000))
-abline(v=b,col="red")
+tibble(x = rhyper(10000, B, N-B, n)) %>% 
+  ggplot(aes(x = x)) + 
+  geom_histogram(col = 'black',
+                 fill = 'grey70',
+                 binwidth = 5) +
+  geom_vline(xintercept = b,
+             col = 'red',
+             linetype = 'dashed') + 
+  coord_cartesian(xlim = c(300, 750)) + 
+  theme_bw()
 ```
-Then the probability of getting this under the null distribution is
+Our true value is quite clearly far outside the tails of the distribution. The associated p-value is: 
 
 ```{r}
 phyper(b-1, B, N-B, n, lower.tail = F)
 ```
+So we can say that the homologous genes are indeed over-represented in the given module. 
+
+# Enrichment in all modules
+
+The analysis above was only for the module termed "nervous system development". We would like to repeat this process for every module in the data set. This can be done automatically using `tmodHGtest()` 
+
 This was only for the nervous system development module. We want to repeat this process for every module in our set. 
 
 ```{r}
-results <- tmodHGtest(fg = mouse_homologs,
+#Run the test for every module
+results <- tmodHGtest(fg = homologous_genes,
                       bg = mappings$GENES$ID,
                       mset = mappings,
-                      qval = 1.1,
+                      qval = 0.05,
                       order.by = 'pval',
                       filter = T)
-```
 
-```{r}
 results %>% 
   as_tibble() %>% 
   separate(ID, sep = '%', into = c('Name', 'Source', 'Identifier')) %>% 
