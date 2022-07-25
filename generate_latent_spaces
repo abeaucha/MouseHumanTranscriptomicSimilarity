@@ -10,25 +10,31 @@
 
 source activate_venv
 
+datadir=data/
+# datadir=data/isocortex/
+
 outdir=data/MLP_outcomes/
+# outdir=data/MLP_outcomes_isocortex/
 
 if [ ! -d "$outdir" ]; then
 	mkdir "$outdir"
 fi
 
+nunits=200
+L2=0.0
 
 for i in {1..500}
 do
  echo "Iteration $i"
 
  python3 train_multilayer_perceptron.py \
-	 --datadir data/ \
+	 --datadir $datadir \
 	 --outdir $outdir \
 	 --labels region67 \
 	 --mousedata region67 \
 	 --humandata region88 \
-	 --nunits 200 \
-	 --L2 0 \
+	 --nunits $nunits \
+	 --L2 $L2 \
 	 --nepochs 25 \
 	 --totalsteps 50 \
 	 --learningrate 0.01 \
@@ -36,23 +42,23 @@ do
 	 --voxeltransform true \
 	 --seed $i
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanProb_Region88_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanProb_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanProb_Region88_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanTx_Region88_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanTx_Region88.csv \
+	 ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanTx_Region88_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseProb_Region67_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_MouseProb_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_MouseProb_Region67_$i.csv
 
- mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67.csv \
-	 ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseTx_Region67_$i.csv
+ mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_MouseTx_Region67.csv \
+	 ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_MouseTx_Region67_$i.csv
 
-mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx.csv \
-	${outdir}MLP_Region67_Layers3_Units200_L20.0_MouseVoxelTx_$i.csv
+mv ${outdir}MLP_Region67_Layers3_Units200_L2${L2}_MouseVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L2${L2}_MouseVoxelTx_$i.csv
 
-mv ${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx.csv \
-	${outdir}MLP_Region67_Layers3_Units200_L20.0_HumanVoxelTx_$i.csv
+mv ${outdir}MLP_Region67_Layers3_Units200_L2${L2}_HumanVoxelTx.csv \
+	${outdir}MLP_Region67_Layers3_Units200_L2${L2}_HumanVoxelTx_$i.csv
 
 done
 
