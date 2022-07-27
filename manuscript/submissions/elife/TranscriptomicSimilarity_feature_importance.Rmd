@@ -18,6 +18,8 @@ knitr::opts_chunk$set(echo = TRUE,
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(data.tree))
 suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
 suppressPackageStartupMessages(library(MRIcrotome))
 suppressPackageStartupMessages(library(patchwork))
 suppressPackageStartupMessages(library(ggplotify))
@@ -25,6 +27,7 @@ suppressPackageStartupMessages(library(viridis))
 ```
 
 ```{r functions}
+#Tree tools
 source('../../../functions/tree_tools.R')
 
 #' Plot top genes
@@ -42,10 +45,11 @@ plot_top_genes <- function(x, n) {
                         ymin = x_sd_lower,
                         ymax = x_sd_upper)) + 
     coord_flip() + 
-    labs(title = unique(pull(x, Region))) + 
+    labs(y = 'Feature importance',
+         title = unique(pull(x, Region))) +
     theme_bw() +
-    theme(axis.title.x = element_blank(),
-          plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = 'inch'))
+    theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, 
+                               unit = 'inch'))
 }
 
 #' Subset top genes
@@ -196,47 +200,46 @@ df_integrated_grads_summary <- df_integrated_grads_long %>%
 
 #Split data frames according to regions
 integrated_grads_structs <- split(x = df_integrated_grads_summary,
-                                  f = factor(df_integrated_grads_summary$Region))
+                                  f = factor(df_integrated_grads_summary$Region,
+                                             levels = c('Caudoputamen', 'Primary motor area', 'Infralimbic area')))
 
 #Order genes according to importance
 integrated_grads_structs <- integrated_grads_structs %>% 
   map(function(x) {mutate(x, Gene = factor(Gene, levels = Gene[order(x_mean)]))})
 ```
 
-# Panel A
+# Figure top row
 
-```{r}
+```{r fig-ggplot}
 ngenes <- 5
+ggplot_list <- map(.x = integrated_grads_structs,
+                   .f = plot_top_genes,
+                   n = ngenes)
 
-plot_list <- map(.x = integrated_grads_structs,
-                 .f = function(x, n) {plot_top_genes(x = x, n = n)},
-                 n = ngenes)
+for (i in 1:length(ggplot_list)) {
+  ggplot_list[[i]] <- ggplot_list[[i]] +
+    theme(axis.text.x = element_text(size = 8),
+          axis.title.x = element_text(size = 10))
+}
 ```
 
-```{r}
-fig_panelA <- plot_list[[1]] / plot_list[[2]] / plot_list[[3]]
-fig_panelA
-```
 
-# Panel B
+# Figure bottom row
 
-
-```{r}
+```{r fig-ss}
+#Create masks indicating ROI voxels
 structure_masks <- map(.x = names(integrated_grads_structs),
                        .f = create_structure_mask,
                        defs = defs_67,
                        labels = labels_67)
 names(structure_masks) <- names(integrated_grads_structs)
-```
 
-```{r}
+#Obtain top 3 genes for each ROI
 list_top_genes <- map(.x = integrated_grads_structs,
                       .f = select_top_genes,
-                      n = 3,
-                      homologs = homologs)
-```
+                      n = 3, homologs = homologs)
 
-```{r}
+#Obtain spatial maps for top genes
 gene_maps <- vector(mode = 'list', length = length(list_top_genes))
 names(gene_maps) <- names(list_top_genes)
 for (i in 1:length(gene_maps)) {
@@ -244,187 +247,95 @@ for (i in 1:length(gene_maps)) {
                                       expr = df_expr_mouse,
                                       mask = mask_gm)  
 }
-```
 
-```{r}
-ss_cp <- sliceSeries(nrow = 4, ncol = 1, begin = 35, end = 45) %>% 
-  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
-  overlay(mincArray(gene_maps[['Caudoputamen']][[1]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Caudoputamen']]), levels = c(0, 1), col = 'green') %>%
-  addtitle(list_top_genes[['Caudoputamen']][['Mouse']][[1]]) %>% 
-  sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(gene_maps[['Caudoputamen']][[2]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Caudoputamen']]), levels = c(0, 1), col = 'green') %>% 
-  addtitle(list_top_genes[['Caudoputamen']][['Mouse']][[2]]) %>% 
-  grobify()
+#Slice ranges for different ROIs
+slice_ranges <- list(c(35, 45), c(35, 45), c(46, 49))
+names(slice_ranges) <- names(gene_maps)
 
-ss_m1 <- sliceSeries(nrow = 4, ncol = 1, begin = 40, end = 50) %>% 
-  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
-  overlay(mincArray(gene_maps[['Primary motor area']][[1]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Primary motor area']]), levels = c(0, 1), col = 'green') %>%
-  addtitle(list_top_genes[['Primary motor area']][['Mouse']][[1]]) %>% 
-  sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(gene_maps[['Primary motor area']][[2]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Primary motor area']]), levels = c(0, 1), col = 'green') %>% 
-  addtitle(list_top_genes[['Primary motor area']][['Mouse']][[2]]) %>% 
-  grobify()
+#Some graphical parameters
+contour_col <- 'green'
+contour_width = 1.5
 
-ss_il <- sliceSeries(nrow = 4, ncol = 1, begin = 40, end = 50) %>% 
-  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
-  overlay(mincArray(gene_maps[['Infralimbic area']][[1]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Infralimbic area']]), levels = c(0, 1), col = 'green') %>%
-  addtitle(list_top_genes[['Infralimbic area']][['Mouse']][[1]]) %>% 
-  sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(gene_maps[['Infralimbic area']][[2]]), low = 1, high = 3, symmetric = T) %>% 
-  legend('Normalized expression') %>% 
-  contours(mincArray(structure_masks[['Infralimbic area']]), levels = c(0, 1), col = 'green') %>% 
-  addtitle(list_top_genes[['Infralimbic area']][['Mouse']][[2]]) %>% 
-  grobify()
-
-ss_il_grob <- grid.force(ss_il)
-
-ss_legend <- ss_il_grob[['children']][[5]][['children']][[1]][['children']][[1]][['children']][['legend']]
-
-ss_il <- sliceSeries(nrow = 4, ncol = 1, begin = 40, end = 50) %>% 
-  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
-  overlay(mincArray(gene_maps[['Infralimbic area']][[1]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Infralimbic area']]), levels = c(0, 1), col = 'green') %>%
-  addtitle(list_top_genes[['Infralimbic area']][['Mouse']][[1]]) %>% 
-  sliceSeries() %>% anatomy() %>% 
-  overlay(mincArray(gene_maps[['Infralimbic area']][[2]]), low = 1, high = 3, symmetric = T) %>% 
-  contours(mincArray(structure_masks[['Infralimbic area']]), levels = c(0, 1), col = 'green') %>% 
-  addtitle(list_top_genes[['Infralimbic area']][['Mouse']][[2]]) %>% 
-  grobify()
-```
-
-
-```{r}
-plot_top_genes <- function(x, n) {
+#Create a list containing the slice series 
+ss_grob_list <- vector(mode = 'list', length = length(gene_maps))
+names(ss_grob_list) <- names(gene_maps)
+for (i in 1:length(gene_maps)) {
   
-  x %>% 
-    top_n(n = n, wt = x_mean) %>% 
-    ggplot(aes(x = Gene)) + 
-    geom_pointrange(aes(y = x_mean,
-                        ymin = x_sd_lower,
-                        ymax = x_sd_upper)) + 
-    coord_flip() + 
-    labs(title = unique(pull(x, Region))) +
-    theme_bw() +
-    theme(axis.title.x = element_blank(),
-          plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = 'inch'))
+  struct <- names(gene_maps)[i]
+  
+  #Condition to extract legend
+  if (i == length(gene_maps)) {
+    ss_tmp <- sliceSeries(nrow = 4, ncol = 1, begin = slice_ranges[[i]][1], end = slice_ranges[[i]][2]) %>% 
+      overlay(mincArray(gene_maps[[struct]][[1]]), low = 1, high = 3, symmetric = T) %>% 
+      legend('Normalized expression') %>% 
+      grobify() %>% 
+      grid.force() 
+    
+    ss_legend_grob <- ss_tmp[['children']][[2]][['children']][[1]][['children']][[1]][['children']][['legend']] 
+  }
+  
+  #Complete slice series
+  ss_grob_list[[i]] <- sliceSeries(nrow = 4, ncol = 1, begin = slice_ranges[[i]][1], end = slice_ranges[[i]][2]) %>% 
+    anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+    overlay(mincArray(gene_maps[[struct]][[1]]), low = 1, high = 3, symmetric = T) %>% 
+    contours(mincArray(structure_masks[[struct]]), levels = c(0, 1), col = contour_col, lwd = contour_width) %>%
+    addtitle(list_top_genes[[struct]][['Mouse']][[1]]) %>% 
+    sliceSeries() %>% anatomy() %>% 
+    overlay(mincArray(gene_maps[[struct]][[2]]), low = 1, high = 3, symmetric = T) %>% 
+    contours(mincArray(structure_masks[[struct]]), levels = c(0, 1), col = contour_col, lwd = contour_width) %>% 
+    addtitle(list_top_genes[[struct]][['Mouse']][[2]]) %>% 
+    grobify()
 }
-
-plot_list <- map(.x = integrated_grads_structs,
-                 .f = function(x, n) {plot_top_genes(x = x, n = n)},
-                 n = ngenes)
-
 ```
 
-```{r fig.width = 10}
-panel_layout <- plot_layout(widths = c(0.000001, 1), tag_level = 'new')
-figure_layout <- plot_layout(heights = c(1, 0.01, 2))
+# Figure grob
 
-panel_A_top <- plot_list[[1]]
-panel_A_bottom <- (plot_spacer() | ss_cp)# + panel_layout
-panel_A <- (panel_A_top / plot_spacer() / panel_A_bottom) + figure_layout 
+```{r fig-grob}
+#Matrix widths and heights in inches
+grid_widths <- c(0.25, 2.8, 0.2, 2.8, 0.2, 2.8, 0.7, 0.25)
+grid_heights <- c(0.225, 2.25, 0.1, 0.2, 3, 0.225)
 
-panel_B_top <- plot_list[[3]] + labs(x = '')
-panel_B_bottom <- (plot_spacer() | ss_m1) #+ panel_layout
-panel_B <- (panel_B_top / plot_spacer() /panel_B_bottom) + figure_layout  
+#Grob for figure plots
+fig_plots_grob <- arrangeGrob(ggplot_list[['Caudoputamen']],
+                              ggplot_list[['Primary motor area']],
+                              ggplot_list[['Infralimbic area']],
+                              ss_grob_list[['Caudoputamen']],
+                              ss_grob_list[['Primary motor area']],
+                              ss_grob_list[['Infralimbic area']],
+                              ss_legend_grob,
+                              layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA,  1, NA,  2, NA,  3, NA, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA,  4, NA,  5, NA,  6, NA, NA),
+                                                    c(NA,  4, NA,  5, NA,  6,  7, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA)),
+                              widths = unit(grid_widths, 'inch'),
+                              heights = unit(grid_heights, 'inch'))
 
-panel_C_top <- plot_list[[2]] + labs(x = '')
-panel_C_bottom <- (plot_spacer() | ss_il)# + plot_layout(widths = c(0.001, 1, 0.000000001))
-panel_C <- (panel_C_top / plot_spacer() / panel_C_bottom) + figure_layout
+#Empty rectangle grob to form the border
+fig_border_grob <- rectGrob(gp = gpar(fill = NA))
 
-fig_patchwork <- (panel_A | plot_spacer() | panel_B | plot_spacer() | panel_C | plot_spacer() | ss_legend) +
-  plot_layout(widths = c(1, -0.105, 1, -0.105, 1, 0.105, 0.1)) +
-  plot_annotation(tag_levels = 'A', tag_suffix = '.',
-                  theme = theme(plot.background = element_rect(fill = NA, colour = 'black'))) &
-  theme(plot.tag = element_text(size = 15, face = 'bold'),
-        plot.tag.position = )
+#Tags
+fig_tags_grob <- textGrob(label = c('A.', 'B.', 'C.'), 
+                          x = unit(c(0.35, 3.35, 6.35), 'inch'),
+                          y = unit(5.7, 'inch'),
+                          gp = gpar(fontsize = 14, fontface = "bold"))
 
-fig_patchwork
+#Grob for figure
+fig_grob <- gTree(children = gList(fig_plots_grob,
+                                   fig_tags_grob,
+                                   fig_border_grob))
+
+#Width and height
+fig_width <- 10
+fig_height <- 6
+
+#Save as pdf
+pdf(file = 'Figure_feature_importance.pdf',
+    width = fig_width,
+    height = fig_height)
+grid.newpage()
+grid.draw(fig_grob)
+dev.off()
 ```
 
-```{r}
-(panel_A_top | plot_spacer() | panel_B_top | plot_spacer() | panel_C_top | plot_spacer()) /
-  (panel_A_bottom | plot_spacer() | panel_B_bottom | plot_spacer() | panel_C_bottom | ss_legend) + 
-  plot_layout(widths = c(0.9, 0.1, 0.9, 0.1, 0.9, 0.1))
-```
-
-
-```{r}
-plot_list[[1]] + 
-  theme(plot.background = element_rect(colour = 'black'))
-```
-
-# Temp
-
-```{r}
-# gene_selection_mouse <- c('Prrg2', 'Hsd11b1', 'Rfx4')
-# 
-# gene_selection_human <- homologs %>% 
-#   filter(Mouse %in% gene_selection) %>% 
-#   mutate(Mouse = factor(Mouse, levels = gene_selection)) %>% 
-#   arrange(Mouse) %>% 
-#   pull(Human)
-# 
-# gene_maps <- columns_to_images(genes = gene_selection_human,
-#                                expr = df_expr_mouse,
-#                                mask = mask_gm)
-
-```
-
-```{r}
-# structure_colours <- map_chr(.x = names(integrated_grads_structs),
-#                              .f = function(x, tree) {FindNode(tree, name = x)[['color_hex_triplet']]},
-#                              tree = tree_mouse_67)
-# names(structure_colours) <- names(integrated_grads_structs)
-```
-
-
-```{r fig.width = 5, fig.height = 8}
-# overlay_range <- c(1, 3)
-# 
-# palette_length <- 255
-# 
-# library(RColorBrewer)
-# 
-# # ss_palette <- magma(n = palette_length)
-# # ss_palette <- viridis(n = palette_length)
-# ss_palette <- colorRampPalette(colors = brewer.pal(n = 9, name = 'BrBG'))(255)
-# 
-# 
-# array_frac <- (c(-1, 1)*overlay_range[1] + overlay_range[2])/(2*overlay_range[2])
-# array_ind <- floor(array_frac*palette_length)
-# 
-# ss_palette_positive <- colorRampPalette(ss_palette[array_ind[2]:length(ss_palette)])(palette_length)
-# ss_palette_negative <- colorRampPalette(ss_palette[array_ind[1]:1])(palette_length)
-# 
-# # sliceSeries(nrow = 8, ncol = 1, begin = 10, end = 60) %>% 
-# #   anatomy(mincArray(anat), low = 700, high = 1400) %>%
-# #   overlay(mincArray(gene_maps[[1]]), low = overlay_range[1], high = overlay_range[2], symmetric = T, col = ss_palette_positive, rCol = ss_palette_negative) %>%
-# #   contours(mincArray(structure_masks[[1]]), levels = c(0, 1), col = structure_colours[[1]], lwd = 3) %>% 
-# #   sliceSeries() %>% anatomy() %>% 
-# #   overlay(mincArray(gene_maps[[2]]), low = overlay_range[1], high = overlay_range[2], symmetric = T, col = ss_palette_positive, rCol = ss_palette_negative) %>%
-# #   contours(mincArray(structure_masks[[2]]), levels = c(0, 1), col = structure_colours[[2]], lwd = 3) %>%
-# #   sliceSeries() %>% anatomy() %>% 
-# #   overlay(mincArray(gene_maps[[3]]), low = overlay_range[1], high = overlay_range[2], symmetric = T, col = ss_palette_positive, rCol = ss_palette_negative) %>%
-# #   legend('Normalized expression') %>% 
-# #   contours(mincArray(structure_masks[[3]]), levels = c(0, 1), col = structure_colours[[3]], lwd = 3) %>%
-# #   draw()
-# 
-# ss_tmp <- sliceSeries(nrow = 8, ncol = 1, begin = 10, end = 60) %>% 
-#   anatomy(mincArray(anat), low = 700, high = 1400) %>%
-#   overlay(mincArray(gene_maps[[1]]), low = overlay_range[1], high = overlay_range[2], symmetric = T) %>%
-#   contours(mincArray(structure_masks[[1]]), levels = c(0, 1), col = 'green', lwd = 3) %>% 
-#   sliceSeries() %>% anatomy() %>% 
-#   overlay(mincArray(gene_maps[[2]]), low = overlay_range[1], high = overlay_range[2], symmetric = T) %>%
-#   contours(mincArray(structure_masks[[2]]), levels = c(0, 1), col = 'green', lwd = 3) %>%
-#   sliceSeries() %>% anatomy() %>% 
-#   overlay(mincArray(gene_maps[[3]]), low = overlay_range[1], high = overlay_range[2], symmetric = T) %>%
-#   legend('Normalized expression') %>% 
-# contours(mincArray(structure_masks[[3]]), levels = c(0, 1), col = 'green', lwd = 3) %>%
-#   grobify() 
-#   # draw()
-```
