@@ -439,6 +439,7 @@ fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled simila
                                           gp = gpar(lineheight = 0.8))
 ```
 
+
 ## Panel C: Proportions slice series
 
 ```{r results2-fig3-panelC-proportions}
@@ -588,6 +589,49 @@ save(fig3_grob,
 
 
 # In-text quantification
+
+```{r}
+dfModel <- dfRankDifferencesSummary %>% 
+  mutate(y = ifelse(RankDiffMean <= 0, 1, 0))
+model <- glm(y ~ 1, data = dfModel, family = 'binomial')
+model_summary <- summary(model)
+model_summary
+```
+
+```{r}
+theta_estimate <- model_summary$coefficients[,'Estimate']
+theta_error <- model_summary$coefficients[,'Std. Error']
+theta_upper <- theta_estimate + 2*theta_error
+theta_lower <- theta_estimate - 2*theta_error
+
+p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+
+print(c(p_estimate, p_lower, p_upper))
+```
+
+```{r}
+dfModel <- dfRankDifferences %>% 
+  mutate(y = ifelse(RankDiff <= 0, 1, 0))
+
+model <- glm(y ~ 1, data = dfModel, family = 'binomial')
+model_summary <- summary(model)
+model_summary
+```
+
+```{r}
+theta_estimate <- model_summary$coefficients[,'Estimate']
+theta_error <- model_summary$coefficients[,'Std. Error']
+theta_upper <- theta_estimate + 2*theta_error
+theta_lower <- theta_estimate - 2*theta_error
+
+p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+
+print(c(p_estimate, p_lower, p_upper))
+```
 
 ```{r results2-fig3-intext-1, eval = F}
 #Number of latent spaces
