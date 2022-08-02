@@ -273,6 +273,72 @@ fig5_regionaldist_title_grob <- textGrob("Distributions of maximal correlation f
                                          just = c("left", "centre"))
 ```
 
+```{r}
+df_tmp <- dfSimilarityProfiles_Cx_MaxSim %>% 
+  select(Data, Seed, Similarity) %>% 
+  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal"),
+         LatentSpace = str_extract(Data, '[0-9]+'),
+         LatentSpace = as.numeric(LatentSpace))
+
+summary(lmer(Similarity ~ CortexType + (1|Data), data = df_tmp))
+```
+
+```{r}
+latent_space_ids <- sort(unique(df_tmp$LatentSpace))
+df_params <- tibble(id = latent_space_ids,
+                    beta0 = 0,
+                    beta = 0,
+                    sigma_beta = 0,
+                    tval = 0,
+                    pval = 0)
+
+for (i in 1:nrow(df_params)) {
+  
+  df_model <- df_tmp %>% 
+    filter(LatentSpace == df_params[[i, 'id']])
+  
+  model <- summary(lm(Similarity ~ CortexType, data = df_model))
+
+  df_params[i, 'beta0'] <- model[['coefficients']][1, 'Estimate']  
+  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
+  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
+  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
+  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
+  
+}
+```
+
+```{r}
+ggplot(df_params, aes(x = -log10(pval))) + 
+  geom_histogram(binwidth = 0.2,
+                 col = 'black', fill = 'grey70') + 
+  geom_vline(xintercept = -log10(0.05),
+             linetype = 'dashed', col = 'red', size = 1.2) + 
+  theme_bw()
+```
+
+```{r}
+
+x <- seq(0, 1, length.out = 5)
+y <- matrix(data = 0, nrow = length(x), ncol = nrow(df_params))
+colnames(y) <- str_c('y', df_params$id)
+for(i in 1:nrow(df_params)) {
+  beta0 <- df_params[[i, 'beta0']]
+  beta <- df_params[[i, 'beta']]
+  y[,i] <- beta0 + beta*x
+}
+
+df_lines <- as_tibble(y) %>% 
+  mutate(x = x) %>% 
+  pivot_longer(cols = -x, names_to = 'id', values_to = 'y')
+
+ggplot(df_lines, aes(x = x, y = y, group = id)) + 
+  geom_line(alpha = 0.1) + 
+  scale_x_continuous(breaks = c(0,1)) + 
+  theme_bw()
+```
+
+
 
 ## Panel B: Maximal correlation distributions by cortex type
 
@@ -320,6 +386,90 @@ fig5_cortexdist_title_grob <- textGrob("Distributions of maximal correlation for
                                        just = c("left", "centre"),
                                        gp = gpar(lineheight = 1))
 ```
+
+```{r}
+library(lme4)
+library(lmerTest)
+
+dfSimilarityProfiles_Cx_MaxSim_Compare 
+
+model_lm <- summary(lm(SimilarityMean ~ CortexType, data = dfSimilarityProfiles_Cx_MaxSim_Compare))
+model_lm
+```
+
+```{r}
+df_model <- dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
+  mutate(LatentSpace = str_extract(Data, '[0-9]+'),
+         LatentSpace = as.numeric(LatentSpace))
+
+# model_lmer <- 
+summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
+```
+
+```{r}
+latent_space_ids <- sort(unique(df_model$LatentSpace))
+sample_ids <- sample(x = latent_space_ids, size = 100, replace = FALSE)
+
+df_sample_model <- df_model %>% 
+  filter(LatentSpace %in% sample_ids)
+
+summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
+```
+
+```{r}
+nsamples <- c(400, 100, 50, 10, 5)
+npermutations <- 20
+
+df_params <- expand_grid(nsamples = nsamples,
+                         permutation = 1:npermutations,
+                         beta = 0,
+                         sigma_beta = 0,
+                         tval = 0,
+                         pval = 0)
+
+for (i in 1:nrow(df_params)) {
+  
+  nsamples <- df_params[[i, 'nsamples']]
+  
+  sample_ids <- sample(x = latent_space_ids, 
+                       size = nsamples, 
+                       replace = FALSE)
+  
+  df_sample_model <- df_model %>% 
+    filter(LatentSpace %in% sample_ids)
+  
+  model <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_sample_model))
+  
+  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
+  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
+  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
+  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
+}
+```
+
+```{r}
+library(ggbeeswarm)
+ggplot(df_params, aes(x = factor(nsamples), y = abs(tval))) + 
+  geom_beeswarm(cex = 1.5) + 
+  # geom_jitter(width = 0.3) + 
+  geom_hline(yintercept = 2,
+             linetype = 'dashed',
+             col = 'red') + 
+  coord_cartesian(ylim = c(0, 50)) +
+  theme_bw()
+```
+
+```{r}
+ggplot(df_params, aes(x = factor(nsamples), y = -1*log10(pval))) +
+  geom_point() +
+  # geom_beeswarm(cex = 1.5) +
+  geom_hline(yintercept = -1*log10(0.05),
+             linetype = 'dashed',
+             col = 'red') + 
+  coord_cartesian(ylim = c(0, 75)) +
+  theme_bw()
+```
+
 
 ## Panel C: Cortical clustering heatmap
 

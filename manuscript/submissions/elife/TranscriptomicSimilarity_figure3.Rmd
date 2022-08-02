@@ -190,11 +190,11 @@ computeSimilarityProfiles <- function(similarity, scale = FALSE){
     temp <- similarity[, seed] %>% 
       enframe(name = "Target",
               value = "Similarity") 
-      
-      if(scale){
-        temp <- temp %>% 
-          mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
-      }
+    
+    if(scale){
+      temp <- temp %>% 
+        mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+    }
     
     temp <- temp %>% 
       mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
@@ -258,7 +258,7 @@ dfSeedSim_Comparison <- dfSimilarityProfiles %>%
 dfSeedSim_Background <- dfSimilarityProfiles %>% 
   filter(Seed == seed,
          Data != "AllGenes") %>% 
-    mutate(Seed = factor(Seed, levels = listLabelsMouseReordered$Region67_reordered))
+  mutate(Seed = factor(Seed, levels = listLabelsMouseReordered$Region67_reordered))
 
 #Seed ranks at 0.75 for gene space and MLP sample
 seedRanks <- c(dfRankThresholds[dfRankThresholds$Seed == seed,][["AllGenes"]],
@@ -439,6 +439,7 @@ fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled simila
                                           gp = gpar(lineheight = 0.8))
 ```
 
+
 ## Panel C: Proportions slice series
 
 ```{r results2-fig3-panelC-proportions}
@@ -588,6 +589,98 @@ save(fig3_grob,
 
 
 # In-text quantification
+
+```{r}
+dfModel <- dfRankDifferencesSummary %>% 
+  mutate(y = ifelse(RankDiffMean <= 0, 1, 0))
+model <- glm(y ~ 1, data = dfModel, family = 'binomial')
+model_summary <- summary(model)
+model_summary
+```
+
+```{r}
+theta_estimate <- model_summary$coefficients[,'Estimate']
+theta_error <- model_summary$coefficients[,'Std. Error']
+theta_upper <- theta_estimate + 2*theta_error
+theta_lower <- theta_estimate - 2*theta_error
+
+p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+
+print(c(p_estimate, p_lower, p_upper))
+```
+
+```{r}
+dfModel <- dfRankDifferences %>% 
+  mutate(y = ifelse(RankDiff <= 0, 1, 0))
+
+model <- glm(y ~ 1, data = dfModel, family = 'binomial')
+model_summary <- summary(model)
+model_summary
+```
+
+```{r}
+theta_estimate <- model_summary$coefficients[,'Estimate']
+theta_error <- model_summary$coefficients[,'Std. Error']
+theta_upper <- theta_estimate + 2*theta_error
+theta_lower <- theta_estimate - 2*theta_error
+
+p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+
+print(c(p_estimate, p_lower, p_upper))
+```
+
+```{r}
+df_proportions <- tibble(Seed = unique(dfRankDifferences$Seed),
+                         p = 0,
+                         p_lower = 0,
+                         p_upper = 0)
+
+for(i in 1:nrow(df_proportions)) {
+  
+  struct <- df_proportions[[i,'Seed']]
+  
+  df_model <- dfRankDifferences %>% 
+    mutate(y = ifelse(RankDiff <= 0, 1, 0)) %>% 
+    filter(Seed == struct)
+  
+  if (length(unique(df_model$y)) == 1) {
+    
+    df_proportions[i, 'p'] <- unique(df_model$y)
+    df_proportions[i, 'p_lower'] <- unique(df_model$y)
+    df_proportions[i, 'p_upper'] <- unique(df_model$y)
+    
+  } else {
+    
+    model <- summary(glm(y ~ 1, data = df_model, family = 'binomial'))
+    
+    theta_estimate <- model$coefficients[,'Estimate']
+    theta_error <- model$coefficients[,'Std. Error']
+    theta_upper <- theta_estimate + 2*theta_error
+    theta_lower <- theta_estimate - 2*theta_error
+    
+    p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+    p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+    p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+    
+    df_proportions[i, 'p'] <- p_estimate
+    df_proportions[i, 'p_lower'] <- p_lower
+    df_proportions[i, 'p_upper'] <- p_upper
+  }
+}
+
+```
+
+```{r}
+ggplot(df_proportions, aes(x = Seed)) + 
+  geom_pointrange(aes(y = p, ymin = p_lower, ymax = p_upper)) + 
+  coord_flip()
+```
+
+
 
 ```{r results2-fig3-intext-1, eval = F}
 #Number of latent spaces
