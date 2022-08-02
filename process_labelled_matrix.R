@@ -112,11 +112,18 @@ if (args[["scale"]] == "true") {
   dfLabels <- dfExpression %>% select(contains("Region"))
   
   #Normalize data
-  dfExpression <- dfExpression %>% 
+  # dfExpression <- dfExpression %>% 
+  #   select(-contains("Region")) %>% 
+  #   as.matrix() %>% 
+  #   scaler(axis = "rows") %>% 
+  #   scaler(scale = FALSE, axis = "columns") %>% 
+  #   as_tibble() %>% 
+  #   bind_cols(dfLabels)
+  
+  dfExpression %>% 
     select(-contains("Region")) %>% 
     as.matrix() %>% 
-    scaler(axis = "rows") %>% 
-    scaler(scale = FALSE, axis = "columns") %>% 
+    scale() %>% 
     as_tibble() %>% 
     bind_cols(dfLabels)
   
