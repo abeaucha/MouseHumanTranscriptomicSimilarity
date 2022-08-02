@@ -1,0 +1,63 @@
+---
+title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
+subtitle: "Gene enrichment analysis"
+author: "Antoine Beauchamp"
+date: 'August 2nd, 2022'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
+
+```{r packages}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(tmod))
+```
+
+```{r import}
+# Path to gene set data
+annotation_file_remote <- 
+  paste0("http://download.baderlab.org/EM_Genesets/",
+         "November_01_2019/Mouse/symbol/GO/MOUSE_GO_bp_no_GO_iea_symbol.gmt")
+
+#Output file
+annotation_file_local <- '../../../data/MOUSE_GO_bp_no_GO_iea_symbol.gmt'
+
+# Download it if it doesn't exist
+if (!file.exists(annotation_file_local)) {
+  download.file(annotation_file_remote, annotation_file_local)
+}
+
+# Load GMT file into a tmod object
+mappings <- tmodImportMSigDB(file = annotation_file_local, format = 'gmt')
+
+#Get homologous gene set
+homologous_genes <- read_csv('../../../data/MouseHumanGeneHomologs.csv', 
+                             show_col_types = FALSE) %>% 
+  pull(Mouse)
+```
+
+```{r analysis}
+#Run the test for every module
+results <- tmodHGtest(fg = homologous_genes,
+                      bg = mappings$GENES$ID,
+                      mset = mappings,
+                      qval = 0.001,
+                      order.by = 'pval',
+                      filter = T)
+
+results_tbl <- results %>% 
+  as_tibble() %>% 
+  separate(ID, sep = '%', into = c('Name', 'Source', 'Identifier')) %>% 
+  select(Identifier, Title, b, B, n, N, E, P.Value, adj.P.Val) %>% 
+  arrange(adj.P.Val)
+```
+
+```{r export}
+write_csv(x = results_tbl,
+          file = 'SupplementaryFile1.csv')
+```
+
