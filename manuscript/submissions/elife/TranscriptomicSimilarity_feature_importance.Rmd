@@ -1,0 +1,341 @@
+---
+title: "Temp"
+subtitle: "Multi-layer perceptron feature importance"
+author: "Antoine Beauchamp"
+date: 'July 26th, 2022'
+output: html_document
+---
+
+# Initialization
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
+
+```{r libraries}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(patchwork))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(viridis))
+```
+
+```{r functions}
+#Tree tools
+source('../../../functions/tree_tools.R')
+
+#' Plot top genes
+#'
+#' @param x (data.frame) Data frame containing summary statistics
+#' @param n (integer scalar) Number of genes to plot
+#'
+#' @return ggplot
+plot_top_genes <- function(x, n) {
+  
+  x %>% 
+    top_n(n = n, wt = x_mean) %>% 
+    ggplot(aes(x = Gene)) + 
+    geom_pointrange(aes(y = x_mean,
+                        ymin = x_sd_lower,
+                        ymax = x_sd_upper)) + 
+    coord_flip() + 
+    labs(y = 'Feature importance',
+         title = unique(pull(x, Region))) +
+    theme_bw() +
+    theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, 
+                               unit = 'inch'))
+}
+
+#' Subset top genes
+#'
+#' @param x (data.frame) Data frame containing summary statistics
+#' @param n (integer scalar) Number of genes to subset
+#' @param homologs (data.frame) Data frame containing homologs
+#'
+#' @return (data.frame) Data frame containing mouse and human gene names
+#' for top genes
+select_top_genes <- function(x, n, homologs) {
+  x %>% 
+    top_n(n = n, wt = x_mean) %>% 
+    arrange(desc(x_mean)) %>% 
+    left_join(homologs, 
+              by = c('Gene' = 'Mouse')) %>% 
+    select(Mouse = Gene, Human) %>% 
+    return()
+}
+
+#' Convert data frame columns to images
+#'
+#' @param genes (character vector) Names of columns to use
+#' @param expr (data.frame) Data frame containing voxel-wise values
+#' @param mask (mincSingleDim) Mask identifying which voxels correspond to data frame rows
+#'
+#' @return (list) List containing mincSingleDim expression arrays
+columns_to_images <- function(genes, expr, mask) {
+  gene_arrays <- vector(mode = 'list', length = length(genes))
+  for (i in 1:length(genes)) {
+    img <- numeric(length(mask))
+    img[mask == 1] <- pull(expr[,genes[i]])
+    attributes(img) <- attributes(mask)
+    gene_arrays[[i]] <- img
+  }
+  names(gene_arrays) <- genes
+  return(gene_arrays)
+}
+
+#' Create ROI mask
+#'
+#' @param struct (character scalar) Name of ROI in atlas
+#' @param defs (data.frame) Table mapping ROIs to atlas labels
+#' @param labels (mincSingleDim) Atlas labels
+#'
+#' @return (mincSingleDim) ROI mask
+create_structure_mask <- function(struct, defs, labels) {
+  
+  label <- defs %>% 
+    filter(Structure == struct) %>% 
+    pull(Label)
+  
+  mask <- numeric(length(labels))
+  mask[labels == label] <- 1
+  attributes(mask) <- attributes(labels)
+  return(mask)
+}
+```
+
+```{r import}
+#Path to AMBA ISH directory
+expr_dir <- '../../../AMBA/data/expression/coronal/'
+
+#Processed expression matrix
+expr_file <- '../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
+df_expr_mouse <- as_tibble(data.table::fread(expr_file, header = TRUE))
+
+#Mouse-human homologous genes
+homologs <- read_csv('../../../data/MouseHumanGeneHomologs.csv', 
+                     show_col_types = FALSE)
+
+#Mouse tree
+load('../../../AMBA/data/MouseExpressionTree_DSURQE.RData')
+tree_mouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+pruneAnatTree(tree_mouse,
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Imaging files
+anatfile <- '../../../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc'
+maskfile <- '../../../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc'
+labelfile <- '../../../AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc'
+
+anat <- mincGetVolume(anatfile)
+mask <- mincGetVolume(maskfile)
+labels <- mincGetVolume(labelfile)
+
+#Filters to map matrix back to imaging space
+ind_mask <- mask == 1
+ind_gm <- labels %in% tree_mouse[['Basic cell groups and regions']][['label']]
+ind_filter <- ind_mask & ind_gm
+
+mask_gm <- numeric(length(mask))
+mask_gm[ind_filter] <- 1
+attributes(mask_gm) <- attributes(mask)
+
+#Create a 67-label atlas
+load('../../../data/TreeLabelsReordered.RData')
+tree_mouse_67 <- Clone(tree_mouse)
+pruneAnatTree(tree_mouse_67,
+              nodes = listLabelsMouseReordered$Region67_reordered,
+              method = 'BelowNode')
+labels_67 <- hanatToAtlas(anatTree = tree_mouse_67, labelVolume = mincArray(labels))
+defs_67 <- hanatToAtlasDefs(anatTree = tree_mouse_67)
+```
+
+```{r import-gradients}
+#Identify files containing integrated gradients
+gradient_files <- list.files('../../../data/MLP_outcomes/', full.names = T) %>% 
+  str_subset('IntegratedGradients')
+
+#Extract latent space IDs
+latent_space_ids <- gradient_files %>% 
+  str_extract('IntegratedGradients_[0-9]+.csv') %>% 
+  str_extract('[0-9]+') %>% 
+  as.integer()
+
+#Name files according to latent space IDs
+names(gradient_files) <- latent_space_ids
+
+#Import gradients data
+df_integrated_grads <- map_dfr(.x = gradient_files,
+                               .f = function(x) {as_tibble(data.table::fread(x, header = TRUE))},
+                               .id = 'LatentSpace') %>% 
+  mutate(LatentSpace = as.integer(LatentSpace)) %>% 
+  arrange(LatentSpace)
+
+#Convert data to long format
+df_integrated_grads_long <- df_integrated_grads %>% 
+  pivot_longer(cols = c(-Region, -LatentSpace), names_to = 'Human', values_to = 'x')
+
+#Intersect with homologs to get mouse gene IDs
+df_integrated_grads_long <- df_integrated_grads_long %>% 
+  left_join(homologs,
+            by = 'Human') %>% 
+  rename(Gene = Mouse)
+
+#Compute gradient summaries over latent spaces
+df_integrated_grads_summary <- df_integrated_grads_long %>% 
+  group_by(Region, Gene) %>% 
+  summarise(x_mean = mean(x),
+            x_sd = sd(x),
+            x_sd_lower = x_mean - 2*x_sd,
+            x_sd_upper = x_mean + 2*x_sd) %>% 
+  ungroup()
+
+#Split data frames according to regions
+integrated_grads_structs <- split(x = df_integrated_grads_summary,
+                                  f = factor(df_integrated_grads_summary$Region,
+                                             levels = c('Caudoputamen', 'Primary motor area', 'Infralimbic area')))
+
+#Order genes according to importance
+integrated_grads_structs <- integrated_grads_structs %>% 
+  map(function(x) {mutate(x, Gene = factor(Gene, levels = Gene[order(x_mean)]))})
+```
+
+# Figure top row
+
+```{r fig-ggplot}
+ngenes <- 5
+ggplot_list <- map(.x = integrated_grads_structs,
+                   .f = plot_top_genes,
+                   n = ngenes)
+
+for (i in 1:length(ggplot_list)) {
+  ggplot_list[[i]] <- ggplot_list[[i]] +
+    theme(axis.text.x = element_text(size = 8),
+          axis.title.x = element_text(size = 10))
+}
+```
+
+
+# Figure bottom row
+
+```{r fig-ss}
+#Create masks indicating ROI voxels
+structure_masks <- map(.x = names(integrated_grads_structs),
+                       .f = create_structure_mask,
+                       defs = defs_67,
+                       labels = labels_67)
+names(structure_masks) <- names(integrated_grads_structs)
+
+#Obtain top 3 genes for each ROI
+list_top_genes <- map(.x = integrated_grads_structs,
+                      .f = select_top_genes,
+                      n = 3, homologs = homologs)
+
+#Obtain spatial maps for top genes
+gene_maps <- vector(mode = 'list', length = length(list_top_genes))
+names(gene_maps) <- names(list_top_genes)
+for (i in 1:length(gene_maps)) {
+  gene_maps[[i]] <- columns_to_images(genes = pull(list_top_genes[[i]], Human),
+                                      expr = df_expr_mouse,
+                                      mask = mask_gm)  
+}
+
+#Slice ranges for different ROIs
+slice_ranges <- list(c(35, 45), c(35, 45), c(46, 49))
+names(slice_ranges) <- names(gene_maps)
+
+#Some graphical parameters
+contour_col <- 'green'
+contour_width = 1.5
+
+#Create a list containing the slice series 
+ss_grob_list <- vector(mode = 'list', length = length(gene_maps))
+names(ss_grob_list) <- names(gene_maps)
+for (i in 1:length(gene_maps)) {
+  
+  struct <- names(gene_maps)[i]
+  
+  #Condition to extract legend
+  if (i == length(gene_maps)) {
+    ss_tmp <- sliceSeries(nrow = 4, ncol = 1, begin = slice_ranges[[i]][1], end = slice_ranges[[i]][2]) %>% 
+      overlay(mincArray(gene_maps[[struct]][[1]]), low = 1, high = 3, symmetric = T) %>% 
+      legend('Normalized expression') %>% 
+      grobify() %>% 
+      grid.force() 
+    
+    ss_legend_grob <- ss_tmp[['children']][[2]][['children']][[1]][['children']][[1]][['children']][['legend']] 
+  }
+  
+  #Complete slice series
+  ss_grob_list[[i]] <- sliceSeries(nrow = 4, ncol = 1, begin = slice_ranges[[i]][1], end = slice_ranges[[i]][2]) %>% 
+    anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+    overlay(mincArray(gene_maps[[struct]][[1]]), low = 1, high = 3, symmetric = T) %>% 
+    contours(mincArray(structure_masks[[struct]]), levels = c(0, 1), col = contour_col, lwd = contour_width) %>%
+    addtitle(list_top_genes[[struct]][['Mouse']][[1]]) %>% 
+    sliceSeries() %>% anatomy() %>% 
+    overlay(mincArray(gene_maps[[struct]][[2]]), low = 1, high = 3, symmetric = T) %>% 
+    contours(mincArray(structure_masks[[struct]]), levels = c(0, 1), col = contour_col, lwd = contour_width) %>% 
+    addtitle(list_top_genes[[struct]][['Mouse']][[2]]) %>% 
+    grobify()
+}
+```
+
+# Figure grob
+
+```{r fig-grob}
+#Matrix widths and heights in inches
+grid_widths <- c(0.25, 2.8, 0.2, 2.8, 0.2, 2.8, 0.7, 0.25)
+grid_heights <- c(0.225, 2.25, 0.1, 0.2, 3, 0.225)
+
+#Grob for figure plots
+fig_plots_grob <- arrangeGrob(ggplot_list[['Caudoputamen']],
+                              ggplot_list[['Primary motor area']],
+                              ggplot_list[['Infralimbic area']],
+                              ss_grob_list[['Caudoputamen']],
+                              ss_grob_list[['Primary motor area']],
+                              ss_grob_list[['Infralimbic area']],
+                              ss_legend_grob,
+                              layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA,  1, NA,  2, NA,  3, NA, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA,  4, NA,  5, NA,  6, NA, NA),
+                                                    c(NA,  4, NA,  5, NA,  6,  7, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA)),
+                              widths = unit(grid_widths, 'inch'),
+                              heights = unit(grid_heights, 'inch'))
+
+#Empty rectangle grob to form the border
+fig_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Tags
+fig_tags_grob <- textGrob(label = c('A.', 'B.', 'C.'), 
+                          x = unit(c(0.35, 3.35, 6.35), 'inch'),
+                          y = unit(5.7, 'inch'),
+                          gp = gpar(fontsize = 14, fontface = "bold"))
+
+#Grob for figure
+fig_grob <- gTree(children = gList(fig_plots_grob,
+                                   fig_tags_grob,
+                                   fig_border_grob))
+
+#Width and height
+fig_width <- 10
+fig_height <- 6
+
+#Save as pdf
+pdf(file = 'Figure_feature_importance.pdf',
+    width = fig_width,
+    height = fig_height)
+grid.newpage()
+grid.draw(fig_grob)
+dev.off()
+```
+

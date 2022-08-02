@@ -1,0 +1,549 @@
+---
+title: "Exploring the multi-layer perceptron using integrated gradients"
+author: "Antoine Beauchamp"
+date: '2022-07-19'
+output: 
+  html_document:
+    theme: paper
+    highlight: pygments
+    toc: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(patchwork))
+```
+
+# Functions
+
+```{r}
+source('../functions/tree_tools.R')
+
+#' Plot top genes
+#'
+#' @param x (data.frame) Data frame containing summary statistics
+#' @param n (integer scalar) Number of genes to plot
+#'
+#' @return ggplot
+plot_top_genes <- function(x, n) {
+  
+  x %>% 
+    top_n(n = n, wt = x_mean) %>% 
+    ggplot(aes(x = Gene)) + 
+    geom_pointrange(aes(y = x_mean,
+                        ymin = x_sd_lower,
+                        ymax = x_sd_upper)) + 
+    coord_flip() + 
+    labs(y = 'Feature importance',
+         title = str_c('Top genes for region: ', struct),
+         caption = 'Mean +/- 95% CI over latent spaces') + 
+    theme_bw() + 
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
+}
+
+#' Subset top genes
+#'
+#' @param x (data.frame) Data frame containing summary statistics
+#' @param n (integer scalar) Number of genes to subset
+#' @param homologs (data.frame) Data frame containing homologs
+#'
+#' @return (data.frame) Data frame containing mouse and human gene names
+#' for top genes
+select_top_genes <- function(x, n, homologs) {
+  x %>% 
+    top_n(n = n, wt = x_mean) %>% 
+    arrange(desc(x_mean)) %>% 
+    left_join(homologs, 
+              by = c('Gene' = 'Human')) %>% 
+    select(Mouse, Human = Gene) %>% 
+    return()
+}
+
+#' Import gene ISH images
+#'
+#' @param genes (character vector) Mouse gene names
+#' @param exprdir (character scalar) Paths to directory containing ISH images
+#' @param mask (numeric vector) Image mask)
+#'
+#' @return (list) List containing mincSingleDim expression arrays
+import_gene_images <- function(genes, exprdir, mask) {
+  expr_files <- list.files(exprdir, full.names = TRUE)
+  gene_arrays <- vector(mode = 'list', length = length(genes)) 
+  for (i in 1:length(genes)) {
+    infile <- str_subset(expr_files, str_c(genes[i], '_'))
+    img <- mincGetVolume(infile)
+    img[mask == 0] <- 0
+    img[img == -1] <- 0
+    gene_arrays[[i]] <- img
+  }
+  names(gene_arrays) <- genes
+  return(gene_arrays)
+}
+
+#' Convert data frame columns to images
+#'
+#' @param genes (character vector) Names of columns to use
+#' @param expr (data.frame) Data frame containing voxel-wise values
+#' @param mask (mincSingleDim) Mask identifying which voxels correspond to data frame rows
+#'
+#' @return (list) List containing mincSingleDim expression arrays
+columns_to_images <- function(genes, expr, mask) {
+  gene_arrays <- vector(mode = 'list', length = length(genes))
+  for (i in 1:length(genes)) {
+    img <- numeric(length(mask))
+    img[mask == 1] <- pull(expr[,genes[i]])
+    attributes(img) <- attributes(mask)
+    gene_arrays[[i]] <- img
+  }
+  names(gene_arrays) <- genes
+  return(gene_arrays)
+}
+
+#' Create a slice series for multiple images
+#'
+#' @param images (list) List of mincSingleDim arrays to visualize
+#' @param anat (mincSingleDim) Anatomy template
+#' @param nslices (integer scalar) Number of slices to plot per image
+#' @param begin (integer scalar) Starting slice
+#' @param end (integer scalar) Ending slice
+#' @param low (numeric scalar) Lower threshold for overlay
+#' @param high (numeric scalar) Upper threshold for overlay
+#' @param symmetric (logical scalar) Whether to visualize symmetric
+#' @param legend_title (character scalar)
+#'
+#' @return (environment) Slice series
+top_gene_slice_series <- function(images, anat, nslices = 8, begin = 30, end = 50, low, high, symmetric = FALSE, legend_title = NULL) {
+  
+  ss_base <- sliceSeries(nrow = nslices, ncol = 1, begin = begin, end = end) %>% 
+    anatomy(mincArray(anat), low = 700, high = 1400) 
+  
+  for (i in 1:length(images)) {
+    if (i == 1) {
+      ss <- ss_base
+    } else {
+      ss <- ss %>% 
+        sliceSeries() %>% 
+        anatomy() 
+    }
+    ss <- ss %>% 
+      overlay(mincArray(images[[i]]), low = low, high = high, symmetric = symmetric) %>% 
+      addtitle(names(images)[i])
+  }
+  ss <- ss %>% 
+    legend(legend_title)
+  
+  return(ss)
+}
+```
+
+# Importing general purpose data
+
+```{r message=FALSE}
+#Mouse-human homologous genes
+homologs <- read_csv('../data/MouseHumanGeneHomologs.csv', 
+                     show_col_types = FALSE)
+
+#Path to AMBA ISH directory
+exprdir <- '../AMBA/data/expression/coronal/'
+
+#Processed expression matrix
+expr_file <- '../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
+df_expr <- data.table::fread(expr_file, header = TRUE) %>% 
+  as_tibble()
+
+#Mouse tree
+load('../AMBA/data/MouseExpressionTree_DSURQE.RData')
+tree_mouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+pruneAnatTree(tree_mouse,
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Imaging files
+anatfile <- '../AMBA/data/imaging/DSURQE_CCFv3_average_200um.mnc'
+maskfile <- '../AMBA/data/imaging/coronal_200um_coverage_bin0.8.mnc'
+labelfile <- '../AMBA/data/imaging/DSURQE_CCFv3_labels_200um.mnc'
+
+anat <- mincGetVolume(anatfile)
+mask <- mincGetVolume(maskfile)
+labels <- mincGetVolume(labelfile)
+
+#Filters to map matrix back to imaging space
+ind_mask <- mask == 1
+ind_gm <- labels %in% tree_mouse[['Basic cell groups and regions']][['label']]
+ind_filter <- ind_mask & ind_gm
+
+mask_gm <- numeric(length(mask))
+mask_gm[ind_filter] <- 1
+attributes(mask_gm) <- attributes(mask)
+
+#Create a 67-label atlas
+load('../data/TreeLabelsReordered.RData')
+tree_mouse_67 <- Clone(tree_mouse)
+pruneAnatTree(tree_mouse_67,
+              nodes = listLabelsMouseReordered$Region67_reordered,
+              method = 'BelowNode')
+labels_67 <- hanatToAtlas(anatTree = tree_mouse_67, labelVolume = mincArray(labels))
+defs_67 <- hanatToAtlasDefs(anatTree = tree_mouse_67)
+```
+
+
+# Importing integrated gradients data
+
+```{r}
+#Identify files containing integrated gradients
+files <- list.files('../data/MLP_outcomes/', full.names = T) %>% 
+  str_subset('IntegratedGradients')
+
+#Extract latent space IDs
+latent_space_ids <- files %>% 
+  str_extract('IntegratedGradients_[0-9]+.csv') %>% 
+  str_extract('[0-9]+') %>% 
+  as.integer()
+
+#Name files according to latent space IDs
+names(files) <- latent_space_ids
+
+#How many files at time of rendering?
+print(length(files))
+```
+
+```{r}
+#Import gradients data
+df_integrated_grads <- map_dfr(.x = files,
+                               .f = read_csv,
+                               .id = 'LatentSpace',
+                               show_col_types = FALSE) %>% 
+  mutate(LatentSpace = as.integer(LatentSpace)) %>% 
+  arrange(LatentSpace)
+```
+
+```{r message = FALSE}
+#Convert data to long format
+df_integrated_grads_long <- df_integrated_grads %>% 
+  pivot_longer(cols = c(-Region, -LatentSpace), names_to = 'Gene', values_to = 'x')
+
+#Compute gradient summaries over latent spaces
+df_integrated_grads_summary <- df_integrated_grads_long %>% 
+  group_by(Region, Gene) %>% 
+  summarise(x_mean = mean(x),
+            x_sd = sd(x),
+            x_sd_lower = x_mean - 2*x_sd,
+            x_sd_upper = x_mean + 2*x_sd) %>% 
+  ungroup()
+
+#Split data frames according to regions
+integrated_grads_structs <- split(x = df_integrated_grads_summary,
+                                  f = factor(df_integrated_grads_summary$Region))
+
+#Order genes according to importance
+integrated_grads_structs <- integrated_grads_structs %>% 
+  map(function(x) {mutate(x, Gene = factor(Gene, levels = Gene[order(x_mean)]))})
+```
+
+# Overview of gene importances
+
+```{r fig.height = 8, fig.width = 10}
+for (i in 1:length(integrated_grads_structs)) {
+  plt <- ggplot(integrated_grads_structs[[i]],
+                aes(x = as.numeric(Gene), y = x_mean)) + 
+    geom_area(stat = 'identity', fill = 'grey70') + 
+    geom_hline(yintercept = 0) + 
+    geom_point(size = 0.5) + 
+    labs(x = 'Genes',
+         y = 'Feature importance',
+         title = names(integrated_grads_structs)[i]) + 
+    theme_bw() + 
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
+  
+  if (i == 1) {
+    overview_plot <- plt
+  } else {
+    overview_plot <- overview_plot / plt
+  }
+}
+
+overview_plot + 
+  plot_annotation(title = 'Integrated gradients averaged over latent spaces')
+```
+
+# Digging into the caudoputamen
+
+
+```{r}
+struct <- 'Caudoputamen'
+df_struct <- integrated_grads_structs[[struct]]
+
+struct_label <- defs_67 %>% 
+  filter(Structure == struct) %>% 
+  pull(Label)
+
+mask_struct <- numeric(length(labels_67))
+mask_struct[labels_67 == struct_label] <- 1
+attributes(mask_struct) <- attributes(labels_67)
+```
+
+```{r fig.width = 10, fig.height = 5}
+plot_top_genes(x = df_struct, n = 10)
+```
+
+```{r}
+ngenes <- 5
+top_genes <- select_top_genes(x = df_struct,
+                              n = ngenes,
+                              homologs = homologs)
+
+top_genes_human <- pull(top_genes, Human)
+top_genes_mouse <- pull(top_genes, Mouse)
+```
+
+First we'll take a look at the in-situ hybridization images, normalized using the sum of the expression over the brain. 
+
+```{r fig.width = 10, fig.height = 10}
+#Import gene images
+gene_maps <- import_gene_images(genes = top_genes_mouse, 
+                                exprdir = exprdir, 
+                                mask = mask)
+
+#Normalize using total intensity
+gene_maps_normalized <- map(.x = gene_maps,
+                            .f = function(x){x/sum(x)})
+
+ss_gene_maps_normalized <- top_gene_slice_series(images = gene_maps_normalized, anat = anat,
+                                                 nslices = 8, begin = 30,end = 50,
+                                                 low = 0.0001, high = 0.001,
+                                                 symmetric = F, legend_title = 'Expression')
+
+ss_gene_maps_normalized %>% 
+  sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+Not seeing anything for Prrg2 at this threshold. However this isn't what the perceptron is seeing as input. Let's instead taking a look at the processed and normalized expression values that are passed to the network. 
+
+```{r fig.width = 10, fig.height = 10}
+gene_maps_normalized <- columns_to_images(genes = top_genes_human,
+                                          expr = df_expr,
+                                          mask = mask_gm)
+names(gene_maps_normalized) <- top_genes_mouse
+
+ss_gene_maps_normalized <- top_gene_slice_series(images = gene_maps_normalized, anat = anat,
+                                                 nslices = 8, begin = 30,end = 50,
+                                                 low = 1, high = 3,
+                                                 symmetric = T, legend_title = 'Normalized expression')
+
+ss_gene_maps_normalized %>% 
+sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+I suppose that makes more sense?
+
+Prrg2 has a stronger signal here. But I wonder how much of that is true signal and how much is imputed. 
+
+```{r fig.width = 6, fig.height = 8}
+Prrg2 <- gene_maps[['Prrg2']]
+Prrg2_log <- Prrg2
+Prrg2_log[Prrg2_log <= 0] <- NA
+Prrg2_log <- log2(Prrg2_log)
+Prrg2_log[is.na(Prrg2_log)] <- 0
+
+sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(Prrg2), low = 0.001, high = 0.5, symmetric = F) %>% 
+  legend('Expression') %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(Prrg2_log), low = 2, high = 10, symmetric = T) %>% 
+  legend('log2(Expression)') %>% 
+  sliceSeries() %>% anatomy() %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+Looks like the signal is real. 
+
+
+# Digging into the primary motor area
+
+
+```{r}
+struct <- 'Primary motor area'
+df_struct <- integrated_grads_structs[[struct]]
+
+struct_label <- defs_67 %>% 
+  filter(Structure == struct) %>% 
+  pull(Label)
+
+mask_struct <- numeric(length(labels_67))
+mask_struct[labels_67 == struct_label] <- 1
+attributes(mask_struct) <- attributes(labels_67)
+```
+
+```{r fig.width = 10, fig.height = 5}
+plot_top_genes(x = df_struct, n = 10)
+```
+
+```{r}
+ngenes <- 5
+top_genes <- select_top_genes(x = df_struct,
+                              n = ngenes,
+                              homologs = homologs)
+
+top_genes_human <- pull(top_genes, Human)
+top_genes_mouse <- pull(top_genes, Mouse)
+```
+
+```{r fig.width = 10, fig.height = 10}
+#Import gene images
+gene_maps <- import_gene_images(genes = top_genes_mouse, 
+                                exprdir = exprdir, 
+                                mask = mask)
+
+#Normalize using total intensity
+gene_maps <- map(.x = gene_maps,
+                 .f = function(x){x/sum(x)})
+
+ss_gene_maps <- top_gene_slice_series(images = gene_maps, anat = anat,
+                                      nslices = 8, begin = 30,end = 50,
+                                      low = 0.00001, high = 0.0001,
+                                      symmetric = F, legend_title = 'Expression')
+
+ss_gene_maps %>% 
+sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+
+Maybe need to take into account normalization?
+
+
+```{r fig.width = 10, fig.height = 10}
+gene_maps_normalized <- columns_to_images(genes = top_genes_human,
+                                          expr = df_expr,
+                                          mask = mask_gm)
+names(gene_maps_normalized) <- top_genes_mouse
+
+ss_gene_maps_normalized <- top_gene_slice_series(images = gene_maps_normalized, anat = anat,
+                                                 nslices = 8, begin = 30,end = 50,
+                                                 low = 1, high = 3,
+                                                 symmetric = T, legend_title = 'Normalized expression')
+
+ss_gene_maps_normalized %>% 
+sliceSeries(nrow = 8, ncol = 1, begin = 30, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+
+
+
+
+
+
+# Digging into the infralimbic area
+
+
+```{r}
+struct <- 'Infralimbic area'
+df_struct <- integrated_grads_structs[[struct]]
+
+struct_label <- defs_67 %>% 
+  filter(Structure == struct) %>% 
+  pull(Label)
+
+mask_struct <- numeric(length(labels_67))
+mask_struct[labels_67 == struct_label] <- 1
+attributes(mask_struct) <- attributes(labels_67)
+```
+
+```{r fig.width = 10, fig.height = 5}
+plot_top_genes(x = df_struct, n = 10)
+```
+
+```{r}
+ngenes <- 5
+top_genes <- select_top_genes(x = df_struct,
+                              n = ngenes,
+                              homologs = homologs)
+
+top_genes_human <- pull(top_genes, Human)
+top_genes_mouse <- pull(top_genes, Mouse)
+```
+
+```{r fig.width = 10, fig.height = 10}
+#Import gene images
+gene_maps <- import_gene_images(genes = top_genes_mouse, 
+                                exprdir = exprdir, 
+                                mask = mask)
+
+#Normalize using total intensity
+gene_maps <- map(.x = gene_maps,
+                 .f = function(x){x/sum(x)})
+
+ss_gene_maps <- top_gene_slice_series(images = gene_maps, anat = anat,
+                                      nslices = 8, begin = 42,end = 50,
+                                      low = 0.00005, high = 0.0001,
+                                      symmetric = F, legend_title = 'Expression')
+
+ss_gene_maps %>%
+sliceSeries(nrow = 8, ncol = 1, begin = 42, end = 50) %>%
+  anatomy(mincArray(anat), low = 700, high = 1400) %>%
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>%
+  addtitle('Target ROI') %>%
+  draw()
+```
+
+
+Maybe need to take into account normalization?
+
+
+```{r fig.width = 10, fig.height = 10}
+gene_maps_normalized <- columns_to_images(genes = top_genes_human,
+                                          expr = df_expr,
+                                          mask = mask_gm)
+names(gene_maps_normalized) <- top_genes_mouse
+
+ss_gene_maps_normalized <- top_gene_slice_series(images = gene_maps_normalized, anat = anat,
+                                                 nslices = 8, begin = 42,end = 50,
+                                                 low = 1, high = 2,
+                                                 symmetric = T, legend_title = 'Normalized expression')
+
+ss_gene_maps_normalized %>% 
+sliceSeries(nrow = 8, ncol = 1, begin = 42, end = 50) %>% 
+  anatomy(mincArray(anat), low = 700, high = 1400) %>% 
+  overlay(mincArray(mask_struct), low = 0, high = 1, col = 'magenta') %>% 
+  addtitle('Target ROI') %>% 
+  draw()
+```
+
+
+
+
+

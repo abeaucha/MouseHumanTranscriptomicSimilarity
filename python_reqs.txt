@@ -10,6 +10,6 @@ tqdm
 sklearn
 torch
 skorch
-openpyxl
+captum
 matplotlib
 seaborn
