@@ -38,4 +38,5 @@ manuscript/submissions/elife/*isocortex.pdf
 data/isocortex*/
 .ipynb_checkpoints/
 analyses/captum_test.ipynb
+data/MOUSE_GO_bp_no_GO_iea_symbol.gmt
 analyses/*.html
