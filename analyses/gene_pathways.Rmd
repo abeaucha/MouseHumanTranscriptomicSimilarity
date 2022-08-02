@@ -135,14 +135,21 @@ results <- tmodHGtest(fg = homologous_genes,
                       order.by = 'pval',
                       filter = T)
 
-results %>% 
+results_tbl <- results %>% 
   as_tibble() %>% 
   separate(ID, sep = '%', into = c('Name', 'Source', 'Identifier')) %>% 
   select(Identifier, Title, b, B, n, N, E, P.Value, adj.P.Val) %>% 
-  arrange(P.Value)
+  arrange(adj.P.Val)
+
+results_tbl
 ```
 
 
+```{r}
+results_tbl %>% 
+  filter(adj.P.Val <= 0.001) %>% 
+  nrow()
+```
 
 
 
