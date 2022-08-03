@@ -137,7 +137,7 @@ matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,match(listLabelsMouseReordered
 matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[match(listLabelsHumanReordered$Region88_reordered, rownames(matSim_H88M67_AllGenes)),]
 ```
 
-```{r}
+```{r cortex-labels}
 labelsCortexMouse <- dfLabelsMouse %>% 
   filter(Region11 == 'Isocortex') %>% 
   select(Region67) %>% 
@@ -151,9 +151,7 @@ labelsCortexHuman <- dfLabelsHuman %>%
   select(Region16, Region88) %>% 
   distinct() %>% 
   pull(Region88)
-```
 
-```{r}
 matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,colnames(matSim_H88M67_AllGenes) %in% labelsCortexMouse]
 matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[rownames(matSim_H88M67_AllGenes) %in% labelsCortexHuman,]
 ```
@@ -201,7 +199,7 @@ rm(listMouseLatentSpace, listHumanLatentSpace)
 
 ```{r import-latent-space-isocortex}
 #Path to MLP files
-pathMLP <- "../../../data/MLP_outcomes_isocortex_v2/"
+pathMLP <- "../../../data/MLP_outcomes_isocortex/"
 
 #Files containing latent space representations
 filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
@@ -432,10 +430,12 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
                      # limits = c(0, 35),
                      expand = c(0,0)) +
   labs(x = "Mouse region",
-       y = "Rank") + 
+       y = "Rank",
+       title = "Rank of canonical human neuroanatomical homologue") + 
   theme_bw() +
   theme(axis.text.y = element_text(size = 6,
-                                   face = "bold"))
+                                   face = "bold"),
+        title = element_text(size = 8))
 
 #Convert the ggplot object into a grob
 fig4_distributions_grob <- ggplotGrob(fig4_distributions) %>% grid.force()
@@ -476,12 +476,6 @@ fig4_distributions_legend <- ggplot(tmp,
 fig4_distributions_legend_grob <- ggplotGrob(fig4_distributions_legend) %>% 
   grid.force() %>% 
   getGrob("guides.3-3-3-3")
-
-#Plot title for panel A
-fig4_distributions_title_grob <- textGrob("Rank of canonical human neuroanatomical homologue",
-                                          x = unit(0, 'npc'), 
-                                          y = unit(0.5, 'npc'),
-                                          just = c("left", "centre"))
 ```
 
 ```{r}
@@ -489,9 +483,9 @@ pdf(file = 'Figure4_isocortex.pdf',
     width = 5,
     height = 5)
 
-grid.arrange(fig4_distributions,
+grid.arrange(fig4_distributions_grob,
              fig4_distributions_legend_grob, 
-             heights = unit(c(0.8, 0.2), 'npc'))
+             heights = unit(c(4.5, 0.5), 'inch'))
 
 dev.off()
 ```
