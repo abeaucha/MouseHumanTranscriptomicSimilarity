@@ -42,8 +42,8 @@ do
 	 --voxeltransform true \
 	 --seed $i
 
- mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_IntegratedGradients.csv \
-     ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_IntegratedGradients_$i.csv
+#  mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_IntegratedGradients.csv \
+#      ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_IntegratedGradients_$i.csv
 
  mv ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanProb_Region88.csv \
 	 ${outdir}MLP_Region67_Layers3_Units${nunits}_L2${L2}_HumanProb_Region88_$i.csv
