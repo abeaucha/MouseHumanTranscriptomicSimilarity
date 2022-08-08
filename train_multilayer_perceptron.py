@@ -27,7 +27,6 @@ import pandas                 as pd
 import numpy                  as np
 import random
 import argparse
-import sys
 import os
 from datatable                import fread
 
@@ -373,57 +372,57 @@ def main():
         
     # Feature importance -----------------------------------------------------
     
-    #Structures to examine
-    target_structs = ['Caudoputamen',
-                      'Primary motor area',
-                      'Infralimbic area']
+#     #Structures to examine
+#     target_structs = ['Caudoputamen',
+#                       'Primary motor area',
+#                       'Infralimbic area']
     
-    #List of genes
-    genes = dfInput.columns.to_numpy()
+#     #List of genes
+#     genes = dfInput.columns.to_numpy()
     
-    #Convert X to tensor
-    X_tensor = torch.from_numpy(X).type(torch.FloatTensor)
-    X_tensor.requires_grad_()    
+#     #Convert X to tensor
+#     X_tensor = torch.from_numpy(X).type(torch.FloatTensor)
+#     X_tensor.requires_grad_()    
     
-    #Set up integrated gradients
-    ig = IntegratedGradients(net_module)
+#     #Set up integrated gradients
+#     ig = IntegratedGradients(net_module)
 
-    #Iterate over structs
-    integrated_grads = np.zeros((len(target_structs), len(genes)))
-    for i, struct in enumerate(target_structs):
+#     #Iterate over structs
+#     integrated_grads = np.zeros((len(target_structs), len(genes)))
+#     for i, struct in enumerate(target_structs):
         
-        print("Computing integrated gradients for region: {}".format(struct))
+#         print("Computing integrated gradients for region: {}".format(struct))
     
-        #Grab label from structure name
-        target_label = int(dfLabelsUnique
-                          .loc[dfLabelsUnique[labelcol] == struct, ['y']]
-                          .values[0][0])
+#         #Grab label from structure name
+#         target_label = int(dfLabelsUnique
+#                           .loc[dfLabelsUnique[labelcol] == struct, ['y']]
+#                           .values[0][0])
         
-        #Compute gradients
-        attr = ig.attribute(X_tensor, 
-                            target = target_label,
-                            internal_batch_size = X_tensor.shape[0])
+#         #Compute gradients
+#         attr = ig.attribute(X_tensor, 
+#                             target = target_label,
+#                             internal_batch_size = X_tensor.shape[0])
 
-        #Average over data points
-        attr_mean = np.mean(attr.detach().numpy(), axis = 0)
+#         #Average over data points
+#         attr_mean = np.mean(attr.detach().numpy(), axis = 0)
         
-        #Assign to array
-        integrated_grads[i,:] = attr_mean
+#         #Assign to array
+#         integrated_grads[i,:] = attr_mean
     
-    #Convert to data frame
-    integrated_grads = pd.DataFrame(integrated_grads, columns = genes)
-    integrated_grads['Region'] = target_structs
+#     #Convert to data frame
+#     integrated_grads = pd.DataFrame(integrated_grads, columns = genes)
+#     integrated_grads['Region'] = target_structs
     
-    #Output filename
-    file_integrated_grads = ('MLP_{}_Layers3_Units{}_L2{}_IntegratedGradients.csv'
-                             .format(args['labels'].capitalize(),
-                                     args['nunits'], 
-                                     args['L2']))
+#     #Output filename
+#     file_integrated_grads = ('MLP_{}_Layers3_Units{}_L2{}_IntegratedGradients.csv'
+#                              .format(args['labels'].capitalize(),
+#                                      args['nunits'], 
+#                                      args['L2']))
     
-    file_integrated_grads = os.path.join(outdir, file_integrated_grads)
+#     file_integrated_grads = os.path.join(outdir, file_integrated_grads)
     
-    #Write to file
-    integrated_grads.to_csv(file_integrated_grads, index = False)
+#     #Write to file
+#     integrated_grads.to_csv(file_integrated_grads, index = False)
     
     
     # Predict label probabilities for mouse/human data -----------------------
