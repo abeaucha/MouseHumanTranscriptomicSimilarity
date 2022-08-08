@@ -37,8 +37,8 @@ source("../../../functions/buildSimilarityMatrix.R")
 
 ```{r import}
 #Import data
-dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
-dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv"))
+dfExprMouse <- as_tibble(data.table::fread("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv", header = TRUE))
+dfExprHuman <- as_tibble(data.table::fread("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv", header = TRUE))
 
 #Extract gene names
 genes <- colnames(dfExprMouse)[!str_detect(colnames(dfExprMouse), "Region")]
@@ -154,7 +154,7 @@ if (file.exists(simfile)){
     
     #Import mouse voxelwise latent space matrix and compute average hidden unit values
     #for mouse ROIs
-    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+    matMouse <- as_tibble(data.table::fread(mouse, header = TRUE, showProgress = FALSE)) %>% 
       select(-Region) %>% 
       mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
       inner_join(dfLabelsMouse %>% 
@@ -170,7 +170,7 @@ if (file.exists(simfile)){
       t()
     
     #Import human samplewise latent space matrix and filter for samples in the striatum
-    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+    matHuman <- as_tibble(data.table::fread(human, header = TRUE, showProgress = FALSE)) %>% 
       mutate(SampleID = str_c("S", 1:nrow(.))) %>%
       filter(Region %in% striatumHuman) %>% 
       select(-Region) %>% 
@@ -378,7 +378,7 @@ if (file.exists(simfile)) {
   
   computeStriatumSimilarity <- function(mouse, human){
     
-    matMouse <- suppressMessages(read_csv(mouse, progress = F)) %>% 
+    matMouse <- as_tibble(data.table::fread(mouse, header = TRUE, showProgress = FALSE)) %>% 
       select(-Region) %>% 
       mutate(VoxelID = str_c("V", 1:nrow(.))) %>% 
       inner_join(dfLabelsMouse %>% 
@@ -390,7 +390,7 @@ if (file.exists(simfile)) {
       as.matrix() %>% 
       t()
     
-    matHuman <- suppressMessages(read_csv(human, progress = F)) %>% 
+    matHuman <- as_tibble(data.table::fread(mouse, header = TRUE, showProgress = FALSE))
       group_by(Region) %>% 
       summarise_all(.funs = mean) %>% 
       ungroup() %>% 

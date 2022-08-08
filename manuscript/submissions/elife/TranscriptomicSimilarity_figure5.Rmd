@@ -40,8 +40,8 @@ source("../../../functions/buildSimilarityMatrix.R")
 
 ```{r import}
 #Import data
-dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
-dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv"))
+dfExprMouse <- as_tibble(data.table::fread("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv", header = TRUE))
+dfExprHuman <- as_tibble(data.table::fread("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv", header = TRUE))
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
 load("../../../data/TreeLabelsReordered.RData")
@@ -112,7 +112,8 @@ filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
 #Import the mouse latent space data
 listMouseLatentSpace <- map(filesMLP_Mouse,
                             function(x){
-                              suppressMessages(read_csv(x)) %>% 
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
                                 column_to_rownames("Region") %>% 
                                 as.matrix() %>% 
                                 t()
@@ -121,7 +122,8 @@ listMouseLatentSpace <- map(filesMLP_Mouse,
 #Import the human latent space data
 listHumanLatentSpace <- map(filesMLP_Human,
                             function(x){
-                              suppressMessages(read_csv(x)) %>% 
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
                                 column_to_rownames("Region") %>% 
                                 as.matrix() %>% 
                                 t()

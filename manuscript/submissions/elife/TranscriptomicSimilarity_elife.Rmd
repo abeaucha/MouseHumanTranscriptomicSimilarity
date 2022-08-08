@@ -404,6 +404,12 @@ We used the trained perceptron to generate the latent gene expression space. To 
 
 Given the stochasticity inherent in training the network (e.g. random weight initialization and stochastic optimization), we repeated the training and transformation process 500 times using the same network architecture and input data.
 
+
+## Multi-layer perceptron feature importance
+
+\edit{WRITE THIS}
+
+
 ## Data and code availability
 
 This manuscript, including all figures, was generated programmatically using R Markdown (https://rmarkdown.rstudio.com) and \LaTeX (https://www.latex-project.org). The Allen Mouse Brain Atlas and Allen Human Brain Atlas data sets are openly accessible and can be downloaded from the Allen Institute's API (http://api.brain-map.org). All of the code and additional data needed to generate this analysis, including figures and manuscript, is accessible at https://github.com/abeaucha/MouseHumanTranscriptomicSimilarity/. 

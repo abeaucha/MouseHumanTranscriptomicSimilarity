@@ -38,8 +38,8 @@ source("../../../functions/buildSimilarityMatrix.R")
 
 ```{r import}
 #Import data
-dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
-dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv"))
+dfExprMouse <- as_tibble(data.table::fread("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv", header = TRUE))
+dfExprHuman <- as_tibble(data.table::fread("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv", header = TRUE))
 
 #Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
 load("../../../data/TreeLabelsReordered.RData")

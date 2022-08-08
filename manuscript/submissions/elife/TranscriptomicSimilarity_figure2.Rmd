@@ -38,8 +38,8 @@ source("../../../functions/buildSimilarityMatrix.R")
 
 ```{r import-basic}
 #Import data
-dfExprMouse <- suppressMessages(read_csv("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv"))
-dfExprHuman <- suppressMessages(read_csv("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv"))
+dfExprMouse <- as_tibble(data.table::fread("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv", header = TRUE))
+dfExprHuman <- as_tibble(data.table::fread("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv", header = TRUE))
 
 #Extract labels from data frames
 dfLabelsMouse <- dfExprMouse %>% select(contains("Region"))
@@ -88,7 +88,8 @@ filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
 #Import the mouse latent space data
 listMouseLatentSpace <- map(filesMLP_Mouse,
                             function(x){
-                              suppressMessages(read_csv(x)) %>% 
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
                                 column_to_rownames("Region") %>% 
                                 as.matrix() %>% 
                                 t()
@@ -97,7 +98,8 @@ listMouseLatentSpace <- map(filesMLP_Mouse,
 #Import the human latent space data
 listHumanLatentSpace <- map(filesMLP_Human,
                             function(x){
-                              suppressMessages(read_csv(x)) %>% 
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
                                 column_to_rownames("Region") %>% 
                                 as.matrix() %>% 
                                 t()
@@ -345,7 +347,7 @@ fig2_illustration1_input_data_rect_grob <- rectGrob(x = fig2_illustration1_input
                                                     width = fig2_illustration1_input_data_rect_width, 
                                                     height = fig2_illustration1_input_data_rect_height,
                                                     gp = gpar(fill = "#719DC0",
-                                                                col = "#00325C"))
+                                                              col = "#00325C"))
 ```
 
 ```{r results2-fig2-panelA-input-text} 
@@ -562,12 +564,12 @@ fig2_illustration2_input_text_yaxis_grob <- textGrob("Regions",
 #Text for mouse and human annotations
 fig2_illustration2_input_text_species <- c("Human data", "Mouse data")
 fig2_illustration2_input_text_species_x <- mean(c(fig2_illustration2_input_rect_x,
-                                                fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width))
+                                                  fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width))
 fig2_illustration2_input_text_species_y <- fig2_illustration2_input_rect_y - fig2_illustration2_input_rect_height/2 - 0.03
 fig2_illustration2_input_text_species_grob <- textGrob(fig2_illustration2_input_text_species,
-                                                     x = fig2_illustration2_input_text_species_x,
-                                                     y = fig2_illustration2_input_text_species_y,
-                                                     gp = gpar(fontsize = 8))
+                                                       x = fig2_illustration2_input_text_species_x,
+                                                       y = fig2_illustration2_input_text_species_y,
+                                                       gp = gpar(fontsize = 8))
 
 #Text for input data title
 fig2_illustration2_input_text_title_x <- fig2_illustration2_input_rect_x - fig2_illustration2_input_rect_width/2
@@ -610,17 +612,17 @@ fig2_illustration2_output_text_xaxis_grob <- textGrob("Hidden units",
 fig2_illustration2_output_text_yaxis_x <- fig2_illustration2_output_rect_x - 0.02
 fig2_illustration2_output_text_yaxis_y <- fig2_illustration2_output_rect_y
 fig2_illustration2_output_text_yaxis_grob <- textGrob("Regions",
-                                                     x = fig2_illustration2_output_text_yaxis_x,
-                                                     y = fig2_illustration2_output_text_yaxis_y,
-                                                     rot = 90,
-                                                     gp = gpar(fontsize = 8))
+                                                      x = fig2_illustration2_output_text_yaxis_x,
+                                                      y = fig2_illustration2_output_text_yaxis_y,
+                                                      rot = 90,
+                                                      gp = gpar(fontsize = 8))
 
 #Text for title on outputs
 fig2_illustration2_output_text_title_x <- fig2_illustration2_output_rect_x + fig2_illustration2_output_rect_width/2
 fig2_illustration2_output_text_title_grob <- textGrob("Latent space",
-                                                     x = fig2_illustration2_output_text_title_x,
-                                                     y = 0.1,
-                                                     gp = gpar(fontsize = 10))
+                                                      x = fig2_illustration2_output_text_title_x,
+                                                      y = 0.1,
+                                                      gp = gpar(fontsize = 10))
 
 #Combined grob for neural net outputs
 fig2_illustration2_output_grob <- gTree(children = gList(fig2_illustration2_output_rect_grob,
@@ -947,7 +949,7 @@ fig2_heatmap_labsmouse_text_x <- dfLabelsMouse %>%
   ungroup() %>% 
   mutate(x_i_med_perc = x_i_med/67) %>% 
   pull(x_i_med_perc)
-  
+
 matWidth_in <- 3.07
 fig2_heatmap_labsmouse_text_x <- (fig2_heatmap_labsmouse_text_x*(matWidth_in - 0.1) + 0.1)/matWidth_in
 fig2_heatmap_labsmouse_text_x <- fig2_heatmap_labsmouse_text_x + c(0,  #Cortical subplate
