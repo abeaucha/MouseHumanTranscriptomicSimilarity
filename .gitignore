@@ -15,6 +15,7 @@ data/TreeLabels.RData
 data/TreeLabelsReordered.RData
 .venv/
 data/MLP_outcomes*/
+data/MLP_validation/
 AMBA/to_clean/
 AMBA/data/to_clean/
 logs/
@@ -40,3 +41,4 @@ data/isocortex*/
 analyses/captum_test.ipynb
 data/MOUSE_GO_bp_no_GO_iea_symbol.gmt
 analyses/*.html
+analyses/*.pdf
