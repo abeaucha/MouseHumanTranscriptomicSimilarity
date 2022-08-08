@@ -42,13 +42,13 @@ plot_gene_distributions <- function(x, colour) {
               alpha = 0.7,
               col = colour,
               fill = colour) +
-  coord_cartesian(ylim = c(-0.0005, 0.001)) + 
-  labs(x = 'Gene rank',
-       y = 'Feature importance',
-       title = unique(pull(x, Region))) +
-  theme_bw() + 
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+    coord_cartesian(ylim = c(-0.0005, 0.001)) + 
+    labs(x = 'Gene rank',
+         y = 'Feature importance',
+         title = unique(pull(x, Region))) +
+    theme_bw() + 
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank())
 }
 
 #' Subset top genes
@@ -222,7 +222,7 @@ for (i in 1:length(structs)) {
 
 # Figure top row
 
-```{r fig-ggplot}
+```{r fig2-supp1-ggplot}
 ggplot_list <- map2(.x = integrated_grads_structs,
                     .y = struct_colours,
                     .f = plot_gene_distributions) %>% 
@@ -233,7 +233,7 @@ ggplot_yaxis_text_grob <- textGrob('Feature importance', rot = 90)
 
 # Figure bottom row
 
-```{r fig-ss}
+```{r fig2-supp1-ss}
 #Create masks indicating ROI voxels
 structure_masks <- map(.x = names(integrated_grads_structs),
                        .f = create_structure_mask,
@@ -297,60 +297,60 @@ for (i in 1:length(gene_maps)) {
 
 # Figure grob
 
-```{r fig-grob}
+```{r fig2-supp1-grob}
 #Matrix widths and heights in inches
 grid_widths <- c(0.25, 0.25, 2.8, 0.2, 2.8, 0.2, 2.8, 0.7, 0.25)
 grid_heights <- c(0.225, 2.25, 0.1, 0.2, 3, 0.225)
 
 #Grob for figure plots
-fig_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), ggplot_yaxis_text_grob)),
-                              ggplot_list[['Caudoputamen']],
-                              ggplot_list[['Primary motor area']],
-                              ggplot_list[['Infralimbic area']],
-                              ss_grob_list[['Caudoputamen']],
-                              ss_grob_list[['Primary motor area']],
-                              ss_grob_list[['Infralimbic area']],
-                              ss_legend_grob,
-                              layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                    c(NA,  1,  2, NA,  3, NA,  4, NA, NA),
-                                                    c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                                                    c(NA, NA,  5, NA,  6, NA,  7, NA, NA),
-                                                    c(NA, NA,  5, NA,  6, NA,  7,  8, NA),
-                                                    c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-                              widths = unit(grid_widths, 'inch'),
-                              heights = unit(grid_heights, 'inch'))
+fig2_supp1_plots_grob <- arrangeGrob(ggplot_yaxis_text_grob,
+                                     ggplot_list[['Caudoputamen']],
+                                     ggplot_list[['Primary motor area']],
+                                     ggplot_list[['Infralimbic area']],
+                                     ss_grob_list[['Caudoputamen']],
+                                     ss_grob_list[['Primary motor area']],
+                                     ss_grob_list[['Infralimbic area']],
+                                     ss_legend_grob,
+                                     layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                           c(NA,  1,  2, NA,  3, NA,  4, NA, NA),
+                                                           c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                           c(NA, NA,  5, NA,  6, NA,  7, NA, NA),
+                                                           c(NA, NA,  5, NA,  6, NA,  7,  8, NA),
+                                                           c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
+                                     widths = unit(grid_widths, 'inch'),
+                                     heights = unit(grid_heights, 'inch'))
 
 #Empty rectangle grob to form the border
-fig_border_grob <- rectGrob(gp = gpar(fill = NA))
+fig2_supp1_border_grob <- rectGrob(gp = gpar(fill = NA))
 
 #Tags
-fig_tags_grob <- textGrob(label = c('A.', 'B.', 'C.'), 
-                          x = unit(c(0.35, 3.35, 6.35), 'inch'),
-                          y = unit(5.65, 'inch'),
-                          gp = gpar(fontsize = 14, fontface = "bold"))
+fig2_supp1_tags_grob <- textGrob(label = c('A.', 'B.', 'C.'), 
+                                 x = unit(c(0.35, 3.35, 6.35), 'inch'),
+                                 y = unit(5.65, 'inch'),
+                                 gp = gpar(fontsize = 14, fontface = "bold"))
 
 #Grob for figure
-fig_grob <- gTree(children = gList(fig_plots_grob,
-                                   fig_tags_grob,
-                                   fig_border_grob))
+fig2_supp1_grob <- gTree(children = gList(fig2_supp1_plots_grob,
+                                          fig2_supp1_tags_grob,
+                                          fig2_supp1_border_grob))
 
 #Width and height
-fig_width <- 10
-fig_height <- 6
+fig2_supp1_width <- 10
+fig2_supp1_height <- 6
 
 #Save as pdf
 pdf(file = 'Figure2_Supplement1.pdf',
-    width = fig_width,
-    height = fig_height)
+    width = fig2_supp1_width,
+    height = fig2_supp1_height)
 grid.newpage()
-grid.draw(fig_grob)
+grid.draw(fig2_supp1_grob)
 dev.off()
 
 #Save figure grob
 fileout <- "Figure2_Supplement1.RData"
-save(fig_grob,
-     fig_width,
-     fig_height,
+save(fig2_supp1_grob,
+     fig2_supp1_width,
+     fig2_supp1_height,
      file = fileout)
 ```
 
