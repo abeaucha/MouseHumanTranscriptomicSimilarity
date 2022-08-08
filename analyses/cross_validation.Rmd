@@ -1,0 +1,144 @@
+---
+title: "Untitled"
+author: "Antoine Beauchamp"
+date: '2022-08-06'
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+datadir <- '../data/MLP_validation'
+
+df_original_naive <- as_tibble(data.table::fread(file.path(datadir, 'MLP_validation_naive_region67_original.csv'), header = TRUE))
+df_original_resampling <- as_tibble(data.table::fread(file.path(datadir, 'MLP_Validation_CoronalSagittalSampling_Region67_original.csv'), header = TRUE))
+
+df_updated_naive <- as_tibble(data.table::fread(file.path(datadir, 'MLP_validation_naive_region67_updated.csv'), header = TRUE))
+df_updated_resampling <- as_tibble(data.table::fread(file.path(datadir, 'MLP_Validation_CoronalSagittalSampling_Region67_updated.csv'), header = TRUE))
+
+df_original_naive <- df_original_naive %>% 
+  mutate(model = 'original',
+         method = 'naive',
+         sample = 1)
+df_original_resampling <- df_original_resampling %>% 
+  mutate(model = 'original',
+         method = 'resampling')
+df_updated_naive <- df_updated_naive %>% 
+  mutate(model = 'updated',
+         method = 'naive',
+         sample = 1)
+df_updated_resampling <- df_updated_resampling %>% 
+  mutate(model = 'updated',
+         method = 'resampling')
+
+datalist <- list(df_original_naive,
+                 df_original_resampling,
+                 df_updated_naive,
+                 df_updated_resampling)
+
+df_data <- map_dfr(datalist,
+                .f = function(x){
+                  x %>% 
+                    select(model,
+                           method,
+                           sample, 
+                           epoch, 
+                           train_loss, 
+                           valid_loss, 
+                           train_acc, 
+                           valid_acc)
+                },
+                .id = NULL)
+
+df_data <- df_data %>% 
+  pivot_longer(cols = c(train_loss, valid_loss), names_to = 'dataset_loss', values_to = 'loss') %>% 
+  pivot_longer(cols = c(train_acc, valid_acc), names_to = 'dataset_acc', values_to = 'accuracy') %>% 
+  mutate(dataset_loss = ifelse(dataset_loss == 'train_loss', 'training', 'validation'),
+         dataset_acc = ifelse(dataset_acc == 'train_acc', 'training', 'validation')) %>%
+  filter(dataset_loss == dataset_acc) %>% 
+  mutate(dataset = dataset_loss) %>% 
+  select(-dataset_loss, -dataset_acc)
+
+df_data <- df_data %>% 
+  group_by(model, method, dataset, epoch) %>% 
+  summarise(loss = mean(loss),
+            accuracy = mean(accuracy)) %>% 
+  ungroup()
+```
+
+```{r fig.width=10,fig.height=6}
+plot_loss <- ggplot(df_data, aes(x = epoch, y = loss, col = dataset)) + 
+  geom_line(size = 0.75) + 
+  facet_grid(model~method) + 
+  scale_x_continuous(breaks = seq(0, 200, by = 20)) + 
+  labs(title = 'Multi-layer perceptron optimization loss',
+       caption = "Facet rows: Neural network version\nFacet columns: Cross-validation scheme") + 
+  theme_bw()
+
+ggsave(filename = 'mlp_validation_loss.pdf',
+       plot = plot_loss,
+       device = 'pdf',
+       width = unit(10, 'inch'),
+       height = unit(5, 'inch'))
+
+plot_loss
+```
+
+```{r}
+df_data %>% 
+  group_by(model, method, dataset) %>% 
+  filter(loss == min(loss))
+```
+
+
+```{r fig.width=10,fig.height=6}
+plot_acc <- ggplot(df_data, aes(x = epoch, y = accuracy, col = dataset)) + 
+  geom_line(size = 0.75) +
+  facet_grid(model~method) + 
+  coord_cartesian(xlim = c(0,200),
+                  ylim = c(0,1)) + 
+
+  scale_x_continuous(breaks = seq(0, 200, by = 20)) + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.2)) + 
+  labs(title = 'Multi-layer perceptron optimization accuracy',
+       caption = "Facet rows: Neural network version\nFacet columns: Cross-validation scheme") + 
+  theme_bw()
+
+
+ggsave(filename = 'mlp_validation_accuracy.pdf',
+       plot = plot_acc,
+       device = 'pdf',
+       width = unit(10, 'inch'),
+       height = unit(5, 'inch'))
+
+plot_acc
+```
+
+```{r fig.width=10,fig.height=6}
+plot_loss <- ggplot(df_data, aes(x = epoch, y = loss, col = dataset)) + 
+  geom_line() + 
+  facet_grid(model~method) + 
+  scale_x_continuous(breaks = seq(0, 200, by = 20)) + 
+  labs(title = 'Multi-layer perceptron validation',
+       caption = "Facet rows: Neural network version\nFacet columns: Cross-validation scheme") + 
+  theme_bw()
+
+ggsave(filename = 'mlp_validation_loss.pdf',
+       plot = plot_loss,
+       device = 'pdf',
+       width = unit(10, 'inch'),
+       height = unit(5, 'inch'))
+
+plot_loss
+```
+
+```{r}
+df_data %>% 
+  group_by(model, method, dataset) %>% 
+  filter(accuracy == max(accuracy))
+```
+
