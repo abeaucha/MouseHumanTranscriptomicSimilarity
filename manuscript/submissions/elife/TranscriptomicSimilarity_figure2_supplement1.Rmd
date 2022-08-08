@@ -1,6 +1,6 @@
 ---
-title: "Temp"
-subtitle: "Multi-layer perceptron feature importance"
+title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
+subtitle: "Results 2, Figure 2, Figure Supplement 1"
 author: "Antoine Beauchamp"
 date: 'July 26th, 2022'
 output: html_document
@@ -30,26 +30,25 @@ suppressPackageStartupMessages(library(viridis))
 #Tree tools
 source('../../../functions/tree_tools.R')
 
-#' Plot top genes
+#' Plot gene distributions
 #'
 #' @param x (data.frame) Data frame containing summary statistics
-#' @param n (integer scalar) Number of genes to plot
+#' @param colour (character scalar) Colour to use for fill and colour
 #'
 #' @return ggplot
-plot_top_genes <- function(x, n) {
-  
-  x %>% 
-    top_n(n = n, wt = x_mean) %>% 
-    ggplot(aes(x = Gene)) + 
-    geom_pointrange(aes(y = x_mean,
-                        ymin = x_sd_lower,
-                        ymax = x_sd_upper)) + 
-    coord_flip() + 
-    labs(y = 'Feature importance',
-         title = unique(pull(x, Region))) +
-    theme_bw() +
-    theme(plot.margin = margin(t = 0, r = 0, b = 0, l = 0, 
-                               unit = 'inch'))
+plot_gene_distributions <- function(x, colour) {
+  ggplot(x, aes(x = as.numeric(Gene), y = x_mean)) +
+    geom_area(stat = 'identity',
+              alpha = 0.7,
+              col = colour,
+              fill = colour) +
+  coord_cartesian(ylim = c(-0.0005, 0.001)) + 
+  labs(x = 'Gene rank',
+       y = 'Feature importance',
+       title = unique(pull(x, Region))) +
+  theme_bw() + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 }
 
 #' Subset top genes
@@ -198,31 +197,39 @@ df_integrated_grads_summary <- df_integrated_grads_long %>%
             x_sd_upper = x_mean + 2*x_sd) %>% 
   ungroup()
 
+structs <- c('Caudoputamen', 'Primary motor area', 'Infralimbic area')
+
 #Split data frames according to regions
 integrated_grads_structs <- split(x = df_integrated_grads_summary,
                                   f = factor(df_integrated_grads_summary$Region,
-                                             levels = c('Caudoputamen', 'Primary motor area', 'Infralimbic area')))
+                                             levels = structs))
 
 #Order genes according to importance
 integrated_grads_structs <- integrated_grads_structs %>% 
   map(function(x) {mutate(x, Gene = factor(Gene, levels = Gene[order(x_mean)]))})
+
+#Reduce list to data frame
+df_integrated_grads <- map_dfr(.x = integrated_grads_structs,
+                               .f = function(x) {mutate(x, Rank = as.numeric(Gene))}) %>% 
+  mutate(Region = factor(Region, levels = c('Caudoputamen', 'Primary motor area', 'Infralimbic area')))
+
+#Get ROI colours from ontology
+struct_colours <- character(length(structs))
+for (i in 1:length(structs)) {
+  struct_colours[i] <- FindNode(tree_mouse_67, structs[i])[['color_hex_triplet']]
+}
 ```
 
 # Figure top row
 
 ```{r fig-ggplot}
-ngenes <- 5
-ggplot_list <- map(.x = integrated_grads_structs,
-                   .f = plot_top_genes,
-                   n = ngenes)
+ggplot_list <- map2(.x = integrated_grads_structs,
+                    .y = struct_colours,
+                    .f = plot_gene_distributions) %>% 
+  map(.f = function(p) {p + theme(axis.title.y = element_blank())})
 
-for (i in 1:length(ggplot_list)) {
-  ggplot_list[[i]] <- ggplot_list[[i]] +
-    theme(axis.text.x = element_text(size = 8),
-          axis.title.x = element_text(size = 10))
-}
+ggplot_yaxis_text_grob <- textGrob('Feature importance', rot = 90)
 ```
-
 
 # Figure bottom row
 
@@ -292,23 +299,24 @@ for (i in 1:length(gene_maps)) {
 
 ```{r fig-grob}
 #Matrix widths and heights in inches
-grid_widths <- c(0.25, 2.8, 0.2, 2.8, 0.2, 2.8, 0.7, 0.25)
+grid_widths <- c(0.25, 0.25, 2.8, 0.2, 2.8, 0.2, 2.8, 0.7, 0.25)
 grid_heights <- c(0.225, 2.25, 0.1, 0.2, 3, 0.225)
 
 #Grob for figure plots
-fig_plots_grob <- arrangeGrob(ggplot_list[['Caudoputamen']],
+fig_plots_grob <- arrangeGrob(gTree(children = gList(rectGrob(), ggplot_yaxis_text_grob)),
+                              ggplot_list[['Caudoputamen']],
                               ggplot_list[['Primary motor area']],
                               ggplot_list[['Infralimbic area']],
                               ss_grob_list[['Caudoputamen']],
                               ss_grob_list[['Primary motor area']],
                               ss_grob_list[['Infralimbic area']],
                               ss_legend_grob,
-                              layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                    c(NA,  1, NA,  2, NA,  3, NA, NA),
-                                                    c(NA, NA, NA, NA, NA, NA, NA, NA),
-                                                    c(NA,  4, NA,  5, NA,  6, NA, NA),
-                                                    c(NA,  4, NA,  5, NA,  6,  7, NA),
-                                                    c(NA, NA, NA, NA, NA, NA, NA, NA)),
+                              layout_matrix = rbind(c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA,  1,  2, NA,  3, NA,  4, NA, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                                                    c(NA, NA,  5, NA,  6, NA,  7, NA, NA),
+                                                    c(NA, NA,  5, NA,  6, NA,  7,  8, NA),
+                                                    c(NA, NA, NA, NA, NA, NA, NA, NA, NA)),
                               widths = unit(grid_widths, 'inch'),
                               heights = unit(grid_heights, 'inch'))
 
@@ -318,7 +326,7 @@ fig_border_grob <- rectGrob(gp = gpar(fill = NA))
 #Tags
 fig_tags_grob <- textGrob(label = c('A.', 'B.', 'C.'), 
                           x = unit(c(0.35, 3.35, 6.35), 'inch'),
-                          y = unit(5.7, 'inch'),
+                          y = unit(5.65, 'inch'),
                           gp = gpar(fontsize = 14, fontface = "bold"))
 
 #Grob for figure
@@ -331,11 +339,19 @@ fig_width <- 10
 fig_height <- 6
 
 #Save as pdf
-pdf(file = 'Figure_feature_importance.pdf',
+pdf(file = 'Figure2_Supplement1.pdf',
     width = fig_width,
     height = fig_height)
 grid.newpage()
 grid.draw(fig_grob)
 dev.off()
+
+#Save figure grob
+fileout <- "Figure2_Supplement1.RData"
+save(fig_grob,
+     fig_width,
+     fig_height,
+     file = fileout)
 ```
+
 
