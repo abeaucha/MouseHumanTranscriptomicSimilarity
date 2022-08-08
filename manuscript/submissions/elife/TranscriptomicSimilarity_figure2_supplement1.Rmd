@@ -1,6 +1,6 @@
 ---
 title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
-subtitle: "Results 2, Figure 2, Figure Supplement 1"
+subtitle: "Results 2, Figure 2, Supplement 1"
 author: "Antoine Beauchamp"
 date: 'July 26th, 2022'
 output: html_document

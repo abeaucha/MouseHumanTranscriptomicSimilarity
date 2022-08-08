@@ -1,5 +1,5 @@
 ---
-title: "Transcriptomic similarity in the mouse and human brain"
+title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
 subtitle: "Results 2, Figure 3"
 author: "Antoine Beauchamp"
 date: 'January 25th, 2022'

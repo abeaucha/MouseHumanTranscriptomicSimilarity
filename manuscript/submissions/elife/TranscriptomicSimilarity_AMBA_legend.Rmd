@@ -1,5 +1,5 @@
 ---
-title: "Transcriptomic similarity in the mouse and human brain"
+title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
 subtitle: "Allen Mouse Brain Atlas legend slice"
 author: "Antoine Beauchamp"
 date: 'March 14th, 2022'
