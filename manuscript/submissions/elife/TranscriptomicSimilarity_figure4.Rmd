@@ -192,11 +192,11 @@ computeSimilarityProfiles <- function(similarity, scale = FALSE){
     temp <- similarity[, seed] %>% 
       enframe(name = "Target",
               value = "Similarity") 
-      
-      if(scale){
-        temp <- temp %>% 
-          mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
-      }
+    
+    if(scale){
+      temp <- temp %>% 
+        mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+    }
     
     temp <- temp %>% 
       mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
@@ -220,7 +220,8 @@ dfSimilarityProfiles <- map_df(.x = listSimMats,
 
 ```{r canonical-pairs}
 #Import the data frame containing mouse-human canonical pairs
-dfCanonicalPairs_H88M67 <- read_csv("../../../data/MouseHumanMatches_H88M67.csv")
+dfCanonicalPairs_H88M67 <- read_csv("../../../data/MouseHumanMatches_H88M67.csv", 
+                                    show_col_types = FALSE)
 
 mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
   str_replace("Superior colliculus, sensory related", "Superior colliculus")
@@ -323,9 +324,12 @@ dfMouseColours <- annotation_colours_mod$MouseRegion %>%
 #Colour palette
 colPalette <- c("#B27700", "#00325C")
 
+dfCanonicalPairs_H88M67_Ranks_MLP <- dfCanonicalPairs_H88M67_Ranks_MLP %>% 
+  mutate(RankSdLower = ifelse(RankSdLower <= 1, 1, RankSdLower))
+
 #Create rank distributions plot
 fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
-       aes(x = Seed)) + 
+                             aes(x = Seed)) + 
   geom_pointrange(mapping = aes(y = RankMean,
                                 ymin = RankSdLower,
                                 ymax = RankSdUpper),
@@ -336,9 +340,8 @@ fig4_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
              mapping = aes(y = TargetRank),
              col = colPalette[1],
              size = 2) +  
-  coord_flip(ylim = c(0,35)) + 
+  coord_flip(ylim = c(0,40)) + 
   scale_y_continuous(breaks = c(1, seq(5, 40, by = 5)),
-                     # limits = c(0, 35),
                      expand = c(0,0)) + 
   labs(x = "Mouse region",
        y = "Rank") + 
@@ -385,6 +388,48 @@ fig4_distributions_title_grob <- textGrob("Rank of canonical human neuroanatomic
 ## Panel B: Proportions slice series
 
 ```{r results2-fig4-panelB-proportions}
+#Initialize df to store parameters
+df_proportions <- tibble(Seed = unique(dfCanonicalPairs_H88M67_RankDiffs$Seed),
+                         p = 0,
+                         p_lower = 0,
+                         p_upper = 0)
+
+#Run logistic regression for each ROI
+for(i in 1:nrow(df_proportions)) {
+  
+  struct <- df_proportions[[i,'Seed']]
+  
+  #Create binary target
+  df_model <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+    mutate(y = ifelse(RankDiff <= 0, 1, 0)) %>% 
+    filter(Seed == struct)
+  
+  #If no variance, assign unique value
+  if (length(unique(df_model$y)) == 1) {
+    
+    df_proportions[i, 'p'] <- unique(df_model$y)
+    df_proportions[i, 'p_lower'] <- unique(df_model$y)
+    df_proportions[i, 'p_upper'] <- unique(df_model$y)
+    
+  } else {
+    
+    model <- summary(glm(y ~ 1, data = df_model, family = 'binomial'))
+    
+    theta_estimate <- model$coefficients[,'Estimate']
+    theta_error <- model$coefficients[,'Std. Error']
+    theta_upper <- theta_estimate + 2*theta_error
+    theta_lower <- theta_estimate - 2*theta_error
+    
+    p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+    p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+    p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+    
+    df_proportions[i, 'p'] <- p_estimate
+    df_proportions[i, 'p_lower'] <- p_lower
+    df_proportions[i, 'p_upper'] <- p_upper
+  }
+}
+
 #Generate a mouse tree with 67 leaf nodes
 treeMouse_67 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_67,
@@ -396,16 +441,9 @@ atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
 dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67) %>% 
   mutate(Structure = ifelse(Structure == "Superior colliculus, sensory related", "Superior colliculus", Structure))
 
-#Compute the proportion of rank differences non-positive
-dfCanonicalPairs_H88M67_RankDiffsProp <- dfCanonicalPairs_H88M67_RankDiffs %>% 
-  mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
-  group_by(Seed) %>% 
-  summarise(PropNonPos = sum(NonPositive)/n()) %>% 
-  ungroup()
-
 #Create MINC array for proportions non-positive
-fig4_ss_array <- mincBuildArray(values = dfCanonicalPairs_H88M67_RankDiffsProp$PropNonPos,
-                                values.names = dfCanonicalPairs_H88M67_RankDiffsProp$Seed,
+fig4_ss_array <- mincBuildArray(values = df_proportions$p,
+                                values.names = df_proportions$Seed,
                                 labels = atlasMouse_67,
                                 defs = dfAtlasMouse_67)
 
@@ -491,9 +529,9 @@ sliceAMBA_height <- sliceAMBA_width/sliceAMBA_asp
 
 #New vieport for the atlas legend slice
 sliceAMBALegend_grob$vp <- viewport(x = unit(0.7, 'inch'),
-                                          y = unit(0.5, 'inch'),
-                                          width = unit(sliceAMBA_width, 'inch'),
-                                          height = unit(sliceAMBA_height,'inch'))
+                                    y = unit(0.5, 'inch'),
+                                    width = unit(sliceAMBA_width, 'inch'),
+                                    height = unit(sliceAMBA_height,'inch'))
 
 #Figure 4 grob
 fig4_grob <- gTree(children = gList(fig4_plots_grob,
@@ -519,16 +557,54 @@ dev.off()
 ```
 
 ```{r results2-fig4-write}
-fileout <- str_c("Figure4.RData")
+fileout <- 'Figure4.RData'
 save(fig4_grob,
      fig4_width,
      fig4_height,
      file = fileout)
 ```
 
-# In-text quantification
 
-```{r results2-fig4-intext-1, eval=F}
+# Quantitative statements
+
+```{r}
+df_model <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  group_by(Seed) %>% 
+  summarise(RankDiffMean = mean(RankDiff)) %>% 
+  ungroup() %>% 
+  mutate(y = ifelse(RankDiffMean <= 0, 1, 0))
+
+model <- glm(y ~ 1, data = df_model, family = 'binomial')
+model_summary <- summary(model)
+
+theta_estimate <- model_summary$coefficients[,'Estimate']
+theta_error <- model_summary$coefficients[,'Std. Error']
+theta_upper <- theta_estimate + 2*theta_error
+theta_lower <- theta_estimate - 2*theta_error
+
+p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+
+print(c(p_estimate, p_lower, p_upper))
+```
+```{r}
+df_proportions %>% 
+  arrange(desc(p))
+```
+
+```{r}
+df_proportions %>% 
+  filter(Seed %in% c('Claustrum',
+                     'Visual areas',
+                     'Primary auditory area',
+                     'Uvula (IX)'))
+```
+
+
+
+
+```{r results2-fig4-quant-1, eval=F}
 #Data frame containing proportions of non-positive rank differences
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -542,7 +618,7 @@ dfCanonicalPairs_H88M67_RankDiffs_Summary %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig4-intext-2, eval=F}
+```{r results2-fig4-quant-2, eval=F}
 #Ranks for frontal pole and visual areas
 dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
@@ -551,7 +627,7 @@ dfCanonicalPairs_H88M67_Ranks %>%
   summarise(mean(TargetRank))
 ```
 
-```{r results2-fig4-intext-3, eval=F}
+```{r results2-fig4-quant-3, eval=F}
 #Number of MLP samples
 nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes") %>% 
@@ -561,24 +637,46 @@ nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>%
 
 #Proportion of latent spaces in which subcortical regions are maximally similar to their canonical pair
 dfCanonicalPairs_H88M67_Ranks %>% 
-filter(Seed %in% c("Pallidum",
-                   "Striatum ventral region",
-                   "Caudoputamen",
-                   "Hypothalamus", 
-                   "Thalamus",
-                   "Inferior colliculus",
-                   "Superior colliculus",
-                   "Pons",
-                   "Medulla"),
-       Data != "AllGenes") %>% 
+  filter(Seed %in% c("Pallidum",
+                     "Striatum ventral region",
+                     "Caudoputamen",
+                     "Hypothalamus", 
+                     "Thalamus",
+                     "Inferior colliculus",
+                     "Superior colliculus",
+                     "Pons",
+                     "Medulla"),
+         Data != "AllGenes") %>% 
   select(Seed, TargetRank) %>% 
   group_by(Seed) %>% 
   summarise(prop = sum(TargetRank == 1)/nMLPsamples) %>% 
   ungroup() %>% 
-  arrange(prop)
+  arrange(desc(prop))
 ```
 
-```{r results2-fig4-intext-4, eval=F}
+```{r}
+df_rank_summary <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != 'AllGenes') %>% 
+  group_by(Seed) %>% 
+  summarise(RankMean = mean(TargetRank),
+            RankRange = max(TargetRank) - min(TargetRank),
+            RankSd = sd(TargetRank)) %>% 
+  ungroup()
+
+dfCanonicalPairs_H88M67_Ranks_MLP %>% 
+  filter(Seed %in% c('Claustrum', 'Visual areas', 'Paraflocculus'))
+```
+
+
+
+```{r}
+dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != "AllGenes",
+         Seed == "Crus 1") 
+```
+
+
+```{r results2-fig4-quant-4, eval=F}
 #Calculate rank frequency for crus 1 pair
 temp <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes",
