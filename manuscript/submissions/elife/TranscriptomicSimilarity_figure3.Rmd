@@ -445,6 +445,48 @@ fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled simila
 ## Panel C: Proportions slice series
 
 ```{r results2-fig3-panelC-proportions}
+#Initialize df to store parameters
+df_proportions <- tibble(Seed = unique(dfRankDifferences$Seed),
+                         p = 0,
+                         p_lower = 0,
+                         p_upper = 0)
+
+#Run logistic regression for each ROI
+for(i in 1:nrow(df_proportions)) {
+  
+  struct <- df_proportions[[i,'Seed']]
+  
+  #Create binary target
+  df_model <- dfRankDifferences %>% 
+    mutate(y = ifelse(RankDiff <= 0, 1, 0)) %>% 
+    filter(Seed == struct)
+  
+  #If no variance, assign unique value
+  if (length(unique(df_model$y)) == 1) {
+    
+    df_proportions[i, 'p'] <- unique(df_model$y)
+    df_proportions[i, 'p_lower'] <- unique(df_model$y)
+    df_proportions[i, 'p_upper'] <- unique(df_model$y)
+    
+  } else {
+    
+    model <- summary(glm(y ~ 1, data = df_model, family = 'binomial'))
+    
+    theta_estimate <- model$coefficients[,'Estimate']
+    theta_error <- model$coefficients[,'Std. Error']
+    theta_upper <- theta_estimate + 2*theta_error
+    theta_lower <- theta_estimate - 2*theta_error
+    
+    p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
+    p_lower <- exp(theta_lower)/(1+exp(theta_lower))
+    p_upper <- exp(theta_upper)/(1+exp(theta_upper))
+    
+    df_proportions[i, 'p'] <- p_estimate
+    df_proportions[i, 'p_lower'] <- p_lower
+    df_proportions[i, 'p_upper'] <- p_upper
+  }
+}
+
 #Generate a mouse tree with 67 leaf nodes
 treeMouse_67 <- Clone(treeMouse)
 pruneAnatTree(treeMouse_67,
@@ -456,8 +498,8 @@ atlasMouse_67 <- hanatToAtlas(treeMouse_67, mincArray(dsurqeLabels))
 dfAtlasMouse_67 <- hanatToAtlasDefs(treeMouse_67)
 
 #Create MINC array for proportions non-positive
-fig3_ss_array <- mincBuildArray(values = dfRankDifferencesSummary$PropNonPos,
-                                values.names = dfRankDifferencesSummary$Seed,
+fig3_ss_array <- mincBuildArray(values = df_proportions$p,
+                                values.names = df_proportions$Seed,
                                 labels = atlasMouse_67,
                                 defs = dfAtlasMouse_67)
 
@@ -593,9 +635,10 @@ save(fig3_grob,
 # Quantitative statements
 
 ```{r results2-fig3-quant-1, eval = F}
-dfModel <- dfRankDifferencesSummary %>% 
+df_model <- dfRankDifferencesSummary %>% 
   mutate(y = ifelse(RankDiffMean <= 0, 1, 0))
-model <- glm(y ~ 1, data = dfModel, family = 'binomial')
+
+model <- glm(y ~ 1, data = df_model, family = 'binomial')
 model_summary <- summary(model)
 
 theta_estimate <- model_summary$coefficients[,'Estimate']
@@ -634,44 +677,6 @@ temp %>%
 ```
 
 ```{r results2-fig3-quant-3}
-df_proportions <- tibble(Seed = unique(dfRankDifferences$Seed),
-                         p = 0,
-                         p_lower = 0,
-                         p_upper = 0)
-
-for(i in 1:nrow(df_proportions)) {
-  
-  struct <- df_proportions[[i,'Seed']]
-  
-  df_model <- dfRankDifferences %>% 
-    mutate(y = ifelse(RankDiff <= 0, 1, 0)) %>% 
-    filter(Seed == struct)
-  
-  if (length(unique(df_model$y)) == 1) {
-    
-    df_proportions[i, 'p'] <- unique(df_model$y)
-    df_proportions[i, 'p_lower'] <- unique(df_model$y)
-    df_proportions[i, 'p_upper'] <- unique(df_model$y)
-    
-  } else {
-    
-    model <- summary(glm(y ~ 1, data = df_model, family = 'binomial'))
-    
-    theta_estimate <- model$coefficients[,'Estimate']
-    theta_error <- model$coefficients[,'Std. Error']
-    theta_upper <- theta_estimate + 2*theta_error
-    theta_lower <- theta_estimate - 2*theta_error
-    
-    p_estimate <- exp(theta_estimate)/(1+exp(theta_estimate))
-    p_lower <- exp(theta_lower)/(1+exp(theta_lower))
-    p_upper <- exp(theta_upper)/(1+exp(theta_upper))
-    
-    df_proportions[i, 'p'] <- p_estimate
-    df_proportions[i, 'p_lower'] <- p_lower
-    df_proportions[i, 'p_upper'] <- p_upper
-  }
-}
-
 df_proportions %>% 
   arrange(desc(p))
 ```
