@@ -28,6 +28,8 @@ suppressPackageStartupMessages(library(data.tree))
 suppressPackageStartupMessages(library(RColorBrewer))
 suppressPackageStartupMessages(library(viridis))
 suppressPackageStartupMessages(library(rcartocolor))
+suppressPackageStartupMessages(library(lme4))
+suppressPackageStartupMessages(library(lmerTest))
 ```
 
 ```{r functions}
@@ -275,72 +277,6 @@ fig5_regionaldist_title_grob <- textGrob("Distributions of maximal correlation f
                                          just = c("left", "centre"))
 ```
 
-```{r}
-df_tmp <- dfSimilarityProfiles_Cx_MaxSim %>% 
-  select(Data, Seed, Similarity) %>% 
-  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal"),
-         LatentSpace = str_extract(Data, '[0-9]+'),
-         LatentSpace = as.numeric(LatentSpace))
-
-summary(lmer(Similarity ~ CortexType + (1|Data), data = df_tmp))
-```
-
-```{r}
-latent_space_ids <- sort(unique(df_tmp$LatentSpace))
-df_params <- tibble(id = latent_space_ids,
-                    beta0 = 0,
-                    beta = 0,
-                    sigma_beta = 0,
-                    tval = 0,
-                    pval = 0)
-
-for (i in 1:nrow(df_params)) {
-  
-  df_model <- df_tmp %>% 
-    filter(LatentSpace == df_params[[i, 'id']])
-  
-  model <- summary(lm(Similarity ~ CortexType, data = df_model))
-
-  df_params[i, 'beta0'] <- model[['coefficients']][1, 'Estimate']  
-  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
-  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
-  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
-  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
-  
-}
-```
-
-```{r}
-ggplot(df_params, aes(x = -log10(pval))) + 
-  geom_histogram(binwidth = 0.2,
-                 col = 'black', fill = 'grey70') + 
-  geom_vline(xintercept = -log10(0.05),
-             linetype = 'dashed', col = 'red', size = 1.2) + 
-  theme_bw()
-```
-
-```{r}
-
-x <- seq(0, 1, length.out = 5)
-y <- matrix(data = 0, nrow = length(x), ncol = nrow(df_params))
-colnames(y) <- str_c('y', df_params$id)
-for(i in 1:nrow(df_params)) {
-  beta0 <- df_params[[i, 'beta0']]
-  beta <- df_params[[i, 'beta']]
-  y[,i] <- beta0 + beta*x
-}
-
-df_lines <- as_tibble(y) %>% 
-  mutate(x = x) %>% 
-  pivot_longer(cols = -x, names_to = 'id', values_to = 'y')
-
-ggplot(df_lines, aes(x = x, y = y, group = id)) + 
-  geom_line(alpha = 0.1) + 
-  scale_x_continuous(breaks = c(0,1)) + 
-  theme_bw()
-```
-
-
 
 ## Panel B: Maximal correlation distributions by cortex type
 
@@ -388,90 +324,6 @@ fig5_cortexdist_title_grob <- textGrob("Distributions of maximal correlation for
                                        just = c("left", "centre"),
                                        gp = gpar(lineheight = 1))
 ```
-
-```{r}
-library(lme4)
-library(lmerTest)
-
-dfSimilarityProfiles_Cx_MaxSim_Compare 
-
-model_lm <- summary(lm(SimilarityMean ~ CortexType, data = dfSimilarityProfiles_Cx_MaxSim_Compare))
-model_lm
-```
-
-```{r}
-df_model <- dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
-  mutate(LatentSpace = str_extract(Data, '[0-9]+'),
-         LatentSpace = as.numeric(LatentSpace))
-
-# model_lmer <- 
-summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
-```
-
-```{r}
-latent_space_ids <- sort(unique(df_model$LatentSpace))
-sample_ids <- sample(x = latent_space_ids, size = 100, replace = FALSE)
-
-df_sample_model <- df_model %>% 
-  filter(LatentSpace %in% sample_ids)
-
-summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
-```
-
-```{r}
-nsamples <- c(400, 100, 50, 10, 5)
-npermutations <- 20
-
-df_params <- expand_grid(nsamples = nsamples,
-                         permutation = 1:npermutations,
-                         beta = 0,
-                         sigma_beta = 0,
-                         tval = 0,
-                         pval = 0)
-
-for (i in 1:nrow(df_params)) {
-  
-  nsamples <- df_params[[i, 'nsamples']]
-  
-  sample_ids <- sample(x = latent_space_ids, 
-                       size = nsamples, 
-                       replace = FALSE)
-  
-  df_sample_model <- df_model %>% 
-    filter(LatentSpace %in% sample_ids)
-  
-  model <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_sample_model))
-  
-  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
-  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
-  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
-  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
-}
-```
-
-```{r}
-library(ggbeeswarm)
-ggplot(df_params, aes(x = factor(nsamples), y = abs(tval))) + 
-  geom_beeswarm(cex = 1.5) + 
-  # geom_jitter(width = 0.3) + 
-  geom_hline(yintercept = 2,
-             linetype = 'dashed',
-             col = 'red') + 
-  coord_cartesian(ylim = c(0, 50)) +
-  theme_bw()
-```
-
-```{r}
-ggplot(df_params, aes(x = factor(nsamples), y = -1*log10(pval))) +
-  geom_point() +
-  # geom_beeswarm(cex = 1.5) +
-  geom_hline(yintercept = -1*log10(0.05),
-             linetype = 'dashed',
-             col = 'red') + 
-  coord_cartesian(ylim = c(0, 75)) +
-  theme_bw()
-```
-
 
 ## Panel C: Cortical clustering heatmap
 
@@ -658,18 +510,18 @@ fig5_heatmap_legend_grob <- gTree(children = gList(fig5_heatmap_legend_scale_gro
 ```{r results3-fig5-panelC-heatmap-titles}
 #Row title
 fig5_heatmap_rowtitle_grob <- textGrob("Mouse regions",
-                                       x = 0.03,
-                                       y = 0.1,
-                                       just = c("left", "bottom"),
+                                       x = 0.7,
+                                       y = 0.5,
+                                       rot = 270,
+                                       just = c('centre', 'centre'),
                                        gp = gpar(fontsize = 8,
                                                  fontface = "bold"))
 
 #Column title
 fig5_heatmap_coltitle_grob <- textGrob("Human regions",
                                        x = 0.5,
-                                       y = 0.97,
-                                       just = c("left", "centre"),
-                                       rot = 270,
+                                       y = 1,
+                                       just = c("centre", "top"),
                                        gp = gpar(fontsize = 8,
                                                  fontface = "bold"))
 
@@ -774,8 +626,9 @@ fig5_wcss <- ggplot(dfWCSS, aes(x = k, y = wcss, col = data)) +
   geom_line(aes(linetype = axis)) + 
   geom_point() + 
   coord_cartesian(xlim = c(1, 10),
-                  ylim = c(0, 1)) +
+                  ylim = c(0, 1.6)) +
   scale_x_continuous(breaks = seq(0, 40, 1), expand = expansion(add = 0.5)) + 
+  scale_y_continuous(breaks = seq(0, 2, by = 0.2)) + 
   scale_color_manual(labels = c("Initial gene expression space", "Latent gene expression space"), 
                      values = c("#B27700", "#00325C"),
                      name = NULL) + 
@@ -811,6 +664,7 @@ fig5_wcss_title_grob <- textGrob("Mouse and human scree plots",
 
 
 ## Figure 5 grob
+
 
 ```{r results3-fig5-grob, fig.width=10, fig.height=7.6}
 #Grob for main plots in figure 5
@@ -856,15 +710,16 @@ fig5_plots_grob <- arrangeGrob(textGrob("A.", gp = gpar(fontsize = 14, fontface 
                                                      c(NA, NA, NA, NA, 13, 13, NA, NA, NA, 14, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
                                                      c(15, NA, 16, 16, 16, NA, NA, 17, 18, 18, NA),
-                                                     c(NA, NA, NA, 19, 19, 20, NA, 21, 22, 23, NA),
-                                                     c(24, 24, 25, 26, 26, 27, NA, 21, 22, 23, NA),
-                                                     c(NA, NA, 28, 29, 29, 30, 30, NA, NA, 31, NA),
-                                                     c(NA, NA, 28, 29, 29, 30, 30, NA, NA, 32, NA),
-                                                     c(NA, NA, 28, 29, 29, 30, 30, NA, 33, 33, NA),
-                                                     c(NA, NA, 28, 29, 29, 34, 34, NA, 33, 33, NA),
+                                                     c(NA, NA, NA, 19, 19, NA, NA, 21, 22, 23, NA),
+                                                     c(24, 24, 25, 26, 26, 27, 20, 21, 22, 23, NA),
+                                                     c(NA, NA, NA, 29, 29, 30, 30, NA, NA, 31, NA),
+                                                     c(NA, NA, NA, 29, 29, 30, 30, NA, NA, 32, NA),
+                                                     c(NA, NA, NA, 29, 29, 30, 30, NA, 33, 33, NA),
+                                                     c(NA, NA, NA, 29, 29, 34, 34, NA, 33, 33, NA),
+                                                     c(NA, NA, NA, 28, 28, 34, 34, NA, NA, NA, NA),
                                                      c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)),
-                               widths = unit(c(0.25, 0.2, 0.2, 1.05, 2.8, 1.1, 0.4, 0.35, 0.3, 2.9, 0.1), 'inch'),
-                               heights = unit(c(0.15, 0.4, 2, 0.25, 0.25, 0.15, 0.4, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.25), 'inch'))
+                               widths = unit(c(0.25, 0.2, 0.2, 1.05, 2.8, 1.1, 0.6, 0.35, 0.3, 2.7, 0.1), 'inch'),
+                               heights = unit(c(0.15, 0.4, 2, 0.25, 0.25, 0.15, 0.4, 0.5, 2, 0.2, 0.2, 0.4, 0.5, 0.1, 0.25), 'inch'))
 
 #Empty rectangle grob to form the border
 fig5_border_grob <- rectGrob(gp = gpar(fill = NA))
@@ -875,7 +730,7 @@ fig5_grob <- gTree(children = gList(fig5_plots_grob,
 
 #Figure 5 width and height
 fig5_width <- 10
-fig5_height <- 7.6
+fig5_height <- 7.7
 
 grid.newpage()
 grid.draw(fig5_grob)
@@ -901,49 +756,111 @@ save(fig5_grob,
 ```
 
 
-# In-text quantification
+# Quantitative statements
 
 
-```{r results3-fig5-intext-1, eval=F}
+```{r results3-fig5-quant-1, eval=F}
+df_latent_spaces <- dfSimilarityProfiles_Cx_MaxSim %>% 
+  select(Data, Seed, Similarity) %>% 
+  mutate(CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal"),
+         LatentSpace = str_extract(Data, '[0-9]+'),
+         LatentSpace = as.numeric(LatentSpace))
+
+latent_space_ids <- sort(unique(df_latent_spaces$LatentSpace))
+df_params <- tibble(id = latent_space_ids,
+                    beta0 = 0,
+                    beta = 0,
+                    sigma_beta = 0,
+                    tval = 0,
+                    pval = 0)
+
+for (i in 1:nrow(df_params)) {
+  
+  df_model <- df_tmp %>% 
+    filter(LatentSpace == df_params[[i, 'id']])
+  
+  model <- summary(lm(Similarity ~ CortexType, data = df_model))
+  
+  df_params[i, 'beta0'] <- model[['coefficients']][1, 'Estimate']  
+  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
+  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
+  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
+  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
+  
+}
+
+ggplot(df_params, aes(x = -log10(pval))) + 
+  geom_histogram(binwidth = 0.2,
+                 col = 'black', fill = 'grey70') + 
+  geom_vline(xintercept = -log10(0.05),
+             linetype = 'dashed', col = 'red', size = 1.2) + 
+  theme_bw()
+```
+
+```{r results3-fig5-quant-2, eval=F}
+summary(lm(SimilarityMean ~ CortexType, data = dfSimilarityProfiles_Cx_MaxSim_Summary))
+```
+
+```{r results3-fig5-quant-3, eval=F}
 #Summary statistics for maximal correlations of S1 and M1
 dfSimilarityProfiles_Cx_MaxSim %>% 
   filter(Seed %in% c("Primary somatosensory area", "Primary motor area")) %>% 
   group_by(Seed) %>% 
   summarise(avg = mean(Similarity), 
-            sd2 = 2*sd(Similarity)) %>% 
+            lower = avg - 2*sd(Similarity),
+            upper = avg + 2*sd(Similarity)) %>% 
   ungroup() %>% 
   arrange(desc(avg))
 ```
 
-```{r results3-fig5-intext-2, eval=F}
-#Summary statistics for maximal correlation values by cortex type
-dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
-  group_by(CortexType) %>% 
-  summarise(avg = mean(SimilarityMean),
-            sd2 = 2*sd(SimilarityMean)) %>% 
-  ungroup() 
+```{r results3-fig5-quant-4, eval=F}
+df_model <- dfSimilarityProfiles_Cx_MaxSim_Compare %>% 
+  mutate(LatentSpace = str_extract(Data, '[0-9]+'),
+         LatentSpace = as.numeric(LatentSpace))
+
+model_lmer <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
+model_lmer
 ```
 
-```{r results3-fig5-intext-3, eval=F}
-#Compute the average correlation between the mouse S1 and cortical regions in the sensory-visual human cluster
+```{r results3-fig5-quant-5, eval=F}
+nsamples <- c(400, 100, 50, 10, 5)
+npermutations <- 20
 
-#Extract similarity profiles from the average latent space isocortical similarity matrix
-dfSimilarityProfiles_Cx_Avg <- matSim_Cx_MLP %>% 
-  as_tibble(rownames = "HumanRegion") %>% 
-  pivot_longer(cols = -HumanRegion, names_to = "MouseRegion", values_to = "Correlation")
+df_params <- expand_grid(nsamples = nsamples,
+                         permutation = 1:npermutations,
+                         beta = 0,
+                         sigma_beta = 0,
+                         tval = 0,
+                         pval = 0)
 
-#Get cluster labels for k = 4 solution for human cortical regions
-dfClustLabels_Human_MLP_4 <- cutree(hcHuman_MLP, k = 4) %>% 
-  enframe(name = "HumanRegion",
-          value = "k4")
+for (i in 1:nrow(df_params)) {
+  
+  nsamples <- df_params[[i, 'nsamples']]
+  
+  sample_ids <- sample(x = latent_space_ids, 
+                       size = nsamples, 
+                       replace = FALSE)
+  
+  df_sample_model <- df_model %>% 
+    filter(LatentSpace %in% sample_ids)
+  
+  model <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_sample_model))
+  
+  df_params[i, 'beta'] <- model[['coefficients']][2, 'Estimate']
+  df_params[i, 'sigma_beta'] <- model[['coefficients']][2, 'Std. Error']
+  df_params[i, 'tval'] <- model[['coefficients']][2, 't value']
+  df_params[i, 'pval'] <- model[['coefficients']][2, 'Pr(>|t|)']
+}
 
-#Join average similarity profiles and 4-cluster labels and compute the average correlation between mouse S1 and human regions in this cluster
-dfSimilarityProfiles_Cx_Avg %>% 
-  inner_join(dfClustLabels_Human_MLP_4, by = "HumanRegion") %>% 
-  filter(k4 == 2) %>% 
-  filter(MouseRegion == "Primary somatosensory area") %>% 
-  pull(Correlation) %>% 
-  mean()
+library(ggbeeswarm)
+ggplot(df_params, aes(x = factor(nsamples), y = abs(tval))) + 
+  geom_beeswarm(cex = 1.5) + 
+  # geom_jitter(width = 0.3) + 
+  geom_hline(yintercept = 2,
+             linetype = 'dashed',
+             col = 'red') + 
+  coord_cartesian(ylim = c(0, 50)) +
+  theme_bw()
 ```
 
 
