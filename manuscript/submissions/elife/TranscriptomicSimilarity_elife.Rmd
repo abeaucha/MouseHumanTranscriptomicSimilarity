@@ -408,7 +408,7 @@ Given the stochasticity inherent in training the network (e.g. random weight ini
 
 ## Multi-layer perceptron feature importance
 
-\edit{WRITE THIS}
+We used integrated gradients to evaluate the contribution of different genes in the classification of mouse atlas labels. Since the homologous gene inputs contribute to the classification of distinct labels in different ways, we examined the feature attributions for three regions: the caudoputamen, the primary motor area, and the infralimbic area. Using the trained multi-layer perceptron, we computed integrated gradients for each of these three regions. We then averaged the values over all input voxels for each gene, resulting in a vector of gene attributions for each of the three example regions. This process was repeated for 200 training runs of the neural network. We then averaged the gene importance vectors of each region over all training runs to get a summary of gene importance. This process was implemented using the `IntegratedGradients` function from the `captum` package in Python (https://captum.ai/).
 
 
 ## Quantifying improvement in gene expression latent spaces 
@@ -445,7 +445,8 @@ load("Figure2_Supplement1.RData")
 ```
 
 ```{r results2-fig2-supp1-caption}
-fig2_supp1_cap <- str_c("\\textbf{Figure 2-figure supplement 1.} Multi-layer perceptron feature importance.",
+fig2_supp1_cap <- str_c("\\textbf{Figure 2-figure supplement 1.}",
+                        "Multi-layer perceptron feature importance for the classification of the caudoputamen (\\textbf{A}), the primary motor area (\\textbf{B}), and the infralimbic area (\\textbf{C}). Top row: Rank-ordered distributions of feature importance for the three example regions, averaged over 200 training runs. While the perceptron relies on information from all input genes, a reduced subset of genes is often more informative for the classification of a given label. Bottom row: Coronal slice series displaying the normalized expression patterns for the two genes most informative in the classification of example regions. The spatial expression patterns can be specific to the region of interest, but this is not necessarily the case.",
                   sep = " ")
 ```
 
