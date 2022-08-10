@@ -112,7 +112,6 @@ def parse_args():
     parser.add_argument(
         '--threshold',
         type = float,
-        default = 0.2,
         help = ("Maximal fraction of empty voxels allowed in an ISH "
                 "image to be included in the final matrix.")
     )
@@ -200,7 +199,7 @@ def importImage(img, mask):
 
 
 def buildExpressionMatrix(files, mask, log_transform = True,
-                          group_experiments = True, threshold = 0.2, 
+                          group_experiments = True, threshold = None, 
                           parallel = True, nproc = None, verbose = True):
     
     """ 
@@ -267,8 +266,8 @@ def buildExpressionMatrix(files, mask, log_transform = True,
         dfExpression = np.log2(dfExpression)
     
     dfExpression.index = (dfExpression.index
-                          .str.replace('.mnc', '')
-                          .str.replace('_.*', ''))
+                          .str.replace('.mnc', '', regex = True)
+                          .str.replace('_.*', '', regex = True))
         
     dfExpression.index.name = 'Gene'
     
@@ -279,10 +278,11 @@ def buildExpressionMatrix(files, mask, log_transform = True,
         dfExpression = (dfExpression
                         .groupby(dfExpression.index)
                         .aggregate(np.mean))
-    
-    #Remove genes where a threshold of voxels aren't expressing
-    fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
-    dfExpression = dfExpression[fracVoxelsNA < threshold]
+        
+    if threshold is not None:
+        #Remove genes where a threshold of voxels aren't expressing
+        fracVoxelsNA = dfExpression.isna().sum(axis=1)/len(dfExpression.columns)
+        dfExpression = dfExpression[fracVoxelsNA < threshold]
     
     return dfExpression
 
@@ -309,7 +309,7 @@ def main():
     
     #If dataset is sagittal, use only those genes that are also in the
     #coronal set
-    if dataset == "sagittal":
+    if dataset == 'sagittal':
         
         #Paths to sagittal and coronal data set directories
         pathGeneDir_Sagittal = os.path.join(datadir, dataset, '')
@@ -350,15 +350,17 @@ def main():
     log_transform = True if args['log2'] == 'true' else False
     groupexp = True if args['groupexp'] == 'true' else False
     parallel = True if args['parallel'] == 'true' else False
+    threshold = args['threshold']
+    
     dfExpression = buildExpressionMatrix(files = pathGeneFiles, 
                                          mask = maskfile,
                                          log_transform = log_transform,
                                          group_experiments = groupexp, 
-                                         threshold = args['threshold'], 
+                                         threshold = threshold, 
                                          parallel = parallel, 
                                          nproc = args['nproc'],
                                          verbose = verbose)
-
+    
     #Impute missing values
     impute = True if args['impute'] == 'true' else False
     if impute:
