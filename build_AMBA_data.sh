@@ -23,27 +23,27 @@
 
 # On MICe machines
 #module purge
-#source AMBA/resample_DSURQE_CCFv3
+#source AMBA/resample_DSURQE_CCFv3.sh
 
 # Activate the python virtual environment
-source activate_venv
+source activate_venv.sh
 
 # Download AHBA data from the web
-echo "Downloading AMBA coronal in-situ hybridization data set..."
-python3 AMBA/download_AMBA.py \
-	--dataset coronal \
-	--outdir AMBA/data/expression/ \
-	--metadata AMBA_metadata_coronal.csv \
-	--parallel true \
-	--nproc 12
+# echo "Downloading AMBA coronal in-situ hybridization data set..."
+# python3 AMBA/download_AMBA.py \
+# 	--dataset coronal \
+# 	--outdir AMBA/data/expression/ \
+# 	--metadata AMBA_metadata_coronal.csv \
+# 	--parallel true \
+# 	--nproc 12
 
-echo "Downloading AMBA sagittal in-situ hybridization data set..."
-python3 AMBA/download_AMBA.py \
-	--dataset sagittal \
-	--outdir AMBA/data/expression/ \
-	--metadata AMBA_metadata_sagittal.csv \
-	--parallel true \
-	--nproc 12
+# echo "Downloading AMBA sagittal in-situ hybridization data set..."
+# python3 AMBA/download_AMBA.py \
+# 	--dataset sagittal \
+# 	--outdir AMBA/data/expression/ \
+# 	--metadata AMBA_metadata_sagittal.csv \
+# 	--parallel true \
+# 	--nproc 12
 
 # Build voxel expression matrix 
 echo "Building mouse gene-by-voxel expression matrix using coronal data with coronal mask..."
@@ -69,12 +69,11 @@ python3 AMBA/build_voxel_matrix.py \
 	--mask sagittal \
 	--log2 true \
 	--groupexp false \
-	--threshold 0.2 \
 	--impute true \
 	--parallel true \
 	--nproc 4 
 
-echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
+# echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
 python3 AMBA/build_voxel_matrix.py \
 	--datadir AMBA/data/expression/ \
 	--outdir AMBA/data/ \
@@ -83,7 +82,6 @@ python3 AMBA/build_voxel_matrix.py \
 	--mask sagittal \
 	--log2 true \
 	--groupexp true \
-	--threshold 0.2 \
 	--impute true \
 	--parallel true \
 	--nproc 4 
