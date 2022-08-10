@@ -699,6 +699,26 @@ ggplot(temp, aes(x = TargetRank, y = n)) +
   theme(panel.grid.minor.x = element_blank())
 ```
 
+```{r}
+dfSimilarityProfiles %>% 
+  inner_join(dfLabelsMouse %>% 
+               select(Region11, Region67) %>% 
+               distinct(),
+             by = c('Seed' = 'Region67')) %>% 
+  rename(Seed_Region11 = Region11) %>% 
+  inner_join(dfLabelsHuman %>% 
+               select(Region16, Region88) %>% 
+               distinct(),
+             by = c('Target' = 'Region88')) %>% 
+  rename(Target_Region16 = Region16) %>% 
+  filter(Seed_Region11 == 'Cerebellar cortex') %>% 
+  filter(TargetRank %in% 1:10) %>% 
+  filter(Data != 'AllGenes') %>% 
+  group_by(Seed, Target_Region16) %>% 
+  summarise(prop = n()/500)
+```
+
+
 # Supplementary
 
 ```{r results2-fig4-supp-1, eval=F}
