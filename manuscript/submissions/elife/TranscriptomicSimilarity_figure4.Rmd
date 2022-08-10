@@ -567,7 +567,7 @@ save(fig4_grob,
 
 # Quantitative statements
 
-```{r}
+```{r results2-fig4-quant-1, eval=F}
 df_model <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   group_by(Seed) %>% 
   summarise(RankDiffMean = mean(RankDiff)) %>% 
@@ -588,23 +588,13 @@ p_upper <- exp(theta_upper)/(1+exp(theta_upper))
 
 print(c(p_estimate, p_lower, p_upper))
 ```
-```{r}
+```{r results2-fig4-quant-2, eval=F}
 df_proportions %>% 
   arrange(desc(p))
 ```
 
-```{r}
-df_proportions %>% 
-  filter(Seed %in% c('Claustrum',
-                     'Visual areas',
-                     'Primary auditory area',
-                     'Uvula (IX)'))
-```
 
-
-
-
-```{r results2-fig4-quant-1, eval=F}
+```{r results2-fig4-quant-3, eval=F}
 #Data frame containing proportions of non-positive rank differences
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -618,16 +608,15 @@ dfCanonicalPairs_H88M67_RankDiffs_Summary %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig4-quant-2, eval=F}
-#Ranks for frontal pole and visual areas
-dfCanonicalPairs_H88M67_Ranks %>% 
-  filter(Seed %in% c("Frontal pole, cerebral cortex", "Visual areas")) %>% 
-  select(Seed, Data2, TargetRank) %>% 
-  group_by(Seed, Data2) %>% 
-  summarise(mean(TargetRank))
+```{r results2-fig4-quant-4, eval=F}
+df_proportions %>% 
+  filter(Seed %in% c('Claustrum',
+                     'Visual areas',
+                     'Primary auditory area',
+                     'Uvula (IX)'))
 ```
 
-```{r results2-fig4-quant-3, eval=F}
+```{r results2-fig4-quant-5, eval=F}
 #Number of MLP samples
 nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes") %>% 
@@ -654,7 +643,7 @@ dfCanonicalPairs_H88M67_Ranks %>%
   arrange(desc(prop))
 ```
 
-```{r}
+```{r results2-fig4-quant-6, eval=F}
 df_rank_summary <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != 'AllGenes') %>% 
   group_by(Seed) %>% 
@@ -667,16 +656,7 @@ dfCanonicalPairs_H88M67_Ranks_MLP %>%
   filter(Seed %in% c('Claustrum', 'Visual areas', 'Paraflocculus'))
 ```
 
-
-
-```{r}
-dfCanonicalPairs_H88M67_Ranks %>% 
-  filter(Data != "AllGenes",
-         Seed == "Crus 1") 
-```
-
-
-```{r results2-fig4-quant-4, eval=F}
+```{r results2-fig4-quant-7, eval=F}
 #Calculate rank frequency for crus 1 pair
 temp <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes",
@@ -699,7 +679,7 @@ ggplot(temp, aes(x = TargetRank, y = n)) +
   theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r}
+```{r results2-fig4-quant-8, eval = F}
 dfSimilarityProfiles %>% 
   inner_join(dfLabelsMouse %>% 
                select(Region11, Region67) %>% 

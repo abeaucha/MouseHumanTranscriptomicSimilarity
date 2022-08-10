@@ -676,26 +676,26 @@ temp %>%
             fracregions = nregions/n())
 ```
 
-```{r results2-fig3-quant-3}
+```{r results2-fig3-quant-3, eval = F}
 df_proportions %>% 
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-4}
+```{r results2-fig3-quant-4, eval = F}
 df_proportions %>% 
   mutate(success = ifelse(p >= 0.95, 1, 0)) %>% 
     summarise(count = sum(success),
             prop = count/n())
 ```
 
-```{r results2-fig3-quant-5}
+```{r results2-fig3-quant-5, eval = F}
 df_proportions %>% 
   filter(p >= 0.95) %>% 
   mutate(p_range = p_upper - p_lower) %>% 
   arrange(desc(p_range))
 ```
 
-```{r results2-fig3-quant-6}
+```{r results2-fig3-quant-6, eval = F}
 df_proportions %>% 
   filter(p_upper <= 0.5) %>% 
   arrange(desc(p))
@@ -721,7 +721,7 @@ df_proportions %>%
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-9}
+```{r results2-fig3-quant-9, eval = F}
 df_proportions %>% 
   filter(Seed %in% structsCx,
          p == 1) %>% 
@@ -762,20 +762,20 @@ df_proportions %>%
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-13}
+```{r results2-fig3-quant-13, eval = F}
 df_proportions %>% 
   filter(Seed %in% structsSubCx) %>% 
   pull(p) %>% 
   mean()
 ```
 
-```{r results2-fig3-quant-14}
+```{r results2-fig3-quant-14, eval = F}
 temp %>% 
   filter(Seed %in% c("Striatum ventral region", 
                      "Lateral septal complex"))
 ```
 
-```{r results2-fig3-quant-15}
+```{r results2-fig3-quant-15, eval = F}
 dfRankDifferences %>% 
   filter(Seed %in% structsSubCx) %>% 
   summarise(rank_diff_mean = mean(RankDiff),
