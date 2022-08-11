@@ -8,7 +8,7 @@
 # training the multi-layer perceptron neural network and using the network
 # architecture to transform the input space into the latent space.
 
-source activate_venv
+source activate_venv.sh
 
 datadir=data/
 # datadir=data/isocortex/
