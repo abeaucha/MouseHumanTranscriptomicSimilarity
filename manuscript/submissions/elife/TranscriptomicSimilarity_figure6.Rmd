@@ -807,11 +807,11 @@ save(fig6_grob,
      file = fileout)
 ```
 
-# In-text quantification
+# Quantitative statements
 
 ## Panel A
 
-```{r results4-fig6-intext-1, eval = F}
+```{r results4-fig6-quant-1, eval = F}
 #Mouse and human ROIs
 mouseTargets <- c("Caudoputamen", "Nucleus accumbens", "Fundus of striatum", "Olfactory tubercle")
 humanSeeds <- c("Caudate nucleus", "Putamen", "Nucleus accumbens")
@@ -838,7 +838,7 @@ dfSimStriatum_Distributions %>%
   arrange(HumanRegion)
 ```
 
-```{r results4-fig6-intext-2, eval = F}
+```{r results4-fig6-quant-2, eval = F}
 #Modal value for caudate-caudoputamen distribution
 ggplot_build(fig6_histogram)$data[[1]] %>% 
   filter(group == 1, PANEL == 1) %>% 
@@ -847,7 +847,7 @@ ggplot_build(fig6_histogram)$data[[1]] %>%
   head()
 ```
 
-```{r results4-fig6-intext-3, eval = F}
+```{r results4-fig6-quant-3, eval = F}
 #Modal value for putamen-caudoputamen distribution
 ggplot_build(fig6_histogram)$data[[1]] %>% 
   filter(group == 1, PANEL == 2) %>% 
@@ -856,7 +856,7 @@ ggplot_build(fig6_histogram)$data[[1]] %>%
   head()
 ```
 
-```{r results4-fig6-intext-4, eval = F}
+```{r results4-fig6-quant-4, eval = F}
 dfSimStriatum_Distributions %>% 
   filter(HumanRegion %in% humanSeeds,
          MouseRegion %in% mouseTargets) %>% 
@@ -868,7 +868,7 @@ dfSimStriatum_Distributions %>%
   arrange(HumanRegion)
 ```
 
-```{r results4-fig6-intext-5, eval = F}
+```{r results4-fig6-quant-5, eval = F}
 #Variance calculated over all mouse targets
 dfSimStriatum_Distributions %>% 
   filter(HumanRegion %in% humanSeeds,
@@ -877,9 +877,57 @@ dfSimStriatum_Distributions %>%
   summarise(sd(MeanPerPair))
 ```
 
+```{r}
+df_tmp <- dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  filter(HumanRegion %in% c('Caudate nucleus', 'Nucleus accumbens'))
+
+summary(aov(MeanPerPair ~ HumanRegion, data = df_tmp))
+```
+
+```{r}
+df_tmp <- dfSimStriatum_Distributions %>% 
+  filter(HumanRegion %in% humanSeeds,
+         MouseRegion %in% mouseTargets) %>% 
+  filter(HumanRegion %in% c('Putamen', 'Nucleus accumbens'))
+
+summary(aov(MeanPerPair ~ HumanRegion, data = df_tmp))
+```
+
+```{r}
+library(lme4)
+library(lmerTest)
+
+df_tmp <- dfSimStriatum_Distributions %>% 
+  filter(HumanRegion == 'Nucleus accumbens') %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = c('Olfactory tubercle', 'Fundus of striatum', 'Nucleus accumbens', 'Caudoputamen')))
+
+summary(lmer(MeanPerPair ~ MouseRegion + (1|Data), data = df_tmp))
+```
+
+```{r}
+ggplot(df_tmp, aes(x = MouseRegion, y = MeanPerPair)) + 
+  geom_jitter()
+```
+
+```{r}
+df_tmp <- dfSimStriatum_Distributions %>% 
+  filter(HumanRegion == 'Nucleus accumbens',
+         MouseRegion %in% c('Fundus of striatum', 'Nucleus accumbens')) 
+
+summary(lmer(MeanPerPair ~ MouseRegion + (1|Data), data = df_tmp))
+```
+
+
+
+
+
+
+
 ## Panel B
 
-```{r results4-fig6-intext-6, eval = F}
+```{r results4-fig6-quant-6, eval = F}
 #Specify human targets
 humanTargets <- c("caudate nucleus", 
                   "putamen",
@@ -896,7 +944,7 @@ dfSimStriatumMean %>%
   arrange(desc(SimMean))
 ```
 
-```{r results4-fig6-intext-7, eval = F}
+```{r results4-fig6-quant-7, eval = F}
 #Percentage of caudputamen voxels with mean similarity of at least 0.9 to different human targets
 dfSimStriatumMean %>% 
   filter(HumanRegion %in% humanTargets) %>%
@@ -908,7 +956,7 @@ dfSimStriatumMean %>%
   arrange(desc(nFilter))
 ```
 
-```{r results4-fig6-intext-8, eval = F}
+```{r results4-fig6-quant-8, eval = F}
 #Average correlations and standard deviations of mouse accumbens voxels to human regions
 dfSimStriatumMean %>% 
   filter(MouseRegion == "Nucleus accumbens") %>% 
@@ -918,7 +966,7 @@ dfSimStriatumMean %>%
   arrange(desc(SimMean))
 ```
 
-```{r results4-fig6-intext-9, eval = F}
+```{r results4-fig6-quant-9, eval = F}
 #Percentage of accumbens voxels with mean similarity of at least 0.7 to different human targets
 dfSimStriatumMean %>% 
   filter(MouseRegion == "Nucleus accumbens") %>% 
@@ -931,7 +979,7 @@ dfSimStriatumMean %>%
 
 ## Panel C
 
-```{r results4-fig6-intext-10, eval = F}
+```{r results4-fig6-quant-10, eval = F}
 #Extract the proportions to the selected human targets
 dfSimStriatum_MaxSim_Proportions_HumanTargets <- dfSimStriatum_MaxSim_Proportions %>% 
   select(-MouseRegion) %>% 
@@ -951,7 +999,7 @@ dfSimStriatum_MaxSim_Proportions %>%
             sum(PropSum == 1)/n())
 ```
 
-```{r results4-fig6-intext-11, eval = F}
+```{r results4-fig6-quant-11, eval = F}
 #Difference in average similarity to caudate and putamen for voxels in the caudoputamen
 dfSimStriatumMean %>% 
   filter(HumanRegion %in% c("caudate nucleus", "putamen")) %>% 
@@ -963,7 +1011,7 @@ dfSimStriatumMean %>%
   mean()
 ```
 
-```{r results4-fig6-intext-12, eval = F}
+```{r results4-fig6-quant-12, eval = F}
 #Number of voxels per mouse region
 dfNumVoxels <- dfSimStriatum_MaxSim_Proportions %>% 
   select(VoxelID, MouseRegion) %>% 
@@ -985,7 +1033,7 @@ dfSimStriatum_MaxSim_Proportions %>%
   mutate(Prop = n/nVoxels)
 ```
 
-```{r results4-fig6-intext-13, eval = F}
+```{r results4-fig6-quant-13, eval = F}
 #Voxels in the mouse accumbens with prop max similarity to the human accumbens in less than 80% of latent spaces
 voxelNAcc <- dfSimStriatum_MaxSim_Proportions %>% 
   filter(HumanRegion %in% humanTargets) %>% 
@@ -1005,7 +1053,7 @@ dfSimStriatum_MaxSim_Proportions %>%
   count()
 ```
 
-```{r results4-fig6-intext-14, eval = F}
+```{r results4-fig6-quant-14, eval = F}
 #Voxels in the mouse olfactory tubercle with prop max similarity to the human accumbens in less than 80% of latent spaces
 voxelOlf <- dfSimStriatum_MaxSim_Proportions %>% 
   filter(HumanRegion %in% humanTargets) %>% 
