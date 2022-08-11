@@ -15,7 +15,7 @@
 module purge
 
 # Activate the python virtual environment
-source activate_venv
+source activate_venv.sh
 
 # Download AHBA data from the web
 echo "Downloading AHBA data..."
