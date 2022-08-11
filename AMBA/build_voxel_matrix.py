@@ -219,7 +219,7 @@ def buildExpressionMatrix(files, mask, log_transform = True,
         for experiments that correspond to the same gene. (default True)
     threshold: float, optional
         Threshold value indicating the fraction of empty voxels in an 
-        image above which the image is discarded (default 0.2)
+        image above which the image is discarded (default None)
     parallel: bool, optional
         Option to import MINC files in parallel. (default True)
     nproc: int, optional
@@ -384,7 +384,7 @@ def main():
         dfExpression = pd.DataFrame(imputing_pipeline.fit_transform(
                                                   dfExpression.to_numpy()
                                     ), index = genes)
-
+        
     #Write to file
     if verbose:
         print("Writing to file...")
