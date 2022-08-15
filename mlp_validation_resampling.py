@@ -67,6 +67,12 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--outfile',
+        type = str,
+        help = "Outfile."
+    )
+    
+    parser.add_argument(
         "--labels",
         type = str,
         default = 'region5',
@@ -107,7 +113,7 @@ def parse_args():
         "--L2",
         nargs = "*",
         type = float,
-        default = [1e-6],
+        default = [0.],
         help = "List containing weight decay values to tune over."
     )
 
@@ -120,28 +126,32 @@ def parse_args():
 
     parser.add_argument(
         "--nepochs",
+        nargs = '*',
         type = int,
-        default = 200,
+        default = [200],
         help = "Number of epochs to train over."
     )
 
     parser.add_argument(
         "--learningrate",
+        nargs = '*',
         type = float,
-        default = 1e-5,
+        default = [1e-5],
         help = "Learning rate during training."
     )
     
     parser.add_argument(
         '--totalsteps',
+        nargs = '*',
         type = int,
         help = "Number of steps to use in optimizer."
     )
     
     parser.add_argument(
         '--optimizer',
+        nargs = '*',
         type = str,
-        default = 'SGD'
+        default = ['SGD']
     )
 
     parser.add_argument(
@@ -150,14 +160,6 @@ def parse_args():
         default = 'false',
         choices = ['true', 'false'],
         help = "Flag to indicate whether to compute confusion matrices."
-    )
-    
-    parser.add_argument(
-        "--imputed",
-        type = str,
-        default = 'true',
-        choices = ['true', 'false'],
-        help = "Flag to indicate whether to use imputed data or data with missing values. If false, will impute missing values using median imputation [default true]"
     )
     
     parser.add_argument(
@@ -176,7 +178,7 @@ def buildTrainValidationSets(coronal, sagittal, seed = None):
     """ """
     
     #Get genes in the coronal data set (includes duplicates)
-    genes_coronal = coronal.columns.str.replace('\.\.\.[0-9]+', '')
+    genes_coronal = coronal.columns.str.replace('\.\.\.[0-9]+', '', regex = True)
     
     #Get unique genes, present in sagittal and coronal data
     genes_unique = np.unique(genes_coronal)
@@ -260,23 +262,22 @@ def main():
     # Importing data -------------------------------------------------------------------
 
     #Set up filepaths
-    if args['imputed'] == 'true':
-        fileSagittal = 'MouseExpressionMatrix_voxel_sagittal_masksagittal_log2_grouped_imputed_labelled.csv'
-        fileCoronal = 'MouseExpressionMatrix_voxel_coronal_masksagittal_log2_imputed_labelled.csv'
-    else: 
-        fileSagittal = 'MouseExpressionMatrix_voxel_sagittal_masksagittal_log2_grouped_labelled.csv'
-        fileCoronal = 'MouseExpressionMatrix_voxel_coronal_masksagittal_log2_labelled.csv'
+    file_ref = 'MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'
+    file_sagittal = 'MouseExpressionMatrix_voxel_sagittal_masksagittal_log2_grouped_imputed_labelled.csv'
+    file_coronal = 'MouseExpressionMatrix_voxel_coronal_masksagittal_log2_imputed_labelled.csv'
 
-        
-    fileSagittal = os.path.join(datadir, fileSagittal)
-    fileCoronal = os.path.join(datadir, fileCoronal)
+    file_ref = os.path.join(datadir, file_ref)
+    file_sagittal = os.path.join(datadir, file_sagittal)
+    file_coronal = os.path.join(datadir, file_coronal)
 
-    print("Importing coronal and sagittal data sets...")
+    print("Importing data sets...")
 
     #Import data
-    dfSagittal = (fread(fileSagittal, header = True)
+    df_ref = (fread(file_ref, header = True)
                   .to_pandas())
-    dfCoronal = (fread(fileCoronal, header = True)
+    df_sagittal = (fread(file_sagittal, header = True)
+                  .to_pandas())
+    df_coronal = (fread(file_coronal, header = True)
                   .to_pandas())
 
 
@@ -285,48 +286,40 @@ def main():
     print("Cleaning and preparing data...")
 
     #Identify and remove label columns
-    indLabelsCoronal = dfCoronal.columns.str.match('Region')
-    dfInputCoronal = dfCoronal.loc[:, ~indLabelsCoronal]
+    ind_coronal_labels = df_coronal.columns.str.match('Region')
+    df_input_coronal = df_coronal.loc[:, ~ind_coronal_labels]
 
-    indLabelsSagittal = dfSagittal.columns.str.match('Region')
-    dfInputSagittal = dfSagittal.loc[:, ~indLabelsSagittal]
+    ind_sagittal_labels = df_sagittal.columns.str.match('Region')
+    df_input_sagittal = df_sagittal.loc[:, ~ind_sagittal_labels]
 
-    #Identify and remove columns in the sagittal dataset that contain infinities
-    if args['imputed'] == 'false':
-        whichInf = []
-        for i in range(dfInputSagittal.shape[1]):
-            ninf = np.sum(np.isinf(dfInputSagittal.iloc[:,i]))
-            if(ninf > 0):
-                whichInf.append(i)
+    #Obtain reference gene set
+    ind_ref_labels = df_ref.columns.str.contains('Region')
+    genes_ref = df_ref.columns[~ind_ref_labels].str.replace('\.\.\.[0-9]+', '', regex = True)
+    genes_ref = set(genes_ref)
 
-        colsInf = dfInputSagittal.columns[whichInf]
-        dfInputSagittal = dfInputSagittal.loc[:, ~dfInputSagittal.columns.isin(colsInf)]
+    #Extract genes in coronal and sagittal data sets
+    genes_coronal = df_input_coronal.columns.str.replace('\.\.\.[0-9]+', '', regex = True)
+    genes_sagittal = df_input_sagittal.columns.str.replace('\.\.\.[0-9]+', '', regex = True)
 
+    genes_coronal_set = set(genes_coronal)
+    genes_sagittal_set = set(genes_sagittal)
 
-    #Get genes in coronal and sagittal sets
-    genesCoronal = dfInputCoronal.columns.str.replace('\.\.\.[0-9]+', '')
-    genesSagittal = dfInputSagittal.columns.str.replace('\.\.\.[0-9]+', '')
+    #Compute gene set intersection
+    genes = set.intersection(genes_ref, genes_coronal_set, genes_sagittal_set)
 
-    #Extract genes in the sagittal set that are in the coronal set
-    indSagittalInCoronal = genesSagittal.isin(genesCoronal)
-    dfInputSagittal = dfInputSagittal.loc[:, indSagittalInCoronal]
+    #Filter sagittal and coronal data sets for genes in the intersection
+    ind_sagittal_genes = genes_sagittal.isin(genes)
+    df_input_sagittal = df_input_sagittal.loc[:, ind_sagittal_genes]
 
-    #Get new set of genes for sagittal set
-    genesSagittal = dfInputSagittal.columns.str.replace('\.\.\.[0-9]+', '')
-
-    #Extract genes in the coronal set that are in the sagittal set
-    indCoronalInSagittal = genesCoronal.isin(genesSagittal)
-    dfInputCoronal = dfInputCoronal.loc[:, indCoronalInSagittal]
-
-    #Get new set of genes for coronal set
-    genesCoronal = dfInputCoronal.columns.str.replace('\.\.\.[0-9]+', '')
+    ind_coronal_genes = genes_coronal.isin(genes)
+    df_input_coronal = df_input_coronal.loc[:, ind_coronal_genes]
 
     #Extract labels
     labelcol = args['labels'].title()
-    dfLabels = dfCoronal[[labelcol]].copy()
+    df_labels = df_coronal[[labelcol]].copy()
 
     #Convert labels to category
-    dfLabels.loc[:,labelcol] = dfLabels.loc[:,labelcol].astype('category')
+    df_labels.loc[:,labelcol] = df_labels.loc[:,labelcol].astype('category')
 
     
     
@@ -334,18 +327,11 @@ def main():
 
     print("Beginning training and validation...")
     
-    #Define a dictionary containing the grid values
-    dictGrid = {'sample':[i for i in range(args['nsamples'])],
-               'hidden_units':args['nunits'],
-               'hidden_layers':args['nlayers'],
-               'dropout':args['dropout'],
-               'weight_decay':args['L2']}
-
-    #Expand the dictionary grid into a data frame containing all combinations
-    df_params = pd.DataFrame([row for row in product(*dictGrid.values())], 
-                             columns = dictGrid.keys())
-
-    #Set max number of epochs to train, and learning rate
+    nsamples = args['nsamples']
+    hidden_units = args['nunits']
+    hidden_layers = args['nlayers']
+    dropout = args['dropout']
+    weight_decay = args['L2']
     max_epochs = args['nepochs']
     total_steps = args['totalsteps']
     learning_rate = args['learningrate']
@@ -353,18 +339,21 @@ def main():
     
     if total_steps is None:
         total_steps = max_epochs
-        
-    df_params['max_epochs'] = max_epochs
-    df_params['totalsteps'] = total_steps
-    df_params['learningrate'] = learning_rate
-    df_params['optimizer'] = optimizer
-        
-    if optimizer == 'AdamW':
-        optimizer = AdamW
-    elif optimizer == 'SGD':
-        optimizer = SGD
-    else:
-        raise ValueError
+    
+    #Define a dictionary containing the grid values
+    dict_grid = {'sample':[i for i in range(1, nsamples+1)],
+               'hidden_units':hidden_units,
+               'hidden_layers':hidden_layers,
+               'dropout':dropout,
+               'weight_decay':weight_decay,
+                'max_epochs':max_epochs,
+                'total_steps':total_steps,
+                'learning_rate':learning_rate,
+                'optimizer':optimizer}
+
+    #Expand the dictionary grid into a data frame containing all combinations
+    df_params = pd.DataFrame([row for row in product(*dict_grid.values())], 
+                             columns = dict_grid.keys())
     
     #Iterate over unique samples
     for sample in np.unique(df_params['sample']):
@@ -374,9 +363,9 @@ def main():
         print('Generating training and validation sets...')
 
         #For the given sample, build the training and validation sets
-        dfTraining, dfValidation = buildTrainValidationSets(dfInputCoronal,
-                                                            dfInputSagittal,
-                                                            seed = sample)    
+        df_training, df_validation = buildTrainValidationSets(df_input_coronal,
+                                                              df_input_sagittal,
+                                                              seed = sample)    
 
 
         print('Preprocessing data...')
@@ -392,40 +381,60 @@ def main():
                                         ('center', center)])
         
         #Fit the pipeline to the training data and transform
-        X_train = processing_pipeline.fit_transform(dfTraining.to_numpy())
-        X_val = processing_pipeline.fit_transform(dfValidation.to_numpy())
+        X_train = processing_pipeline.fit_transform(df_training.to_numpy())
+        X_val = processing_pipeline.fit_transform(df_validation.to_numpy())
         
         X = np.concatenate((X_train, X_val), axis = 0)
         X = X.astype(np.float32)
         
         #Transform labels into data preferred by the network
-        y = DataFrameTransformer().fit_transform(dfLabels)[labelcol]
+        y = DataFrameTransformer().fit_transform(df_labels)[labelcol]
         y = np.concatenate((y, y))
         
-        
         #For the given training/validation sample, extract hyperparameters to iterate over
-        df_params_sample = df_params[df_params['sample'] == sample]
+        df_params_sample = df_params[df_params['sample'] == sample].copy()
+        df_params_sample['parameter_set'] = [i+1 for i in range(df_params_sample.shape[0])]
 
         #Iterate over hyperparameter combinations
         for index, row in df_params_sample.iterrows():
 
-            print('Index {}'.format(index))
+            parameter_set = int(row['parameter_set'])
+            print('\nParameter set {}'.format(parameter_set))
 
             #Extract hyperparameters
             hidden_units = int(row['hidden_units'])
             hidden_layers = int(row['hidden_layers'])
             dropout = row['dropout']
             weight_decay = row['weight_decay']
-
-            print(('Labels: {}; '
-                   'Hidden units: {}; ' 
-                   'Hidden layers: {}; ' 
-                   'Dropout: {}; '
-                   'L2: {} '.format(args['labels'], 
-                                   hidden_units, 
-                                   hidden_layers, 
-                                   dropout, 
-                                   weight_decay)))
+            max_epochs = row['max_epochs']
+            total_steps = row['total_steps']
+            learning_rate = row['learning_rate']
+            optimizer = row['optimizer']
+            
+            print(('  Labels: {}\n'
+                   '  Hidden units: {}\n' 
+                   '  Hidden layers: {}\n' 
+                   '  Dropout: {}\n'
+                   '  L2: {}\n'
+                   '  Max epochs: {}\n'
+                   '  Total steps: {}\n'
+                   '  Learning rate: {}\n'
+                   '  Optimizer: {}\n'.format(args['labels'].title(), 
+                                            hidden_units, 
+                                            hidden_layers, 
+                                            dropout, 
+                                            weight_decay,
+                                            max_epochs,
+                                            total_steps,
+                                            learning_rate,
+                                            optimizer)))
+            
+            if optimizer == 'AdamW':
+                optimizer = AdamW
+            elif optimizer == 'SGD':
+                optimizer = SGD
+            else:
+                raise ValueError
 
             #Generate classifier module with specified architecture
             MLPModule = make_classifier(input_units = X.shape[1],
@@ -470,106 +479,41 @@ def main():
             for i in range(max_epochs):
                 epoch_dict = net.__dict__['history_'][i]
                 if i == 0:
-                    df_epochs_sample = (pd.DataFrame(epoch_dict)
+                    df_epochs_iter = (pd.DataFrame(epoch_dict)
                          .drop(columns = 'batches')
                          .drop_duplicates())
                 else:
-                    df_epochs_sample_tmp = (pd.DataFrame(epoch_dict)
+                    df_epochs_iter_tmp = (pd.DataFrame(epoch_dict)
                          .drop(columns = 'batches')
                          .drop_duplicates())
-                    df_epochs_sample = pd.concat([df_epochs_sample, 
-                                                  df_epochs_sample_tmp], 
+                    df_epochs_iter = pd.concat([df_epochs_iter, 
+                                                  df_epochs_iter_tmp], 
                                                  axis = 0)
                     
-            df_epochs_sample['sample'] = sample
+            df_epochs_iter['parameter_set'] = row['parameter_set']
             
-            df_performance_sample = pd.merge(df_params_sample, 
-                                             df_epochs_sample, 
-                                             on = 'sample')
+            df_performance_iter = pd.merge(df_params_sample, 
+                                           df_epochs_iter, 
+                                           on = 'parameter_set')
             
-            if sample == 0:
-                df_performance = df_performance_sample
+            if parameter_set == 1:
+                df_performance_sample = df_performance_iter
             else:
-                df_performance = pd.concat([df_performance, 
-                                            df_performance_sample], 
-                                           axis = 0)
+                df_performance_sample = pd.concat([df_performance_sample,
+                                                   df_performance_iter],
+                                                  axis = 0)
             
-            
-            if args['confusionmatrix'] == 'true':
-                
-                print("Computing confusion matrices...")
-                
-                dfConfusionMat_Train = pd.DataFrame(confusion_matrix(y_train, y_train_pred))
-                dfConfusionMat_Val = pd.DataFrame(confusion_matrix(y_train, y_val_pred))
-                
-                dfLabelsDummy = dfLabels.copy()
-                dfLabelsDummy['DummyVariable'] = y_train
-                dfLabelsUnique = dfLabelsDummy.sort_values('DummyVariable').drop_duplicates()
-                
-                dfConfusionMat_Train.columns = dfLabelsUnique[labelcol].astype('str')
-                dfConfusionMat_Train['TrueLabels'] = dfLabelsUnique[labelcol].astype('str').reset_index(drop = True)
-                
-                dfConfusionMat_Val.columns = dfLabelsUnique[labelcol].astype('str')
-                dfConfusionMat_Val['TrueLabels'] = dfLabelsUnique[labelcol].astype('str').reset_index(drop = True)
+        if sample == 1:
+            df_performance = df_performance_sample
+        else:
+            df_performance = pd.concat([df_performance, 
+                                        df_performance_sample], 
+                                       axis = 0)
 
-                if args['imputed'] == 'false':
-                    fileTrain = "MLP_Validation_CoronalSagittalSampling_ConfusionMatrix_Training_"+\
-                    args['labels'].title()+\
-                    "_ImputeMedians"+\
-                    "_Sample"+str(sample)+\
-                    "_Layers"+str(hidden_layers)+\
-                    "_Units"+str(hidden_units)+\
-                    "_Dropout"+str(dropout)+\
-                    "_L2"+str(weight_decay)+".csv"
-
-                    fileVal = "MLP_Validation_CoronalSagittalSampling_ConfusionMatrix_Validation_"+\
-                    args['labels'].title()+\
-                    "_ImputeMedians"+\
-                    "_Sample"+str(sample)+\
-                    "_Layers"+str(hidden_layers)+\
-                    "_Units"+str(hidden_units)+\
-                    "_Dropout"+str(dropout)+\
-                    "_L2"+str(weight_decay)+".csv"
-                
-                else:
-                    
-                    fileTrain = "MLP_Validation_CoronalSagittalSampling_ConfusionMatrix_Training_"+\
-                    args['labels'].title()+\
-                    "_ImputeKNN"+\
-                    "_Sample"+str(sample)+\
-                    "_Layers"+str(hidden_layers)+\
-                    "_Units"+str(hidden_units)+\
-                    "_Dropout"+str(dropout)+\
-                    "_L2"+str(weight_decay)+".csv"
-
-                    fileVal = "MLP_Validation_CoronalSagittalSampling_ConfusionMatrix_Validation_"+\
-                    args['labels'].title()+\
-                    "_ImputeKNN"+\
-                    "_Sample"+str(sample)+\
-                    "_Layers"+str(hidden_layers)+\
-                    "_Units"+str(hidden_units)+\
-                    "_Dropout"+str(dropout)+\
-                    "_L2"+str(weight_decay)+".csv"
-
-                
-                os.path.join(outdir, fileTrain)
-                
-                dfConfusionMat_Train.to_csv(os.path.join(outdir, fileTrain),
-                                            index = False)
-                dfConfusionMat_Val.to_csv(os.path.join(outdir, fileVal),
-                                          index = False)
-        
-    if args['imputed'] == 'false':
-        fileout = "MLP_Validation_CoronalSagittalSampling_"+\
-                  args['labels'].title()+\
-                  ".csv"
-    else:
-        fileout = "MLP_Validation_CoronalSagittalSampling_"+\
-                  args['labels'].title()+\
-                  ".csv"
-        
-    df_performance.to_csv(os.path.join(outdir, fileout), index=False)
-    
+    outfile = args['outfile']
+    if outfile is None:
+        outfile = 'MLP_validation_resampling_{}.csv'.format(args['labels'])
+    df_performance.to_csv(os.path.join(outdir, outfile), index=False)
     
 if __name__ == "__main__":
     main()
