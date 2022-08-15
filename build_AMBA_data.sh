@@ -29,21 +29,21 @@
 source activate_venv.sh
 
 # Download AHBA data from the web
-# echo "Downloading AMBA coronal in-situ hybridization data set..."
-# python3 AMBA/download_AMBA.py \
-# 	--dataset coronal \
-# 	--outdir AMBA/data/expression/ \
-# 	--metadata AMBA_metadata_coronal.csv \
-# 	--parallel true \
-# 	--nproc 12
+echo "Downloading AMBA coronal in-situ hybridization data set..."
+python3 AMBA/download_AMBA.py \
+	--dataset coronal \
+	--outdir AMBA/data/expression/ \
+	--metadata AMBA_metadata_coronal.csv \
+	--parallel true \
+	--nproc 12
 
 # echo "Downloading AMBA sagittal in-situ hybridization data set..."
-# python3 AMBA/download_AMBA.py \
-# 	--dataset sagittal \
-# 	--outdir AMBA/data/expression/ \
-# 	--metadata AMBA_metadata_sagittal.csv \
-# 	--parallel true \
-# 	--nproc 12
+python3 AMBA/download_AMBA.py \
+	--dataset sagittal \
+	--outdir AMBA/data/expression/ \
+	--metadata AMBA_metadata_sagittal.csv \
+	--parallel true \
+	--nproc 12
 
 # Build voxel expression matrix 
 echo "Building mouse gene-by-voxel expression matrix using coronal data with coronal mask..."
@@ -69,11 +69,12 @@ python3 AMBA/build_voxel_matrix.py \
 	--mask sagittal \
 	--log2 true \
 	--groupexp false \
+    --threshold 0.5 \
 	--impute true \
 	--parallel true \
 	--nproc 4 
 
-# echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
+echo "Building mouse gene-by-voxel expression matrix using sagittal data with sagittal mask..."
 python3 AMBA/build_voxel_matrix.py \
 	--datadir AMBA/data/expression/ \
 	--outdir AMBA/data/ \
@@ -82,6 +83,7 @@ python3 AMBA/build_voxel_matrix.py \
 	--mask sagittal \
 	--log2 true \
 	--groupexp true \
+    --threshold 0.5 \
 	--impute true \
 	--parallel true \
 	--nproc 4 
@@ -97,7 +99,7 @@ python3 AMBA/build_region_matrix.py \
 	--labels DSURQE_CCFv3_labels_200um.mnc \
 	--defs DSURQE_40micron_R_mapping_long.csv
  
-# Build mouse data tree
+# # Build mouse data tree
 echo "Building mouse neuroanatomical tree..."
 Rscript AMBA/build_mouse_tree.R \
 	--datadir AMBA/data/ \
