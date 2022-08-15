@@ -142,3 +142,224 @@ df_data %>%
   filter(accuracy == max(accuracy))
 ```
 
+
+# --
+
+```{r}
+datadir <- '../data/MLP_validation'
+
+# infile <- 'MLP_validation_resampling_region67.csv'
+infile <- 'tmp.csv'
+infile <- file.path(datadir, infile)
+df_validation <- as_tibble(data.table::fread(infile, header = TRUE))
+```
+
+```{r}
+head(df_validation)
+```
+
+```{r}
+df_validation %>% 
+  select(parameter_set,
+         hidden_units,
+         hidden_layers,
+         dropout,
+         weight_decay,
+         max_epochs,
+         total_steps,
+         learning_rate,
+         optimizer) %>% 
+  distinct()
+```
+```{r}
+df_validation <- df_validation %>% 
+  select(sample, 
+         parameter_set,
+         hidden_units,
+         weight_decay,
+         learning_rate,
+         optimizer,
+         epoch,
+         train_loss,
+         valid_loss,
+         train_acc,
+         valid_acc)
+```
+
+
+
+```{r}
+df_validation_summary <- df_validation %>% 
+  group_by(parameter_set, 
+           hidden_units,
+           weight_decay,
+           learning_rate,
+           optimizer,
+           epoch) %>% 
+  summarise(train_loss = mean(train_loss),
+            valid_loss = mean(valid_loss),
+            train_acc = mean(train_acc),
+            valid_acc = mean(valid_acc)) %>% 
+  ungroup()
+```
+
+```{r}
+df_validation_summary <- df_validation_summary %>% 
+  pivot_longer(cols = c(train_loss, valid_loss), names_to = 'dataset_loss', values_to = 'loss') %>% 
+  pivot_longer(cols = c(train_acc, valid_acc), names_to = 'dataset_acc', values_to = 'accuracy') %>% 
+  mutate(dataset_loss = ifelse(dataset_loss == 'train_loss', 'training', 'validation'),
+         dataset_acc = ifelse(dataset_acc == 'train_acc', 'training', 'validation')) %>%
+  filter(dataset_loss == dataset_acc) %>% 
+  mutate(dataset = dataset_loss) %>% 
+  select(-dataset_loss, -dataset_acc)
+```
+
+```{r}
+df_best_loss <- df_validation_summary %>% 
+  filter(dataset == 'validation') %>% 
+  group_by(parameter_set) %>% 
+  filter(loss == min(loss)) %>% 
+  ungroup()
+
+df_best_acc <- df_validation_summary %>% 
+  filter(dataset == 'validation') %>% 
+  group_by(parameter_set) %>% 
+  filter(accuracy == max(accuracy)) %>% 
+  ungroup()
+
+df_best_loss %>% 
+  arrange(loss) %>% 
+  head(n = 10)
+```
+```{r}
+df_best_acc %>% 
+  arrange(desc(accuracy)) %>% 
+  head(n = 10)
+```
+
+```{r fig.height = 2.5, fig.width = 5}
+ggplot(df_best_loss, aes(x = log10(learning_rate), 
+                         y = loss, 
+                         col = factor(hidden_units))) + 
+  geom_line(aes(linetype = factor(weight_decay))) + 
+  geom_point() + 
+  facet_grid(.~optimizer) + 
+  scale_y_continuous(breaks = seq(0, 5, by = 0.2)) + 
+  labs(y = 'validation loss') + 
+  theme_bw()
+```
+
+```{r fig.height = 2.5, fig.width = 5}
+ggplot(df_best_loss, aes(x = log10(learning_rate), 
+                         y = accuracy, 
+                         col = factor(hidden_units))) + 
+  geom_line(aes(linetype = factor(weight_decay))) + 
+  geom_point() + 
+  facet_grid(.~optimizer) + 
+  coord_cartesian(ylim = c(0,1)) + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.2)) +
+  labs(y = 'validation accuracy') + 
+  theme_bw()
+```
+Looking at AdamW, 200 units is pretty consistently the best over learning rates, with slower rates performing better. There seems to be no effect of weight decay. 
+
+```{r}
+df_best_loss %>% 
+  group_by(optimizer) %>% 
+  summarise(min(loss), max(accuracy))
+```
+What is the optimization like for the best hyperparameters?
+
+```{r fig.height = 5, fig.width = 5}
+df_best <- df_validation_summary %>% 
+  filter(weight_decay == 0,
+         hidden_units == 200) 
+
+ggplot(df_best, aes(x = epoch, y = loss, col = dataset)) + 
+  geom_line() + 
+  facet_grid(learning_rate~optimizer) + 
+  theme_bw()
+```
+
+The AdamW optimizer performs really poorly for high learning rates. This is the opposite of SGD. 
+
+```{r}
+df_best %>% 
+  filter(learning_rate %in% c(1e-5, 1e-4),
+         optimizer == 'AdamW') %>% 
+  ggplot(aes(x = epoch, y = loss, col = dataset, linetype = factor(learning_rate))) +
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 5, by = 0.5)) + 
+  theme_bw()
+```
+```{r}
+df_best %>% 
+  filter(learning_rate %in% c(1e-5, 1e-4),
+         optimizer == 'AdamW') %>% 
+  ggplot(aes(x = epoch, y = accuracy, col = dataset, linetype = factor(learning_rate))) +
+  geom_line() + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.2)) + 
+  theme_bw()
+```
+Learning rates 10^-4 and 10^5 perform similarly, but the slower rate approaches a better metric asymptotically. I can stop training earlier than 200 epochs though. Looks like around 125 we start getting a negligible derivative. 
+
+```{r}
+df_tmp <- df_best %>% 
+  filter(learning_rate == 1e-5,
+         optimizer == 'AdamW',
+         dataset == 'validation') %>% 
+  arrange(epoch)
+
+df_derivative <- tibble(epoch = df_tmp$epoch[-1],
+                        loss_derivative = 0,
+                        acc_derivative = 0)
+
+for (i in 2:nrow(df_tmp)) {
+  delta_t <- df_tmp[[i, 'epoch']] - df_tmp[[i-1, 'epoch']]
+  delta_loss = df_tmp[[i, 'loss']] - df_tmp[[i-1, 'loss']]
+  delta_acc = df_tmp[[i, 'accuracy']] - df_tmp[[i-1, 'accuracy']]
+  df_derivative[i-1, 'loss_derivative'] = delta_loss/delta_t
+  df_derivative[i-1, 'acc_derivative'] = delta_acc/delta_t
+}
+
+df_derivative %>% 
+  pivot_longer(cols = -epoch, names_to = 'metric', values_to = 'derivative') %>% 
+  ggplot(aes(x = epoch, y = derivative, col = metric)) +
+  geom_line() + 
+  theme_bw()
+```
+```{r}
+df_derivative %>% 
+  filter(abs(loss_derivative) <= 1e-4) %>% 
+  head()
+```
+Looks like we can basically stop training at 150 epochs. 
+
+I wonder if a smaller network would perform better. Though the loss isn't improving much 
+
+```{r fig.width = 5, fig.height = 2.5}
+df_validation_summary %>% 
+  filter(weight_decay == 0,
+         learning_rate %in% c(1e-5, 1e-4),
+         optimizer == 'AdamW') %>% 
+  ggplot(aes(x = epoch, y = loss, col = dataset, linetype = factor(hidden_units))) +
+  geom_line() + 
+  facet_grid(.~learning_rate) + 
+  scale_y_continuous(breaks = seq(0, 5, by = 0.5)) + 
+  theme_bw()
+```
+
+```{r fig.width = 5, fig.height = 2.5}
+df_validation_summary %>% 
+  filter(weight_decay == 0,
+         learning_rate %in% c(1e-5, 1e-4),
+         optimizer == 'AdamW') %>% 
+  ggplot(aes(x = epoch, y = accuracy, col = dataset, linetype = factor(hidden_units))) +
+  geom_line() + 
+  facet_grid(.~learning_rate) + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.2)) + 
+  theme_bw()
+```
+
+Interestingly we get barely a difference in loss between 200, 500 and 1000 hidden units, though the optima occur sooner for the larger networks. This doesn't translate to a neglibible difference in accuracy though. The 200 unit network still out-performs the others. 
+
