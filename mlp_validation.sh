@@ -1,84 +1,67 @@
 #!/bin/bash
 
-source activate_venv
+source activate_venv.sh
 
 datadir=data/
 outdir=data/MLP_validation/
 
-nunits=200
-L2=1e-6
+method='resampling'
+# method='naive'
+
+nsamples=5
+nlayers=3
+nunits='200 500 1000'
+L2='0 1e-3 1e-6'
+dropout=0
 nepochs=200
-learningrate=1e-5
-optimizer='AdamW'
+learningrate='1e-1 1e-2 1e-3 1e-4 1e-5'
+optimizer='SGD AdamW' 
+seed=1
 
-python3 mlp_validation_naive.py \
-	 --datadir $datadir \
-	 --outdir $outdir \
-	 --labels region67 \
-	 --nunits $nunits \
-	 --L2 $L2 \
-	 --nepochs $nepochs \
-	 --learningrate $learningrate \
-     --optimizer $optimizer \
-	 --seed 1
-     
-mv ${outdir}MLP_validation_naive_region67.csv \
-${outdir}MLP_validation_naive_region67_original.csv
-     
 python3 mlp_validation_resampling.py \
     --datadir ${datadir} \
     --outdir ${outdir} \
     --labels region67 \
-    --nsamples 10 \
+    --nsamples $nsamples \
     --nunits $nunits \
-    --nlayers 3 \
-    --dropout 0 \
+    --nlayers $nlayers \
+    --dropout $dropout \
     --L2 $L2 \
     --nepochs $nepochs \
     --optimizer $optimizer \
     --learningrate $learningrate \
-    --confusionmatrix false \
-    --seed 1
+    --seed $seed
     
-mv ${outdir}MLP_Validation_CoronalSagittalSampling_Region67.csv \
-${outdir}MLP_Validation_CoronalSagittalSampling_Region67_original.csv
+# python3 mlp_validation_naive.py \
+# 	 --datadir $datadir \
+# 	 --outdir $outdir \
+# 	 --labels region67 \
+# 	 --nunits $nunits \
+# 	 --L2 $L2 \
+# 	 --nepochs $nepochs \
+# 	 --learningrate $learningrate \
+#      --optimizer $optimizer \
+# 	 --seed $seed
      
-nunits=200
-L2=0
-nepochs=50
-learningrate=0.01
-optimizer='SGD'     
+# nunits=200
+# L2=0
+# nepochs=50
+# learningrate=0.01
+# optimizer='SGD'     
      
-python3 mlp_validation_naive.py \
-	 --datadir $datadir \
-	 --outdir $outdir \
-	 --labels region67 \
-	 --nunits $nunits \
-	 --L2 $L2 \
-	 --nepochs $nepochs \
-	 --learningrate $learningrate \
-     --optimizer $optimizer \
-	 --seed 1
-     
-mv ${outdir}MLP_validation_naive_region67.csv \
-${outdir}MLP_validation_naive_region67_updated.csv
-     
-python3 mlp_validation_resampling.py \
-    --datadir ${datadir} \
-    --outdir ${outdir} \
-    --labels region67 \
-    --nsamples 10 \
-    --nunits $nunits \
-    --nlayers 3 \
-    --dropout 0 \
-    --L2 $L2 \
-    --nepochs $nepochs \
-    --optimizer $optimizer \
-    --learningrate $learningrate \
-    --confusionmatrix false \
-    --seed 1
+# python3 mlp_validation_resampling.py \
+#     --datadir ${datadir} \
+#     --outdir ${outdir} \
+#     --labels region67 \
+#     --nsamples 10 \
+#     --nunits $nunits \
+#     --nlayers 3 \
+#     --dropout 0 \
+#     --L2 $L2 \
+#     --nepochs $nepochs \
+#     --optimizer $optimizer \
+#     --learningrate $learningrate \
+#     --confusionmatrix false \
+#     --seed 1
         
-mv ${outdir}MLP_Validation_CoronalSagittalSampling_Region67.csv \
-${outdir}MLP_Validation_CoronalSagittalSampling_Region67_updated.csv
-
 deactivate
