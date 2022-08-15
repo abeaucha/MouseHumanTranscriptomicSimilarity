@@ -33,7 +33,7 @@ from datatable                import fread
 import torch
 import torch.nn.functional    as F
 from torch                    import nn
-from torch.optim              import SGD
+from torch.optim              import SGD, AdamW
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
 
@@ -141,6 +141,12 @@ def parse_args():
     )
     
     parser.add_argument(
+        '--optimizer',
+        type = str,
+        default = 'SGD'
+    )
+    
+    parser.add_argument(
         "--confusionmatrix",
         type = str,
         default = 'false',
@@ -156,6 +162,15 @@ def parse_args():
         choices = ['true', 'false'],
         help = ("Option to transform the voxel-wise data using the "
                 "modified MLP.")
+    )
+    
+    parser.add_argument(
+        '--integratedgrads',
+        type = str,
+        default = 'false',
+        choices = ['true', 'false'],
+        help = ("Option to compute integrated gradients for "
+               "feature attributions.")
     )
     
     parser.add_argument(
@@ -184,7 +199,7 @@ def main():
     
     if os.path.exists(outdir) == False:
         print('Output directory {} not found. Creating it...'.format(outdir))
-        os.mkdir(outdir)
+        os.makedirs(outdir)
     
     # Import data -------------------------------------------------------------
 
@@ -265,9 +280,17 @@ def main():
     max_epochs = args['nepochs']
     total_steps = args['totalsteps']
     learning_rate = args['learningrate']
+    optimizer = args['optimizer']
     
     if total_steps is None:
         total_steps = max_epochs
+        
+    if optimizer == 'AdamW':
+        optimizer = AdamW
+    elif optimizer == 'SGD':
+        optimizer = SGD
+    else:
+        raise ValueError
     
     if is_available() == True:
         print("GPU available. Training network using GPU...")
@@ -313,7 +336,7 @@ def main():
     #Create the classifier
     net = NeuralNetClassifier(net_module,
                               train_split = None,
-                              optimizer = SGD,
+                              optimizer = optimizer,
                               optimizer__weight_decay = weight_decay,
                               max_epochs = max_epochs,
                               callbacks = [('lr_scheduler',
@@ -372,57 +395,59 @@ def main():
         
     # Feature importance -----------------------------------------------------
     
-#     #Structures to examine
-#     target_structs = ['Caudoputamen',
-#                       'Primary motor area',
-#                       'Infralimbic area']
+    if args['integratedgrads'] == 'true':
     
-#     #List of genes
-#     genes = dfInput.columns.to_numpy()
+        #Structures to examine
+        target_structs = ['Caudoputamen',
+                          'Primary motor area',
+                          'Infralimbic area']
     
-#     #Convert X to tensor
-#     X_tensor = torch.from_numpy(X).type(torch.FloatTensor)
-#     X_tensor.requires_grad_()    
+        #List of genes
+        genes = dfInput.columns.to_numpy()
     
-#     #Set up integrated gradients
-#     ig = IntegratedGradients(net_module)
+        #Convert X to tensor
+        X_tensor = torch.from_numpy(X).type(torch.FloatTensor)
+        X_tensor.requires_grad_()    
+    
+        #Set up integrated gradients
+        ig = IntegratedGradients(net_module)
 
-#     #Iterate over structs
-#     integrated_grads = np.zeros((len(target_structs), len(genes)))
-#     for i, struct in enumerate(target_structs):
+        #Iterate over structs
+        integrated_grads = np.zeros((len(target_structs), len(genes)))
+        for i, struct in enumerate(target_structs):
         
-#         print("Computing integrated gradients for region: {}".format(struct))
+            print("Computing integrated gradients for region: {}".format(struct))
     
-#         #Grab label from structure name
-#         target_label = int(dfLabelsUnique
-#                           .loc[dfLabelsUnique[labelcol] == struct, ['y']]
-#                           .values[0][0])
+            #Grab label from structure name
+            target_label = int(dfLabelsUnique
+                              .loc[dfLabelsUnique[labelcol] == struct, ['y']]
+                              .values[0][0])
         
-#         #Compute gradients
-#         attr = ig.attribute(X_tensor, 
-#                             target = target_label,
-#                             internal_batch_size = X_tensor.shape[0])
+            #Compute gradients
+            attr = ig.attribute(X_tensor, 
+                                target = target_label,
+                                internal_batch_size = X_tensor.shape[0])
 
-#         #Average over data points
-#         attr_mean = np.mean(attr.detach().numpy(), axis = 0)
+            #Average over data points
+            attr_mean = np.mean(attr.detach().numpy(), axis = 0)
         
-#         #Assign to array
-#         integrated_grads[i,:] = attr_mean
+            #Assign to array
+            integrated_grads[i,:] = attr_mean
     
-#     #Convert to data frame
-#     integrated_grads = pd.DataFrame(integrated_grads, columns = genes)
-#     integrated_grads['Region'] = target_structs
+        #Convert to data frame
+        integrated_grads = pd.DataFrame(integrated_grads, columns = genes)
+        integrated_grads['Region'] = target_structs
     
-#     #Output filename
-#     file_integrated_grads = ('MLP_{}_Layers3_Units{}_L2{}_IntegratedGradients.csv'
-#                              .format(args['labels'].capitalize(),
-#                                      args['nunits'], 
-#                                      args['L2']))
+        #Output filename
+        file_integrated_grads = ('MLP_{}_Layers3_Units{}_L2{}_IntegratedGradients.csv'
+                                 .format(args['labels'].capitalize(),
+                                         args['nunits'], 
+                                         args['L2']))
     
-#     file_integrated_grads = os.path.join(outdir, file_integrated_grads)
+        file_integrated_grads = os.path.join(outdir, file_integrated_grads)
     
-#     #Write to file
-#     integrated_grads.to_csv(file_integrated_grads, index = False)
+        #Write to file
+        integrated_grads.to_csv(file_integrated_grads, index = False)
     
     
     # Predict label probabilities for mouse/human data -----------------------
