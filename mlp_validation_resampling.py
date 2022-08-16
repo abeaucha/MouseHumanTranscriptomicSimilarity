@@ -1,27 +1,26 @@
 # ----------------------------------------------------------------------------
-# Model_MultilayerPerceptron_Validation_CoronalSagittalSampling.py
+# mlp_validation_resampling.py
 # Author: Antoine Beauchamp
 # Created: February 3rd, 2021
 
 """
-Implement cross-validation 
+
 
 Description
 -----------
+
 """
 
 # Packages -------------------------------------------------------------------
 
-#Delete later
 import sys
-
-import pandas                 as pd
-import numpy                  as np
-import random
 import argparse
 import os
-from datatable                import fread
-from itertools                import product
+import random
+import pandas                 as pd
+import numpy                  as np
+from   datatable              import fread
+from   itertools              import product
 
 from sklearn.impute           import SimpleImputer
 from sklearn.preprocessing    import StandardScaler, FunctionTransformer
@@ -32,19 +31,16 @@ from skorch                   import NeuralNetClassifier
 from skorch.toy               import make_classifier
 from skorch.helper            import DataFrameTransformer
 from skorch.callbacks         import LRScheduler, EpochScoring
-from skorch.dataset import Dataset
+from skorch.dataset           import Dataset
 
-import torch
+import torch.optim
 from torch                    import manual_seed
-from torch.optim              import AdamW, SGD
 from torch.optim.lr_scheduler import OneCycleLR
 from torch.cuda               import is_available
-
-from torch.utils.data import Subset
-from sklearn.model_selection import train_test_split
+from torch.utils.data         import Subset
 
 
-# Functions ------------------------------------------------------------------
+# Command line arguments ------------------------------------------------------------------
 
 def parse_args():
     
@@ -53,119 +49,112 @@ def parse_args():
     )
     
     parser.add_argument(
-        "--datadir",
+        '--datadir',
         type = str,
         default = 'data/',
         help = "Directory containing input data."
     )
     
     parser.add_argument(
-        "--outdir",
+        '--outdir',
         type = str,
-        default = 'data/MLP_outcomes/',
-        help = "Directory in which to write neural net outcomes."
+        default = 'data/MLP_validation/',
+        help = "Directory in which to export performance data."
     )
     
     parser.add_argument(
         '--outfile',
         type = str,
-        help = "Outfile."
+        help = "Name of CSV file in which to export performance data."
     )
     
     parser.add_argument(
-        "--labels",
+        '--labels',
         type = str,
         default = 'region5',
         choices = ['region5', 
-                   'region11', 
-                   'region28', 
-                   'region46', 
-                   'region67', 
-                   'region130'],
-        help = "Class of labels on which to train."
+                   'region11',
+                   'region28',
+                   'region46',
+                   'region67',
+                   'region134'],
+        help = "Class of mouse labels on which to train the network."
     )
     
     parser.add_argument(
-        "--nunits",
-        nargs = "*",
+        '--nsamples',
         type = int,
-        default = [500],
+        default = 1,
+        help = ("Number of times to sample training and validation data sets.")
+    )
+    
+    parser.add_argument(
+        '--nunits',
+        nargs = '*',
+        type = int,
+        default = [200],
         help = "List containing the number of hidden units to tune over."
     )
 
     parser.add_argument(
-        "--nlayers",
-        nargs = "*",
+        '--nlayers',
+        nargs = '*',
         type = int,
-        default = [4],
+        default = [3],
         help = "List containing the number of hidden layers to tune over."
     )
 
     parser.add_argument(
-        "--dropout",
-        nargs = "*",
+        '--dropout',
+        nargs = '*',
         type = float,
-        default = [0.],
+        default = [0.0],
         help = "List containing dropout rates to tune over."
     )
 
     parser.add_argument(
-        "--L2",
-        nargs = "*",
+        '--L2',
+        nargs = '*',
         type = float,
-        default = [0.],
+        default = [0.0],
         help = "List containing weight decay values to tune over."
     )
 
     parser.add_argument(
-        "--nsamples",
-        type = int,
-        default = 1,
-        help = "Number of times to train and evaluate each hyperparameter combination."
-    )
-
-    parser.add_argument(
-        "--nepochs",
+        '--nepochs',
         nargs = '*',
         type = int,
         default = [200],
-        help = "Number of epochs to train over."
+        help = "List containing the number of epochs to train over."
     )
 
     parser.add_argument(
-        "--learningrate",
+        '--learningrate',
         nargs = '*',
         type = float,
         default = [1e-5],
-        help = "Learning rate during training."
+        help = "List containing maximum learning rates to tune over."
     )
     
     parser.add_argument(
         '--totalsteps',
         nargs = '*',
         type = int,
-        help = "Number of steps to use in optimizer."
+        help = "List containing the total number of optimization steps to tune over."
     )
     
     parser.add_argument(
         '--optimizer',
         nargs = '*',
         type = str,
-        default = ['SGD']
+        default = ['SGD'],
+        help = "List containing torch.optim algorithms to tune over."
     )
 
     parser.add_argument(
-        "--confusionmatrix",
-        type = str,
-        default = 'false',
-        choices = ['true', 'false'],
-        help = "Flag to indicate whether to compute confusion matrices."
-    )
-    
-    parser.add_argument(
         '--seed',
         type = int,
-        help = ("Random seed")
+        help = ("Random seed for network training.")
     )
     
     args = vars(parser.parse_args())
@@ -173,9 +162,27 @@ def parse_args():
     return args
     
     
+# Functions ------------------------------------------------------------------
+    
 def buildTrainValidationSets(coronal, sagittal, seed = None):
     
-    """ """
+    """ 
+    Generate training and validation data sets.
+    
+    Description
+    -----------
+    
+    Arguments
+    ---------
+    coronal:
+    sagittal:
+    seed:
+    
+    Returns
+    -------
+    train:
+    validation:
+    """
     
     #Get genes in the coronal data set (includes duplicates)
     genes_coronal = coronal.columns.str.replace('\.\.\.[0-9]+', '', regex = True)
@@ -229,18 +236,77 @@ def buildTrainValidationSets(coronal, sagittal, seed = None):
                 
     return train, validation
 
+
 def train_val_split(dataset, y):
+    
+    """
+    """
+    
     train_ind = [i for i in range(int(len(dataset)/2))]
     val_ind = [i for i in range(int(len(dataset)/2),len(dataset))] 
     dataset_train = Subset(dataset, train_ind)
     dataset_val = Subset(dataset, val_ind)
     return dataset_train, dataset_val
 
+
 def calculate_accuracy(net, X, y):
+    
+    """ 
+    Compute the prediction accuracy.
+    
+    Arguments
+    ---------
+    net:
+        The neural network classifier.
+    X: numpy.ndarray
+        The input data tensor.
+    y: numpy.ndarray
+        The true labels.
+
+    Returns
+    -------
+    acc: numpy.float64
+        The accuracy score.
+    """
+    
     y_pred = net.predict(X)
     acc = accuracy_score(y, y_pred)
     return acc
 
+
+def get_training_history(net):
+
+    """ 
+    Obtain training history data.
+    
+    Arguments
+    ---------
+    net:
+        The neural network classifier.
+        
+    Returns
+    -------
+    df_epochs: pandas.core.frame.DataFrame
+        Data frame containing history data.
+    """
+
+    for i in range(len(net.__dict__['history_'])):
+        epoch_dict = net.__dict__['history_'][i]
+        if i == 0:
+            df_epochs = (pd.DataFrame(epoch_dict)
+                         .drop(columns = 'batches')
+                         .drop_duplicates())
+        else:
+            df_epochs_tmp = (pd.DataFrame(epoch_dict)
+                             .drop(columns = 'batches')
+                             .drop_duplicates())
+            df_epochs = pd.concat([df_epochs, 
+                                   df_epochs_tmp], 
+                                  axis = 0)
+    return df_epochs
+
+
+# Main ------------------------------------------------------------------------
 
 def main():
     
@@ -261,18 +327,23 @@ def main():
     
     # Importing data -------------------------------------------------------------------
 
-    #Set up filepaths
-    file_ref = 'MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv'
-    file_sagittal = 'MouseExpressionMatrix_voxel_sagittal_masksagittal_log2_grouped_imputed_labelled.csv'
-    file_coronal = 'MouseExpressionMatrix_voxel_coronal_masksagittal_log2_imputed_labelled.csv'
+    print("Importing data...")
+    
+    #Input files
+    file_ref = ('MouseExpressionMatrix_'
+                'voxel_coronal_maskcoronal_'
+                'log2_grouped_imputed_labelled.csv')
+    file_sagittal = ('MouseExpressionMatrix_'
+                     'voxel_sagittal_masksagittal_'
+                     'log2_grouped_imputed_labelled.csv')
+    file_coronal = ('MouseExpressionMatrix_'
+                    'voxel_coronal_masksagittal_'
+                    'log2_imputed_labelled.csv')
 
     file_ref = os.path.join(datadir, file_ref)
     file_sagittal = os.path.join(datadir, file_sagittal)
     file_coronal = os.path.join(datadir, file_coronal)
 
-    print("Importing data sets...")
-
-    #Import data
     df_ref = (fread(file_ref, header = True)
                   .to_pandas())
     df_sagittal = (fread(file_sagittal, header = True)
@@ -325,31 +396,19 @@ def main():
     
     # ---------
 
-    print("Beginning training and validation...")
-    
-    nsamples = args['nsamples']
-    hidden_units = args['nunits']
-    hidden_layers = args['nlayers']
-    dropout = args['dropout']
-    weight_decay = args['L2']
-    max_epochs = args['nepochs']
-    total_steps = args['totalsteps']
-    learning_rate = args['learningrate']
-    optimizer = args['optimizer']
-    
-    if total_steps is None:
-        total_steps = max_epochs
+    print("Setting up hyperparameter grid...")
     
     #Define a dictionary containing the grid values
-    dict_grid = {'sample':[i for i in range(1, nsamples+1)],
-               'hidden_units':hidden_units,
-               'hidden_layers':hidden_layers,
-               'dropout':dropout,
-               'weight_decay':weight_decay,
-                'max_epochs':max_epochs,
-                'total_steps':total_steps,
-                'learning_rate':learning_rate,
-                'optimizer':optimizer}
+    dict_grid = {'sample':[i for i in range(1, args['nsamples']+1)],
+                 'hidden_units':args['nunits'],
+                'hidden_layers':args['nlayers'],
+                'dropout':args['dropout'],
+                'weight_decay':args['L2'],
+                'max_epochs':args['nepochs'],
+                'total_steps':(args['nepochs'] if args['totalsteps'] is None else args['totalsteps']),
+                'learning_rate':args['learningrate'],
+                'optimizer':args['optimizer'],
+                'seed':[args['seed']]}
 
     #Expand the dictionary grid into a data frame containing all combinations
     df_params = pd.DataFrame([row for row in product(*dict_grid.values())], 
@@ -358,9 +417,9 @@ def main():
     #Iterate over unique samples
     for sample in np.unique(df_params['sample']):
 
-        print('On sample {}'.format(sample))
+        print("On sample {}".format(sample))
 
-        print('Generating training and validation sets...')
+        print("Generating training and validation sets...")
 
         #For the given sample, build the training and validation sets
         df_training, df_validation = buildTrainValidationSets(df_input_coronal,
@@ -368,7 +427,7 @@ def main():
                                                               seed = sample)    
 
 
-        print('Preprocessing data...')
+        print("Preprocessing data...")
 
         #Initialize classes for imputing, scaling, centering and transposing
         scale = StandardScaler()
@@ -398,10 +457,8 @@ def main():
         #Iterate over hyperparameter combinations
         for index, row in df_params_sample.iterrows():
 
-            parameter_set = int(row['parameter_set'])
-            print('\nParameter set {}'.format(parameter_set))
-
             #Extract hyperparameters
+            parameter_set = int(row['parameter_set'])
             hidden_units = int(row['hidden_units'])
             hidden_layers = int(row['hidden_layers'])
             dropout = row['dropout']
@@ -410,8 +467,10 @@ def main():
             total_steps = row['total_steps']
             learning_rate = row['learning_rate']
             optimizer = row['optimizer']
+            seed = row['seed']
             
-            print(('  Labels: {}\n'
+            print(('\nParameter set {}\n'
+                   '  Labels: {}\n'
                    '  Hidden units: {}\n' 
                    '  Hidden layers: {}\n' 
                    '  Dropout: {}\n'
@@ -419,7 +478,8 @@ def main():
                    '  Max epochs: {}\n'
                    '  Total steps: {}\n'
                    '  Learning rate: {}\n'
-                   '  Optimizer: {}\n'.format(args['labels'].title(), 
+                   '  Optimizer: {}\n'.format(parameter_set,
+                                              args['labels'].title(), 
                                             hidden_units, 
                                             hidden_layers, 
                                             dropout, 
@@ -429,33 +489,29 @@ def main():
                                             learning_rate,
                                             optimizer)))
             
-            if optimizer == 'AdamW':
-                optimizer = AdamW
-            elif optimizer == 'SGD':
-                optimizer = SGD
-            else:
-                raise ValueError
-
-            #Generate classifier module with specified architecture
-            MLPModule = make_classifier(input_units = X.shape[1],
-                                        output_units = len(np.unique(y)),
-                                        hidden_units = hidden_units,
-                                        num_hidden = hidden_layers,
-                                        dropout = dropout)
-
-            seed = args['seed']
+            optimizer = getattr(sys.modules['torch.optim'], 
+                                optimizer)
+            
             if seed is not None:
                 np.random.seed(seed)
                 manual_seed(seed)
                 random.seed(seed)
             
-            net = NeuralNetClassifier(
-                            MLPModule,
-                            train_split = train_val_split,
-                            optimizer = optimizer,
-                            optimizer__weight_decay = weight_decay, 
-                            max_epochs = max_epochs,
-                            callbacks = [('lr_scheduler',
+            #Generate classifier module with specified architecture
+            net_module = make_classifier(input_units = X.shape[1],
+                                        output_units = len(np.unique(y)),
+                                        hidden_units = hidden_units,
+                                        num_hidden = hidden_layers,
+                                        dropout = dropout)
+            
+            if is_available() == True:
+                print("GPU available. Training network using GPU ...")
+                device = 'cuda'
+            else:
+                print("GPU unavailable. Training network using CPU ...")
+                device = 'cpu'
+                
+            net_callbacks = [('lr_scheduler',
                                           LRScheduler(policy=OneCycleLR,
                                                       total_steps=total_steps, 
                                                       cycle_momentum=False,   
@@ -465,37 +521,28 @@ def main():
                                                     lower_is_better = False,
                                                     on_train = True,
                                                     name = 'train_acc')] 
-                        )
-
-
-            if is_available() == True:
-                print("Training network using GPU...")
-            else:
-                print("Training network using CPU...")
+            
+            net = NeuralNetClassifier(net_module,
+                                      train_split = train_val_split,
+                                      optimizer = optimizer,
+                                      optimizer__weight_decay = weight_decay, 
+                                      max_epochs = max_epochs,
+                                      callbacks = net_callbacks,
+                                      device = device)
 
             #Fit the network to the training data
             net.fit(X, y)
     
-            for i in range(max_epochs):
-                epoch_dict = net.__dict__['history_'][i]
-                if i == 0:
-                    df_epochs_iter = (pd.DataFrame(epoch_dict)
-                         .drop(columns = 'batches')
-                         .drop_duplicates())
-                else:
-                    df_epochs_iter_tmp = (pd.DataFrame(epoch_dict)
-                         .drop(columns = 'batches')
-                         .drop_duplicates())
-                    df_epochs_iter = pd.concat([df_epochs_iter, 
-                                                  df_epochs_iter_tmp], 
-                                                 axis = 0)
-                    
-            df_epochs_iter['parameter_set'] = row['parameter_set']
-            
+            #Get training history
+            df_epochs_iter = get_training_history(net)
+            df_epochs_iter['parameter_set'] = parameter_set
+    
+             #Combine history with parameters
             df_performance_iter = pd.merge(df_params_sample, 
                                            df_epochs_iter, 
                                            on = 'parameter_set')
             
+            #Concatenate current iteration with previous
             if parameter_set == 1:
                 df_performance_sample = df_performance_iter
             else:
@@ -503,6 +550,7 @@ def main():
                                                    df_performance_iter],
                                                   axis = 0)
             
+        #Concatenate current sample with previous
         if sample == 1:
             df_performance = df_performance_sample
         else:
@@ -510,10 +558,12 @@ def main():
                                         df_performance_sample], 
                                        axis = 0)
 
+    #Write to file
     outfile = args['outfile']
     if outfile is None:
         outfile = 'MLP_validation_resampling_{}.csv'.format(args['labels'])
     df_performance.to_csv(os.path.join(outdir, outfile), index=False)
     
-if __name__ == "__main__":
+    
+if __name__ == '__main__':
     main()

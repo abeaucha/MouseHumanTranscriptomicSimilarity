@@ -1,53 +1,41 @@
 # ----------------------------------------------------------------------------
-# train_multilayer_perceptron.py 
+# mlp_validation_naive.py
 # Author: Antoine Beauchamp
-# Created: December 15th, 2020
 
 """
-Train a multi-layer perceptron
+
 
 Description
 -----------
-This script trains a multi-layer perceptron neural network to classify mouse
-voxels into a specified number of neuroanatomical atlas regions. 
 
-Once the network is trained, the final layer is removed to obtain the
-transformation from the input space to the latent space defined by the last
-hidden layer. 
-
-The modified network architecture is used to transform aggregated regional
-mouse and human gene expression matrices from the input space into the latent
-space. An option also exists to transform voxel- and sample-wise expression
-matrices as well.
 """
 
 # Packages -------------------------------------------------------------------
 
 import sys
-
-import pandas                 as pd
-import numpy                  as np
-import random
 import argparse
 import os
-from datatable                import fread
-from itertools                import product
+import random
+import pandas                   as pd
+import numpy                    as np
+from   datatable                import fread
+from   itertools                import product
 
-import torch
-import torch.nn.functional    as F
-from torch                    import nn
-from torch.optim              import SGD, AdamW
-from torch.optim.lr_scheduler import OneCycleLR
-from torch.cuda               import is_available
+import torch.optim
+from   torch                    import manual_seed
+from   torch.optim.lr_scheduler import OneCycleLR
+from   torch.cuda               import is_available
 
-from skorch                   import NeuralNetClassifier
-from skorch.callbacks         import LRScheduler, EpochScoring
-from skorch.helper            import DataFrameTransformer
+from   skorch                   import NeuralNetClassifier
+from   skorch.toy               import make_classifier
+from   skorch.callbacks         import LRScheduler, EpochScoring
+from   skorch.helper            import DataFrameTransformer
+from   skorch.dataset           import ValidSplit
 
-from sklearn.metrics          import accuracy_score, confusion_matrix
+from   sklearn.metrics          import accuracy_score
 
 
-# Functions ------------------------------------------------------------------
+# Command line arguments ------------------------------------------------------------------
 
 def parse_args():
     
@@ -56,21 +44,27 @@ def parse_args():
     )
     
     parser.add_argument(
-        "--datadir",
+        '--datadir',
         type = str,
         default = 'data/',
         help = "Directory containing input data."
     )
     
     parser.add_argument(
-        "--outdir",
+        '--outdir',
         type = str,
-        default = 'data/MLP_outcomes/',
-        help = "Directory in which to write neural net outcomes."
+        default = 'data/MLP_validation/',
+        help = "Directory in which to export performance data."
     )
     
     parser.add_argument(
-        "--labels",
+        '--outfile',
+        type = str,
+        help = "Name of CSV file in which to export performance data."
+    )
+    
+    parser.add_argument(
+        '--labels',
         type = str,
         default = 'region5',
         choices = ['region5', 
@@ -79,66 +73,84 @@ def parse_args():
                    'region46',
                    'region67',
                    'region134'],
-        help = "Class of mouse labels on which to train."
+        help = "Class of mouse labels on which to train the network."
     )
     
     parser.add_argument(
-        "--nunits",
-        nargs = "*",
+        '--nfolds',
         type = int,
-        default = [500],
+        default = 5,
+        help = ("Number of folds to use for cross-validation.")
+    )
+    
+    parser.add_argument(
+        '--nunits',
+        nargs = '*',
+        type = int,
+        default = [200],
         help = "List containing the number of hidden units to tune over."
     )
     
     parser.add_argument(
-        "--L2",
-        nargs = "*",
+        '--nlayers',
+        nargs = '*',
+        type = int,
+        default = [3],
+        help = "List containing the number of hidden layers to tune over."
+    )
+
+    parser.add_argument(
+        '--dropout',
+        nargs = '*',
         type = float,
-        default = [1e-6],
+        default = [0.0],
+        help = "List containing dropout rates to tune over."
+    )
+    
+    parser.add_argument(
+        '--L2',
+        nargs = '*',
+        type = float,
+        default = [0.0],
         help = "List containing weight decay values to tune over."
     )
     
     parser.add_argument(
-        "--nepochs",
+        '--nepochs',
+        nargs = '*',
         type = int,
-        default = 200,
-        help = "Number of epochs to train over."
+        default = [200],
+        help = "List containing the number of epochs to train over."
     )
     
     parser.add_argument(
-        "--learningrate",
+        '--learningrate',
+        nargs = '*',
         type = float,
-        default = 1e-5,
-        help = "Learning rate during training."
+        default = [1e-5],
+        help = "List containing maximum learning rates to tune over."
     )
     
     parser.add_argument(
         '--totalsteps',
+        nargs = '*',
         type = int,
-        help = "Number of steps to use in optimizer."
+        help = "List containing the total number of optimization steps to tune over."
     )
     
     parser.add_argument(
         '--optimizer',
+        nargs = '*',
         type = str,
-        default = 'SGD',
-        choices = ['SGD', 'AdamW'],
-        help = ("Neural network optimizer.")
-    )
-    
-    parser.add_argument(
-        "--confusionmatrix",
-        type = str,
-        default = 'false',
-        choices = ['true', 'false'],
-        help = ("Option to compute confusion matrix from training set "
-                "predictions.")
+        default = ['SGD'],
+        help = "List containing torch.optim algorithms to tune over."
     )
     
     parser.add_argument(
         '--seed',
+        nargs = '*',
         type = int,
-        help = ("Random seed")
+        help = ("List containing random seeds to tune over.")
     )
     
     args = vars(parser.parse_args())
@@ -146,40 +158,63 @@ def parse_args():
     return args
     
     
+# Functions ------------------------------------------------------------------
+    
 def calculate_accuracy(net, X, y):
+    
+    """ 
+    Compute the prediction accuracy.
+    
+    Arguments
+    ---------
+    net:
+        The neural network classifier.
+    X: numpy.ndarray
+        The input data tensor.
+    y: numpy.ndarray
+        The true labels.
+
+    Returns
+    -------
+    acc: numpy.float64
+        The accuracy score.
+    """
+    
     y_pred = net.predict(X)
     acc = accuracy_score(y, y_pred)
     return acc
 
-#Define network architecture
-class ClassifierModule(nn.Module):
+
+def get_training_history(net):
+
+    """ 
+    Obtain training history data.
+    
+    Arguments
+    ---------
+    net:
+        The neural network classifier.
         
-        def __init__(
-            self,
-            input_units,
-            output_units,
-            hidden_units,
-            apply_output_layer = True #Flag to apply output layer
-        ):
-            super(ClassifierModule, self).__init__()
+    Returns
+    -------
+    df_epochs: pandas.core.frame.DataFrame
+        Data frame containing history data.
+    """
 
-            self.apply_output_layer = apply_output_layer
-
-            self.hidden1 = nn.Linear(input_units, hidden_units)
-            self.hidden2 = nn.Linear(hidden_units, hidden_units)
-            self.hidden3 = nn.Linear(hidden_units, hidden_units)
-            self.output = nn.Linear(hidden_units, output_units)
-
-        def forward(self, X, **kwargs):
-            X = F.relu(self.hidden1(X))
-            X = F.relu(self.hidden2(X))
-            X = F.relu(self.hidden3(X))
-
-            #If flag is True, apply output layer
-            if self.apply_output_layer is True:
-                X = F.softmax(self.output(X), dim = -1)
-
-            return X
+    for i in range(len(net.__dict__['history_'])):
+        epoch_dict = net.__dict__['history_'][i]
+        if i == 0:
+            df_epochs = (pd.DataFrame(epoch_dict)
+                         .drop(columns = 'batches')
+                         .drop_duplicates())
+        else:
+            df_epochs_tmp = (pd.DataFrame(epoch_dict)
+                             .drop(columns = 'batches')
+                             .drop_duplicates())
+            df_epochs = pd.concat([df_epochs, 
+                                   df_epochs_tmp], 
+                                  axis = 0)
+    return df_epochs
 
     
 # Main ------------------------------------------------------------------------
@@ -197,22 +232,21 @@ def main():
     
     if os.path.exists(outdir) == False:
         print('Output directory {} not found. Creating it...'.format(outdir))
-        os.mkdir(outdir)
+        os.makedirs(outdir)
+    
     
     # Import data -------------------------------------------------------------
 
-    #Set up files for import
-    #Mouse voxelwise data to train over
-    file_voxel = ("MouseExpressionMatrix_"
-                  "voxel_coronal_maskcoronal_"
-                  "log2_grouped_imputed_labelled_scaled.csv")
-    filepath_voxel = os.path.join(datadir, file_voxel)
-    
     print("Importing data...")
+    
+    #Training data
+    infile = ('MouseExpressionMatrix_'
+              'voxel_coronal_maskcoronal_'
+              'log2_grouped_imputed_labelled_scaled.csv')
+    infile = os.path.join(datadir, infile)
 
-    #Import data
-    dfExprVoxel = (fread(filepath_voxel, header = True)
-                   .to_pandas())
+    dfExprVoxel = fread(infile, header = True).to_pandas()
+    
 
     # Process data ------------------------------------------------------------
 
@@ -244,140 +278,132 @@ def main():
     # Extract the arrays from the dictionaries.
     X = X_temp['X']
     y = y_temp[labelcol]
-
+    
+    
     # Initialize the network --------------------------------------------------
 
-    print("Initializing neural network...")
+    print("Setting up hyperparameter grid...")
     
-    #Get network parameters from command line args
-    dict_grid = {'hidden_units':args['nunits'],
-                 'weight_decay':args['L2']}
+    #Define a dictionary containing the grid values
+    dict_grid = {'nfolds':[args['nfolds']],
+                 'hidden_units':args['nunits'],
+                'hidden_layers':args['nlayers'],
+                'dropout':args['dropout'],
+                'weight_decay':args['L2'],
+                'max_epochs':args['nepochs'],
+                'total_steps':(args['nepochs'] if args['totalsteps'] is None else args['totalsteps']),
+                'learning_rate':args['learningrate'],
+                'optimizer':args['optimizer'],
+                'seed':[args['seed']] if args['seed'] is None else args['seed']}
     
     df_params = pd.DataFrame([row for row in product(*dict_grid.values())], 
                              columns = dict_grid.keys())
+    df_params['parameter_set'] = [i+1 for i in range(df_params.shape[0])]
     
-    max_epochs = args['nepochs']
-    total_steps = args['totalsteps']
-    learning_rate = args['learningrate']
-    optimizer = args['optimizer']
-    seed = args['seed']
+    for index, row in df_params.iterrows():
     
-    if total_steps is None:
-        total_steps = max_epochs
-        
-    df_params['max_epochs'] = max_epochs
-    df_params['totalsteps'] = total_steps
-    df_params['learningrate'] = learning_rate
-    df_params['optimizer'] = optimizer
-        
-    if optimizer == 'AdamW':
-        optimizer = AdamW
-    elif optimizer == 'SGD':
-        optimizer = SGD
-    else:
-        raise ValueError
-    
-    if is_available() == True:
-        print("GPU available. Training network using GPU...")
-        device = 'cuda'
-    else:
-        print("GPU unavailable. Training network using CPU...")
-        device = 'cpu'
-        
-    for i, row in df_params.iterrows():
-
+        #Extract hyperparameters from the current set
+        parameter_set = int(row['parameter_set'])
+        nfolds = int(row['nfolds'])
         hidden_units = int(row['hidden_units'])
+        hidden_layers = int(row['hidden_layers'])
+        dropout = row['dropout']
         weight_decay = row['weight_decay']
+        max_epochs = row['max_epochs']
+        total_steps = row['total_steps']
+        learning_rate = row['learning_rate']
+        optimizer = row['optimizer']
+        seed = row['seed']
         
+        print(('\nParameter set {}\n'
+               '  Labels: {}\n'
+               '  Hidden units: {}\n' 
+               '  Hidden layers: {}\n' 
+               '  Dropout: {}\n'
+               '  L2: {}\n'
+               '  Max epochs: {}\n'
+               '  Total steps: {}\n'
+               '  Learning rate: {}\n'
+               '  Optimizer: {}\n'
+               '  Seed: {}\n'.format(parameter_set,
+                                     args['labels'].title(), 
+                                     hidden_units, 
+                                     hidden_layers, 
+                                     dropout, 
+                                     weight_decay,
+                                     max_epochs,
+                                     total_steps,
+                                     learning_rate,
+                                     optimizer,
+                                     seed)))
+        
+        optimizer = getattr(sys.modules['torch.optim'], 
+                            optimizer)
+            
         if seed is not None:
             np.random.seed(seed)
-            torch.manual_seed(seed)
+            manual_seed(seed)
             random.seed(seed)
-        
-        net_module = ClassifierModule(input_units = X.shape[1],
-                                      output_units = len(np.unique(y)),
-                                      hidden_units = hidden_units)
+            
+        #Initialize the classifier module
+        net_module = make_classifier(input_units = X.shape[1],
+                                     output_units = len(np.unique(y)),
+                                     hidden_units = hidden_units,
+                                     num_hidden = hidden_layers,
+                                     dropout = dropout)
+    
+        if is_available() == True:
+            print("GPU available. Training network using GPU ...")
+            device = 'cuda'
+        else:
+            print("GPU unavailable. Training network using CPU ...")
+            device = 'cpu'
 
-    #Create the classifier
+        #Initialize the network optimization
+        net_callbacks = [('lr_scheduler', LRScheduler(policy=OneCycleLR,
+                                                      total_steps=total_steps,
+                                                      cycle_momentum=False,  
+                                                      max_lr=learning_rate)),
+                         EpochScoring(calculate_accuracy, 
+                                      use_caching = False,
+                                      lower_is_better = False,
+                                      on_train = True,
+                                      name = 'train_acc')]
+            
         net = NeuralNetClassifier(net_module,
+                                  train_split = ValidSplit(nfolds),
                                   optimizer = optimizer,
                                   optimizer__weight_decay = weight_decay,
                                   max_epochs = max_epochs,
-                                  callbacks = [('lr_scheduler',
-                                                LRScheduler(policy=OneCycleLR,
-                                                            total_steps=total_steps,
-                                                            cycle_momentum=False,  
-                                                            max_lr=learning_rate)),
-                                               EpochScoring(calculate_accuracy, 
-                                                            use_caching = False,
-                                                            lower_is_better = False,
-                                                            on_train = True,
-                                                            name = 'train_acc')],
+                                  callbacks = net_callbacks,
                                   device = device)
-
     
-    # Train the network ------------------------------------------------------
-    
-    #Fit the network
+        #Train the network
         net.fit(X, y)
-    
-        for i in range(max_epochs):
-            epoch_dict = net.__dict__['history_'][i]
-            if i == 0:
-                df_epochs = (pd.DataFrame(epoch_dict)
-                             .drop(columns = 'batches')
-                             .drop_duplicates())
-            else:
-                df_epochs_tmp = (pd.DataFrame(epoch_dict)
-                                 .drop(columns = 'batches')
-                                 .drop_duplicates())
-                df_epochs = pd.concat([df_epochs, 
-                                       df_epochs_tmp], 
-                                      axis = 0)
-    
         
-        df_performance = pd.concat([df_params, 
-                                    df_epochs],
-                                   axis = 1)
+        #Get training history
+        df_epochs = get_training_history(net)
+        df_epochs['parameter_set'] = parameter_set
         
-    outfile = 'MLP_validation_naive_{}.csv'.format(args['labels'])
+        #Combine history with parameters
+        df_performance_iter = pd.merge(df_params,
+                                       df_epochs,
+                                       on = 'parameter_set')
+        
+        #Concatenate current performance data with previous
+        if parameter_set == 1:
+            df_performance = df_performance_iter
+        else:
+            df_performance = pd.concat([df_performance,
+                                        df_performance_iter],
+                                       axis = 0)
+
+    #Write to file
+    outfile = args['outfile']
+    if outfile is None:
+        outfile = 'MLP_validation_naive_{}.csv'.format(args['labels'])
     df_performance.to_csv(os.path.join(outdir, outfile), index = False)
         
-    
-#     #Match the dummy variable labels to the region names
-#     dfLabels['y'] = y
-#     dfLabelsUnique = dfLabels.sort_values('y').drop_duplicates()
-    
-    
-    # Compute training confusion matrix --------------------------------------
-    
-#     #Switch to compute confusion matrix
-#     if args['confusionmatrix'] == 'true':
-    
-#         print("Computing confusion matrix from training set...")
-    
-#         #Compute confusion matrix and store as data frame
-#         dfConfusionMat = pd.DataFrame(confusion_matrix(y, y_pred))
-    
-#         #Assign region names to the confusion matrix columns
-#         dfConfusionMat.columns = dfLabelsUnique[labelcol].astype('str')
-    
-#         #Assign region names to the confusion matrix rows
-#         dfConfusionMat['TrueLabels'] = (dfLabelsUnique[labelcol]
-#                                         .astype('str')
-#                                         .reset_index(drop = True))
         
-#         #File to save confusion matrix
-#         fileConfMat = "MLP_ConfusionMatrix_Training"+\
-#         "_"+args['labels'].capitalize()+\
-#         "_Layers3"+\
-#         "_Units"+str(args['nunits'])+\
-#         "_L2"+str(args['L2'])+".csv"
-    
-#         #Write confusion matrix to file
-#         dfConfusionMat.to_csv(os.path.join(outdir, fileConfMat),
-#                               index = False)
-        
-        
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
