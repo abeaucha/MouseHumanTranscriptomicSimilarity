@@ -4,8 +4,7 @@
 # pipeline_main
 # Author: Antoine Beauchamp
 #
-# Pipeline to download and process all data necessary for the analysis and
-# manuscript.
+# Pipeline to download and process all data necessary to generate the paper.
 
 #On MICe machine
 module purge
