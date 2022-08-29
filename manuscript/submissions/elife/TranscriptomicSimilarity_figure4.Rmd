@@ -607,14 +607,13 @@ dfCanonicalPairs_H88M67_RankDiffs_Summary %>%
   summarise(nregions = sum(PropNonPos >= 0.80),
             fracregions = nregions/n())
 ```
-
-```{r results2-fig4-quant-4, eval=F}
-df_proportions %>% 
-  filter(Seed %in% c('Claustrum',
-                     'Visual areas',
-                     'Primary auditory area',
-                     'Uvula (IX)'))
+```{r results2-fig4-quant-3, eval = F}
+#Number and proportions of regions with non-positive rank differences in more than 90% latent spaces
+dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
+  summarise(nregions = sum(PropNonPos >= 0.90),
+            fracregions = nregions/n())
 ```
+
 
 ```{r results2-fig4-quant-5, eval=F}
 #Number of MLP samples
@@ -653,7 +652,7 @@ df_rank_summary <- dfCanonicalPairs_H88M67_Ranks %>%
   ungroup()
 
 dfCanonicalPairs_H88M67_Ranks_MLP %>% 
-  filter(Seed %in% c('Claustrum', 'Visual areas', 'Paraflocculus'))
+  filter(Seed %in% c('Primary auditory area', 'Visual areas', 'Paraflocculus'))
 ```
 
 ```{r results2-fig4-quant-7, eval=F}

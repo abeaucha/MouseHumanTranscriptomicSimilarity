@@ -776,7 +776,7 @@ df_params <- tibble(id = latent_space_ids,
 
 for (i in 1:nrow(df_params)) {
   
-  df_model <- df_tmp %>% 
+  df_model <- df_latent_spaces %>% 
     filter(LatentSpace == df_params[[i, 'id']])
   
   model <- summary(lm(Similarity ~ CortexType, data = df_model))

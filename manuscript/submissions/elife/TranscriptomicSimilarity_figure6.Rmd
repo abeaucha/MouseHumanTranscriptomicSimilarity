@@ -390,7 +390,7 @@ if (file.exists(simfile)) {
       as.matrix() %>% 
       t()
     
-    matHuman <- as_tibble(data.table::fread(mouse, header = TRUE, showProgress = FALSE))
+    matHuman <- as_tibble(data.table::fread(human, header = TRUE, showProgress = FALSE)) %>% 
       group_by(Region) %>% 
       summarise_all(.funs = mean) %>% 
       ungroup() %>% 
@@ -808,6 +808,11 @@ save(fig6_grob,
 ```
 
 # Quantitative statements
+
+```{r}
+knitr::opts_chunk$set(eval = FALSE)
+```
+
 
 ## Panel A
 
