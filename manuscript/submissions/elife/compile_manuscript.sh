@@ -2,6 +2,7 @@
 
 markdown_files=(*_AMBA_legend.Rmd)
 markdown_files+=(*_figure*.Rmd)
+markdown_files+=(*_gene_enrichment.Rmd)
 
 echo "Generating figures..."
 
