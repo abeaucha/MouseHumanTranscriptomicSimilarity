@@ -20,7 +20,7 @@ if [ ! -d "$outdir" ]; then
 	mkdir -p "$outdir"
 fi
 
-niterations=200
+niterations=500
 nunits=200
 L2=0.0
 nepochs=150
@@ -29,7 +29,7 @@ learningrate=1e-05
 optimizer=AdamW
 confusionmatrix=false
 voxeltransform=true
-integratedgrads=true
+integratedgrads=false
 
 for i in $(seq 1 $niterations);
 do
