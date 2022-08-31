@@ -41,18 +41,18 @@ datalist <- list(df_original_naive,
                  df_updated_resampling)
 
 df_data <- map_dfr(datalist,
-                .f = function(x){
-                  x %>% 
-                    select(model,
-                           method,
-                           sample, 
-                           epoch, 
-                           train_loss, 
-                           valid_loss, 
-                           train_acc, 
-                           valid_acc)
-                },
-                .id = NULL)
+                   .f = function(x){
+                     x %>% 
+                       select(model,
+                              method,
+                              sample, 
+                              epoch, 
+                              train_loss, 
+                              valid_loss, 
+                              train_acc, 
+                              valid_acc)
+                   },
+                   .id = NULL)
 
 df_data <- df_data %>% 
   pivot_longer(cols = c(train_loss, valid_loss), names_to = 'dataset_loss', values_to = 'loss') %>% 
@@ -101,7 +101,7 @@ plot_acc <- ggplot(df_data, aes(x = epoch, y = accuracy, col = dataset)) +
   facet_grid(model~method) + 
   coord_cartesian(xlim = c(0,200),
                   ylim = c(0,1)) + 
-
+  
   scale_x_continuous(breaks = seq(0, 200, by = 20)) + 
   scale_y_continuous(breaks = seq(0, 1, by = 0.2)) + 
   labs(title = 'Multi-layer perceptron optimization accuracy',
@@ -148,8 +148,7 @@ df_data %>%
 ```{r}
 datadir <- '../data/MLP_validation'
 
-# infile <- 'MLP_validation_resampling_region67.csv'
-infile <- 'tmp.csv'
+infile <- 'MLP_validation_resampling_region67.csv'
 infile <- file.path(datadir, infile)
 df_validation <- as_tibble(data.table::fread(infile, header = TRUE))
 ```
@@ -157,6 +156,15 @@ df_validation <- as_tibble(data.table::fread(infile, header = TRUE))
 ```{r}
 head(df_validation)
 ```
+```{r}
+df_validation %>% 
+  group_by(parameter_set, epoch) %>% 
+  count()
+```
+```{r}
+df_validation$total_steps %>% unique()
+```
+
 
 ```{r}
 df_validation %>% 
@@ -231,6 +239,21 @@ df_best_loss %>%
   arrange(loss) %>% 
   head(n = 10)
 ```
+```{r}
+df_validation_summary %>% 
+  filter(parameter_set == 10,
+         epoch == 196) %>% 
+  ungroup()
+```
+```{r}
+best_validation_acc <- df_best_loss %>%
+  top_n(n = -1, wt = loss) %>% 
+  head(n = 1) %>% 
+  pull(accuracy) 
+```
+
+
+
 ```{r}
 df_best_acc %>% 
   arrange(desc(accuracy)) %>% 
@@ -362,4 +385,88 @@ df_validation_summary %>%
 ```
 
 Interestingly we get barely a difference in loss between 200, 500 and 1000 hidden units, though the optima occur sooner for the larger networks. This doesn't translate to a neglibible difference in accuracy though. The 200 unit network still out-performs the others. 
+
+
+# ----
+
+```{r}
+infile <- '../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled_scaled.csv'
+df_expr <- as_tibble(data.table::fread(infile, header = TRUE))
+```
+
+
+```{r}
+nvoxels <- nrow(df_expr)
+
+df_labels <- df_expr %>% 
+  group_by(Region67) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(label = 1:nrow(.),
+         prob = n/nvoxels)
+
+df_labels
+```
+```{r}
+labels_true <- df_expr %>% 
+  select(Region67) %>% 
+  left_join(df_labels, by = "Region67") %>% 
+  pull(label)
+
+niter <- 10000
+accuracy <- numeric(niter)
+for (i in 1:niter) {
+  labels_pred <- sample(x = 1:67,
+                        size = nvoxels,
+                        replace = TRUE,
+                        prob = df_labels$prob)
+  accuracy[i] <- sum(labels_true == labels_pred)/nvoxels
+}
+```
+
+
+```{r}
+p_null_acc <- ggplot(tibble(accuracy = accuracy), 
+                     aes(x = accuracy,
+                         y = ..count..)) + 
+  geom_histogram(fill = 'grey70', 
+                 col = 'black', 
+                 binwidth = 0.0002) + 
+  geom_vline(xintercept = mean(accuracy), 
+             linetype = 'dashed', 
+             col = 'red') + 
+  annotate(geom = 'text',
+           x = 0.028,
+           y = 1100,
+           col = "red",
+           label = str_c("Mean accuracy: ", as.character(round(mean(accuracy), 4)))) + 
+  coord_cartesian(ylim = c(0, 1300)) + 
+  scale_y_continuous(breaks = seq(0, 1400, by = 200)) + 
+  labs(x = 'Accuracy',
+       y = 'Count',
+       title = 'Null distribution of classification accuracy') + 
+  theme_bw()
+
+p_null_acc
+```
+```{r}
+ggsave(filename = "accuracy_null_distribution.pdf", 
+       plot = p_null_acc,
+       device = "pdf",
+       width = 8,
+       height = 4,
+       units = "in")
+```
+
+```{r}
+accuracy_mean <- round(mean(accuracy), 3)
+accuracy_lower <- round(mean(accuracy) - 2*sd(accuracy), 3)
+accuracy_upper <- round(mean(accuracy) + 2*sd(accuracy), 3)
+accuracy_print <- str_c(accuracy_mean, "[", accuracy_lower, accuracy_upper, "]", sep = " ")
+print(accuracy_print)
+```
+
+```{r}
+1/67
+```
 
