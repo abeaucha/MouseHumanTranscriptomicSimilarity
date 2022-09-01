@@ -654,6 +654,16 @@ print(c(p_estimate, p_lower, p_upper))
 ```
 
 ```{r results2-fig3-quant-2, eval = F}
+nsuccess <- sum(df_model$y)
+ntrials <- nrow(df_model)
+pnull <- 0.5
+
+pbinom(q = nsuccess, size = ntrials, 
+       prob = pnull, 
+       lower.tail = FALSE)
+```
+
+```{r results2-fig3-quant-3, eval = F}
 #Number of latent spaces
 nMLP <- length(unique(dfRankDifferences$Data))
 
@@ -675,107 +685,110 @@ temp %>%
   summarise(nregions = sum(RankDiffMean <= 0),
             fracregions = nregions/n())
 ```
+```{r results2-fig3-quant-4, eval = F}
+df_proportions <- df_proportions %>% 
+  left_join(dfLabelsMouse %>% 
+              select(Region11, Region67),
+            by = c("Seed" = "Region67")) %>% 
+  distinct() 
+```
 
-```{r results2-fig3-quant-3, eval = F}
+```{r results2-fig3-quant-5, eval = F}
 df_proportions %>% 
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-4, eval = F}
+```{r results2-fig3-quant-6, eval = F}
 df_proportions %>% 
   mutate(success = ifelse(p >= 0.95, 1, 0)) %>% 
     summarise(count = sum(success),
             prop = count/n())
 ```
 
-```{r results2-fig3-quant-5, eval = F}
+```{r results2-fig3-quant-7, eval = F}
 df_proportions %>% 
   filter(p >= 0.95) %>% 
   mutate(p_range = p_upper - p_lower) %>% 
   arrange(desc(p_range))
 ```
 
-```{r results2-fig3-quant-6, eval = F}
-df_proportions %>% 
-  filter(p_upper <= 0.5) %>% 
-  arrange(desc(p))
-```
-
-
-```{r results2-fig3-quant-7, eval = F}
-#Summary statistics for specific mouse regions
-temp %>% 
-  filter(Seed %in% c("Main olfactory bulb", "Accessory olfactory bulb", "Cerebellar nuclei"))
-```
-
 ```{r results2-fig3-quant-8, eval = F}
-#Mouse regions in the isocortex
-structsCx <- dfLabelsMouse %>%
-  select(Region11, Region67) %>% 
-  distinct() %>% 
-  filter(Region11 == "Isocortex") %>% 
-  pull(Region67)
+df_proportions$pval <- pbinom(q = df_proportions$p*nMLP, 
+                              size = nMLP,
+                              prob = pnull,
+                              lower.tail = FALSE)
 
-df_proportions %>% 
-  filter(Seed %in% structsCx) %>% 
-  arrange(desc(p))
+df_proportions$qval <- p.adjust(p = df_proportions$pval,
+                                method = "fdr")
+
+sort(df_proportions$qval)
 ```
 
 ```{r results2-fig3-quant-9, eval = F}
+sum(df_proportions$qval <= 0.01)
+```
+
+```{r results2-fig3-quant-10, eval = F}
 df_proportions %>% 
-  filter(Seed %in% structsCx,
+  filter(qval == 1) %>% 
+  arrange(p)
+```
+
+```{r results2-fig3-quant-11, eval = F}
+#Summary statistics for specific mouse regions
+temp %>% 
+  filter(Seed %in% c("Main olfactory bulb", 
+                     "Accessory olfactory bulb", 
+                     "Cerebellar nuclei"))
+```
+
+```{r results2-fig3-quant-12, eval = F}
+df_proportions %>% 
+  filter(Region11 == "Olfactory areas")
+```
+
+```{r results2-fig3-quant-13, eval = F}
+#Mouse regions in the isocortex
+df_proportions %>% 
+  filter(Region11 == "Isocortex") %>% 
+  arrange(desc(p))
+```
+
+```{r results2-fig3-quant-14, eval = F}
+df_proportions %>% 
+  filter(Region11 == "Isocortex",
          p == 1) %>% 
   nrow()
 ```
 
-```{r results2-fig3-quant-10, eval = F}
-#Mouse regions in the cerebellar cortex
-structsCb <- dfLabelsMouse %>%
-  select(Region11, Region67) %>% 
-  distinct() %>% 
-  filter(Region11 == "Cerebellar cortex") %>% 
-  pull(Region67)
-
+```{r results2-fig3-quant-15, eval = F}
 #Number and proportion of cerebellar cortical regions with non-positive rank differences in at least 96% of latent spaces
 df_proportions %>% 
-  filter(Seed %in% structsCb) %>% 
+  filter(Region11 == "Cerebellar cortex") %>% 
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-11, eval = F}
-#Summary statistics for thalamus
-temp %>% 
-  filter(Seed == "Thalamus")
-```
-
-```{r results2-fig3-quant-12, eval = F}
-#Mouse regions in the sub-cortex
-structsSubCx <- dfLabelsMouse %>% 
-  select(Region11, Region67) %>% 
-  distinct() %>% 
-  filter(Region11 %in% c("Cerebral nuclei", "Diencephalon", "Midbrain", "Pons", "Medulla")) %>% 
-  pull(Region67)
-
+```{r results2-fig3-quant-16, eval = F}
 #Mean and sd of rank differences for subcortical regions
 df_proportions %>% 
-  filter(Seed %in% structsSubCx) %>% 
+  filter(Region11 %in% c("Cerebral nuclei", "Diencephalon", "Midbrain", "Pons", "Medulla")) %>% 
   arrange(desc(p))
 ```
 
-```{r results2-fig3-quant-13, eval = F}
+```{r results2-fig3-quant-17, eval = F}
 df_proportions %>% 
-  filter(Seed %in% structsSubCx) %>% 
+    filter(Region11 %in% c("Cerebral nuclei", "Diencephalon", "Midbrain", "Pons", "Medulla")) %>% 
   pull(p) %>% 
   mean()
 ```
 
-```{r results2-fig3-quant-14, eval = F}
+```{r results2-fig3-quant-18, eval = F}
 temp %>% 
   filter(Seed %in% c("Striatum ventral region", 
                      "Lateral septal complex"))
 ```
 
-```{r results2-fig3-quant-15, eval = F}
+```{r results2-fig3-quant-19, eval = F}
 dfRankDifferences %>% 
   filter(Seed %in% structsSubCx) %>% 
   summarise(rank_diff_mean = mean(RankDiff),

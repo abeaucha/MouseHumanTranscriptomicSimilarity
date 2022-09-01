@@ -798,8 +798,18 @@ ggplot(df_params, aes(x = -log10(pval))) +
 ```
 
 ```{r results3-fig5-quant-2, eval=F}
-summary(lm(SimilarityMean ~ CortexType, data = dfSimilarityProfiles_Cx_MaxSim_Summary))
+model_lm <- summary(lm(SimilarityMean ~ CortexType, data = dfSimilarityProfiles_Cx_MaxSim_Summary))
+model_lm
 ```
+
+```{r}
+beta_estimate <- model_lm$coefficients[2, "Estimate"]
+beta_upper <- model_lm$coefficients[2,"Estimate"] + 2*model_lm$coefficients[2, "Std. Error"]
+beta_lower <- model_lm$coefficients[2,"Estimate"] - 2*model_lm$coefficients[2, "Std. Error"]
+
+str_c(beta_estimate, ", 95% CI [", beta_lower, ",", beta_upper, "]")
+```
+
 
 ```{r results3-fig5-quant-3, eval=F}
 #Summary statistics for maximal correlations of S1 and M1
@@ -818,9 +828,19 @@ df_model <- dfSimilarityProfiles_Cx_MaxSim_Compare %>%
   mutate(LatentSpace = str_extract(Data, '[0-9]+'),
          LatentSpace = as.numeric(LatentSpace))
 
-model_lmer <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), data = df_model))
+model_lmer <- summary(lmer(SimilarityMean ~ CortexType + (1|Data), 
+                           data = df_model))
 model_lmer
 ```
+
+```{r}
+beta_estimate <- model_lmer$coefficients[2, "Estimate"]
+beta_upper <- model_lmer$coefficients[2,"Estimate"] + 2*model_lmer$coefficients[2, "Std. Error"]
+beta_lower <- model_lmer$coefficients[2,"Estimate"] - 2*model_lmer$coefficients[2, "Std. Error"]
+
+str_c(beta_estimate, ", 95% CI [", beta_lower, ",", beta_upper, "]")
+```
+
 
 ```{r results3-fig5-quant-5, eval=F}
 nsamples <- c(400, 100, 50, 10, 5)

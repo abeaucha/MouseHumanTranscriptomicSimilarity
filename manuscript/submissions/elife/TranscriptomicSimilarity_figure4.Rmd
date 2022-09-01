@@ -588,13 +588,23 @@ p_upper <- exp(theta_upper)/(1+exp(theta_upper))
 
 print(c(p_estimate, p_lower, p_upper))
 ```
+
 ```{r results2-fig4-quant-2, eval=F}
+nsuccess <- sum(df_model$y)
+ntrials <- nrow(df_model)
+pnull <- 0.5
+
+pbinom(q = nsuccess, size = ntrials, 
+       prob = pnull, 
+       lower.tail = FALSE)
+```
+
+```{r results2-fig4-quant-3, eval=F}
 df_proportions %>% 
   arrange(desc(p))
 ```
 
-
-```{r results2-fig4-quant-3, eval=F}
+```{r results2-fig4-quant-4, eval=F}
 #Data frame containing proportions of non-positive rank differences
 dfCanonicalPairs_H88M67_RankDiffs_Summary <- dfCanonicalPairs_H88M67_RankDiffs %>% 
   mutate(NonPositive = ifelse(RankDiff <= 0, TRUE, FALSE)) %>% 
@@ -607,15 +617,14 @@ dfCanonicalPairs_H88M67_RankDiffs_Summary %>%
   summarise(nregions = sum(PropNonPos >= 0.80),
             fracregions = nregions/n())
 ```
-```{r results2-fig4-quant-3, eval = F}
+```{r results2-fig4-quant-5, eval = F}
 #Number and proportions of regions with non-positive rank differences in more than 90% latent spaces
 dfCanonicalPairs_H88M67_RankDiffs_Summary %>% 
   summarise(nregions = sum(PropNonPos >= 0.90),
             fracregions = nregions/n())
 ```
 
-
-```{r results2-fig4-quant-5, eval=F}
+```{r results2-fig4-quant-6, eval=F}
 #Number of MLP samples
 nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes") %>% 
@@ -623,6 +632,35 @@ nMLPsamples <- dfCanonicalPairs_H88M67_Ranks %>%
   unique() %>% 
   length()
 
+df_proportions$pval <- pbinom(q = df_proportions$p*nMLPsamples, 
+                              size = nMLPsamples,
+                              prob = pnull,
+                              lower.tail = FALSE)
+
+df_proportions$qval <- p.adjust(p = df_proportions$pval,
+                                method = "fdr")
+
+sort(df_proportions$qval)
+```
+
+```{r results2-fig4-quant-7, eval=F}
+df_proportions %>% 
+  filter(p >= 0.8) %>%
+  arrange(desc(qval))
+```
+```{r results2-fig4-quant-8, eval=F}
+df_proportions %>% 
+  filter(p >= 0.9) %>% 
+  nrow()
+```
+
+```{r results2-fig4-quant-9, eval=F}
+df_proportions %>% 
+  filter(p == 1) %>% 
+  nrow()
+```
+
+```{r results2-fig4-quant-10, eval=F}
 #Proportion of latent spaces in which subcortical regions are maximally similar to their canonical pair
 dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Seed %in% c("Pallidum",
@@ -642,7 +680,8 @@ dfCanonicalPairs_H88M67_Ranks %>%
   arrange(desc(prop))
 ```
 
-```{r results2-fig4-quant-6, eval=F}
+
+```{r results2-fig4-quant-11, eval=F}
 df_rank_summary <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != 'AllGenes') %>% 
   group_by(Seed) %>% 
@@ -655,7 +694,7 @@ dfCanonicalPairs_H88M67_Ranks_MLP %>%
   filter(Seed %in% c('Primary auditory area', 'Visual areas', 'Paraflocculus'))
 ```
 
-```{r results2-fig4-quant-7, eval=F}
+```{r results2-fig4-quant-12, eval=F}
 #Calculate rank frequency for crus 1 pair
 temp <- dfCanonicalPairs_H88M67_Ranks %>% 
   filter(Data != "AllGenes",
@@ -678,7 +717,7 @@ ggplot(temp, aes(x = TargetRank, y = n)) +
   theme(panel.grid.minor.x = element_blank())
 ```
 
-```{r results2-fig4-quant-8, eval = F}
+```{r results2-fig4-quant-13, eval = F}
 dfSimilarityProfiles %>% 
   inner_join(dfLabelsMouse %>% 
                select(Region11, Region67) %>% 
