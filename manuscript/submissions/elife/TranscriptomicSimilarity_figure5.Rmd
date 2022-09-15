@@ -277,6 +277,19 @@ fig5_regionaldist_title_grob <- textGrob("Distributions of maximal correlation f
                                          just = c("left", "centre"))
 ```
 
+```{r results3-fig5-data1}
+fig5_data1 <- dfSimilarityProfiles_Cx_MaxSim %>% 
+  mutate(Data = str_replace(Data, "MLP", "LatentSpace"),
+         LatentSpaceID = str_extract(Data, "[0-9]+"), 
+         LatentSpaceID = as.numeric(LatentSpaceID), 
+         CortexType = ifelse(Seed %in% structsMouse_Cx_sensory, "Sensorimotor", "Supramodal")) %>% 
+  arrange(LatentSpaceID) %>% 
+  select(Data, MouseRegion = Seed, HumanRegion = Target, MaxCorrelation = Similarity, CortexType)
+
+write_csv(x = fig5_data1,
+          file = "Figure5_Data1.csv")
+```
+
 
 ## Panel B: Maximal correlation distributions by cortex type
 
@@ -372,7 +385,6 @@ dfAnnotations <- dfSimilarityProfiles_Cx %>%
 clusterOrder_cols <- names(sort(clusterLabels_Mouse_4))
 matSim_Cx_MLP_ordered <- matSim_Cx_MLP[,match(clusterOrder_cols, colnames(matSim_Cx_MLP))]
 ```
-
 
 ```{r results3-fig5-panelC-heatmap-base}
 #Palette for heatmap fill
@@ -532,6 +544,16 @@ fig5_heatmap_title_grob <- textGrob("Clustering of mouse and human isocortical r
                                     just = c("left", "centre"))
 ```
 
+```{r results3-fig5-data2}
+fig5_data2 <- dfSimilarityProfiles_Cx %>% 
+  filter(Seed %in% structsMouse_Cx,
+         Target %in% structsHuman_Cx) %>% 
+  mutate(Data = str_replace(Data, "MLP", "LatentSpace")) %>% 
+  select(Data, MouseRegion = Seed, HumanRegion = Target, Correlation = Similarity)
+
+write_csv(x = fig5_data2,
+          file = "Figure5_Data2.csv")
+```
 
 ## Panel D: Cluster scree plots
 
@@ -662,9 +684,18 @@ fig5_wcss_title_grob <- textGrob("Mouse and human scree plots",
                                  just = c("left", "centre"))
 ```
 
+```{r results3-fig5-data3}
+fig5_data3 <- dfWCSS %>% 
+  mutate(data = case_when(data == "MLP" ~ "AverageLatentSpace",
+                          data == "AllGenes" ~ "HomologousGenes")) %>% 
+  select(Data = data, Species = axis, k, wcss)
+
+write_csv(x = fig5_data3,
+          file = "Figure5_Data3.csv")
+```
+
 
 ## Figure 5 grob
-
 
 ```{r results3-fig5-grob, fig.width=10, fig.height=7.6}
 #Grob for main plots in figure 5
@@ -737,7 +768,7 @@ grid.draw(fig5_grob)
 ```
 
 ```{r results3-fig5-pdf}
-pdf(file = 'Figure5.pdf',
+pdf(file = "Figure5.pdf",
     width = fig5_width,
     height = fig5_height)
 
@@ -757,7 +788,6 @@ save(fig5_grob,
 
 
 # Quantitative statements
-
 
 ```{r results3-fig5-quant-1, eval=F}
 df_latent_spaces <- dfSimilarityProfiles_Cx_MaxSim %>% 

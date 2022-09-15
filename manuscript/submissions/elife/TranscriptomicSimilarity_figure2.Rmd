@@ -806,7 +806,6 @@ annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
 annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
 ```
 
-
 ```{r results2-fig2-panelC-heatmap-base}
 #Some values to set up the palette
 paletteLength <- 255 #Palette length
@@ -1107,6 +1106,36 @@ fig2_heatmap_title_grob <- textGrob("Average latent space grey matter similarity
                                     just = "left")
 ```
 
+```{r results2-fig2-data}
+fig2_data <- vector(mode = "list", length = length(listSimLatentSpace))
+for (i in 1:length(listSimLatentSpace)) {
+  fig2_data[[i]] <- listSimLatentSpace[[i]] %>% 
+    as_tibble(rownames = "HumanRegion") %>% 
+    pivot_longer(cols = -HumanRegion, 
+                 names_to = "MouseRegion",
+                 values_to = "Correlation") %>% 
+    mutate(Data = names(listSimLatentSpace)[i],
+           LatentSpaceID = str_extract(Data, "[0-9]+"),
+           LatentSpaceID = as.numeric(LatentSpaceID))
+}
+
+fig2_data <- reduce(.x = fig2_data, 
+                     .f = bind_rows)
+
+fig2_data <- fig2_data %>% 
+  mutate(MouseRegion = factor(MouseRegion, levels = listLabelsMouseReordered$Region67_reordered),
+         HumanRegion = factor(HumanRegion, levels = listLabelsHumanReordered$Region88_reordered)) %>% 
+  arrange(LatentSpaceID, MouseRegion, HumanRegion) %>% 
+  select(LatentSpaceID, MouseRegion, HumanRegion, Correlation)
+
+start <- c(1,(floor(nrow(fig2_data)/3)*(1:2)+1))
+end <- c(floor(nrow(fig2_data)/3)*(1:2), nrow(fig2_data))
+for (i in 1:length(start)) {
+  write_csv(x = fig2_data[start[i]:end[i],],
+            file = str_c("Figure2_Data", i, ".csv"))
+}
+```
+
 
 ## Figure 2 grob
 
@@ -1155,7 +1184,7 @@ grid.draw(fig2_grob)
 ```
 
 ```{r results2-fig2-pdf}
-pdf(file = 'Figure2.pdf',
+pdf(file = "Figure2.pdf",
     width = fig2_width,
     height = fig2_height)
 

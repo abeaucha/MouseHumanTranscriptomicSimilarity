@@ -230,12 +230,12 @@ dfRankThresholds <- dfSimilarityProfiles %>%
 
 #Compute the differences between latent space ranks and homologous gene rank
 dfRankDifferences <- dfRankThresholds %>% 
-  select(contains("MLP")) %>% 
-  map_dfc(function(x){x - dfRankThresholds$AllGenes}) %>% 
-  mutate(Seed = dfRankThresholds$Seed) %>% 
-  gather(key = "Data", value = "RankDiff", -Seed) %>% 
-  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)))
+  pivot_longer(cols = c(-Seed, -AllGenes), names_to = "Data", values_to = "RankLatentSpace") %>% 
+  rename(RankHomologousGenes = AllGenes) %>% 
+  mutate(Seed = fct_rev(factor(Seed, levels = listLabelsMouseReordered$Region67_reordered)),
+         RankDiff = RankLatentSpace - RankHomologousGenes)
 ```
+
 
 # Figure 3
 
@@ -335,6 +335,28 @@ fig3_seedsim_title_grob <- textGrob("Rank-ordered similarity profiles of the mou
                                     x = 0, y = 0.5,
                                     just = c("left", "centre"))
 ```
+
+```{r results2-fig3-data1}
+#Clean up data space names
+fig3_data1 <- dfSimilarityProfiles %>% 
+  filter(Seed == seed) %>% 
+  mutate(Data = ifelse(Data == "AllGenes", "HomologousGenes", Data),
+         Data = str_replace(Data, "MLP", "LatentSpace"))  %>% 
+  select(Data, MouseRegion = Seed, Target, TargetRank, Similarity)
+
+#Extract levels for data space variable
+data_levels <- unique(fig3_data1$Data)
+
+#Arrange data according to data space and target rank
+fig3_data1 <- fig3_data1 %>% 
+  mutate(Data = factor(Data, levels = data_levels)) %>% 
+  arrange(Data, TargetRank)
+
+#Write to file
+write_csv(x = fig3_data1,
+          file = "Figure3_Data1.csv")
+```
+
 
 ## Panel B: Distributions of rank differences
 
@@ -441,12 +463,34 @@ fig3_distributions_title_grob <- textGrob("Difference in rank at a scaled simila
                                           gp = gpar(lineheight = 0.8))
 ```
 
+```{r results2-fig3-data2}
+#Clean up latent space names and order data
+fig3_data2 <- dfRankDifferences %>%
+  mutate(Data = str_replace(Data, "MLP", "LatentSpace"),
+         LatentSpaceID = str_extract(Data, "[0-9]+"),
+         LatentSpaceID = as.numeric(LatentSpaceID)) %>% 
+  arrange(LatentSpaceID, desc(Seed)) %>% 
+  select(Data, 
+         MouseRegion = Seed, 
+         RankLatentSpace,
+         RankHomologousGenes,
+         RankDifference = RankDiff)
+
+#Write to file
+write_csv(x = fig3_data2,
+          file = "Figure3_Data2.csv")
+```
+
 
 ## Panel C: Proportions slice series
 
 ```{r results2-fig3-panelC-proportions}
 #Initialize df to store parameters
 df_proportions <- tibble(Seed = unique(dfRankDifferences$Seed),
+                         theta = 0,
+                         theta_error = 0,
+                         theta_lower = 0,
+                         theta_upper = 0,
                          p = 0,
                          p_lower = 0,
                          p_upper = 0)
@@ -481,6 +525,10 @@ for(i in 1:nrow(df_proportions)) {
     p_lower <- exp(theta_lower)/(1+exp(theta_lower))
     p_upper <- exp(theta_upper)/(1+exp(theta_upper))
     
+    df_proportions[i, "theta"] <- theta_estimate
+    df_proportions[i, "theta_error"] <- theta_error
+    df_proportions[i, "theta_lower"] <- theta_lower
+    df_proportions[i, "theta_upper"] <- theta_upper
     df_proportions[i, 'p'] <- p_estimate
     df_proportions[i, 'p_lower'] <- p_lower
     df_proportions[i, 'p_upper'] <- p_upper
@@ -545,6 +593,18 @@ fig3_ss_title_grob <- textGrob("Proportion of latent spaces featuring improved r
                                x = 0, y = 0.5,
                                just = "left")
 ```
+
+```{r results2-fig3-data3}
+#Order by mouse region
+fig3_data3 <- df_proportions %>% 
+  rename(MouseRegion = Seed) %>% 
+  arrange(desc(MouseRegion))
+
+#Write to file
+write_csv(x = fig3_data3,
+          file = "Figure3_Data3.csv")
+```
+
 
 ## Figure 3 grob
 
@@ -613,7 +673,7 @@ grid.draw(fig3_grob)
 ```
 
 ```{r results2-fig3-pdf}
-pdf(file = 'Figure3.pdf',
+pdf(file = "Figure3.pdf",
     width = fig3_width,
     height = fig3_height)
 

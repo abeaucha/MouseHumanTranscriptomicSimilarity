@@ -346,6 +346,25 @@ fig6_histogram_title_grob <- textGrob("Similarity of human striatal regions to t
                                       just = c("left", "centre"))
 ```
 
+```{r results4-fig6-data1}
+fig6_data1 <- dfSimStriatum %>% 
+  filter(MouseRegion %in% mouseTargets) %>% 
+    mutate(Data = str_replace(Data, "MLP", "LatentSpace"),
+         LatentSpaceID = str_extract(Data, "[0-9]+"), 
+         LatentSpaceID = as.numeric(LatentSpaceID),
+         SampleID = str_extract(SampleID, "[0-9]+"),
+         SampleID = as.numeric(SampleID),
+         HumanRegion = ifelse(HumanRegion == "caudate nucleus", "caudate", HumanRegion),
+         HumanRegion = factor(str_to_sentence(HumanRegion), levels = lvlsHuman),
+         MouseRegion = factor(MouseRegion, levels = mouseTargets)) %>% 
+  arrange(LatentSpaceID, HumanRegion, SampleID, MouseRegion) %>% 
+  select(Data, HumanRegion, SampleID, MouseRegion, Correlation = Similarity)
+
+write_csv(x = fig6_data1,
+          file = "Figure6_Data1.csv")
+```
+
+
 ## Panels B and C: Voxel-wise brain maps
 
 ```{r results4-fig6-panelsBC-import-mousevoxel-sim}
@@ -743,6 +762,41 @@ fig6_ss_title_prop_grob <- textGrob("Voxels maximally similar to human targets",
                                     just = c("left", "centre"))
 ```
 
+```{r results4-fig6-data2}
+fig6_data2 <- dfSimStriatumMean %>% 
+  mutate(VoxelID = str_extract(VoxelID, "[0-9]+"),
+         VoxelID = as.numeric(VoxelID)) %>% 
+  select(VoxelID, MouseRegion, HumanRegion, AverageCorrelation = Similarity) %>% 
+  arrange(VoxelID, HumanRegion)
+
+write_csv(x = fig6_data2,
+          file = "Figure6_Data2.csv")
+```
+
+```{r results4-fig6-data3}
+fig6_data <- dfSimStriatum_MaxSim %>% 
+  inner_join(dfLabelsMouse %>% 
+               select(VoxelID, MouseRegion = Region134),
+             by = "VoxelID") %>% 
+  mutate(VoxelID = str_extract(VoxelID, "[0-9]+"),
+         VoxelID = as.numeric(VoxelID),
+         Data = str_replace(Data, "MLP", "LatentSpace"),
+         LatentSpaceID = str_extract(Data, "[0-9]+"),
+         LatentSpaceID = as.numeric(LatentSpaceID)) %>% 
+  arrange(LatentSpaceID, VoxelID, HumanRegion) %>% 
+  select(Data, VoxelID, MouseRegion, TopHumanRegion = HumanRegion, MaxCorrelation = Similarity)
+
+start <- c(1,(floor(nrow(fig6_data)/3)*(1:2)+1))
+end <- c(floor(nrow(fig6_data)/3)*(1:2), nrow(fig6_data))
+data_id <- 3:5
+for (i in 1:length(start)) {
+  
+  data.table::fwrite(x = fig6_data[start[i]:end[i],],
+                     file = str_c("Figure6_Data", data_id[i], ".csv"))
+}
+```
+
+
 ## Figure 6 grob
 
 ```{r results4-fig6-grob, fig.width = 8, fig.height = 6.8}
@@ -789,7 +843,7 @@ grid.draw(fig6_grob)
 ```
 
 ```{r results4-fig6-pdf}
-pdf(file = 'Figure6.pdf',
+pdf(file = "Figure6.pdf",
     width = fig6_width,
     height = fig6_height)
 
@@ -807,8 +861,8 @@ save(fig6_grob,
      file = fileout)
 ```
 
-# Quantitative statements
 
+# Quantitative statements
 
 ## Panel A
 

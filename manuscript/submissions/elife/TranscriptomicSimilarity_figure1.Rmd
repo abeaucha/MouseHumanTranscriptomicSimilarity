@@ -443,6 +443,14 @@ fig1_heatmap_title_grob <- textGrob("Transcriptomic similarity of mouse and huma
                                     just = "left")
 ```
 
+```{r results1-fig1-data1}
+fig1_data1 <- matSim_H88M67_AllGenes %>% 
+  as_tibble(rownames = "HumanRegion")
+write_csv(x = fig1_data1,
+          file = "Figure1_Data1.csv")
+```
+
+
 ## Panel B: Correlation map slice series
 
 ```{r results1-fig1-panelB-sliceseries}
@@ -723,7 +731,7 @@ grid.draw(fig1_grob)
 ```
 
 ```{r results1-fig1-pdf}
-pdf(file = 'Figure1.pdf',
+pdf(file = "Figure1.pdf",
     width = fig1_width,
     height = fig1_height)
 
@@ -741,6 +749,7 @@ save(fig1_grob,
      fig1_height,
      file = fileout)
 ```
+
 
 # Quantitative statements
 
