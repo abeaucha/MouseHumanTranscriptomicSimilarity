@@ -71,6 +71,7 @@ fig1_cap <- str_c("Transcriptomic similarity in the mouse and human brains.",
                   fig1_cap_B,
                   fig1_cap_C,
                   "Annotation colours correspond to atlas colours from the AMBA and AHBA for mouse and human regions respectively.",
+                  "Source data 1. Related to Figure 1A, B, and C.",
                   sep = " ")
 ```
 
@@ -118,6 +119,10 @@ fig2_cap <- str_c("Creating a new common space.",
                   fig2_cap_A,
                   fig2_cap_B,
                   fig2_cap_C,
+                  "Source data 1. Related to Figure 2C.",
+                  "Source data 2. Related to Figure 2C.",
+                  "Source data 3. Related to Figure 2C.",
+                  "Figure supplement 1. Multi-layer perceptron feature importance for the classification of the caudoputamen, the primary motor area, and the infralimbic area.",
                   sep = " ")
 ```
 
@@ -165,6 +170,9 @@ fig3_cap <- str_c("Quantifying improvement in locality in gene expression latent
                   fig3_cap_A,
                   fig3_cap_B,
                   fig3_cap_C,
+                  "Source data 1. Related to Figure 3A.",
+                  "Source data 2. Related to Figure 3B.",
+                  "Source data 3. Related to Figure 3C.",
                   sep = " ")
 ```
 
@@ -206,6 +214,8 @@ fig4_cap_B <- "(\\textbf{B}) Proportion of latent spaces resulting in an improve
 fig4_cap <- str_c("Recovering canonical neuroanatomical pairs in gene expression space.",
                   fig4_cap_A,
                   fig4_cap_B,
+                  "Source data 1. Related to Figure 4A.",
+                  "Source data 2. Related to Figure 4B.",
                   sep = " ")
 ```
 
@@ -235,7 +245,7 @@ knitr::opts_chunk$set(echo = TRUE,
 #For code chunk navigation purposes
 ```
 
-Together, these results demonstrate that the multi-layer peceptron classification approach improves our ability to resolve finer scale mouse-human neuroanatomical matches within the broadly similar regions obtained using the initial gene expression space. By training a classifier to predict the atlas labels in one species, we were able to generate a new common space that amplified the amount of local signal within broadly similar regions while also improving our ability to recover known mouse-human neuroanatomical pairs. 
+Together, these results demonstrate that the multi-layer perceptron classification approach improves our ability to resolve finer scale mouse-human neuroanatomical matches within the broadly similar regions obtained using the initial gene expression space. By training a classifier to predict the atlas labels in one species, we were able to generate a new common space that amplified the amount of local signal within broadly similar regions while also improving our ability to recover known mouse-human neuroanatomical pairs. 
 
 
 ## Cortical areas involved in sensorimotor processing show greater transcriptomic similarity than supramodal areas  {#results-3}
@@ -268,6 +278,9 @@ fig5_cap <- str_c("Similarity of mouse-human isocortical regions.",
                   fig5_cap_B,
                   fig5_cap_C,
                   fig5_cap_D,
+                  "Source data 1. Related to Figure 5A and B.",
+                  "Source data 2. Related to Figure 5C.",
+                  "Source data 3. Related to Figure 5D.",
                   sep = " ")
 ```
 
@@ -320,6 +333,11 @@ fig6_cap <- str_c("Similarity among mouse and human striatal regions.",
                   fig6_cap_A,
                   fig6_cap_B,
                   fig6_cap_C,
+                  "Source data 1. Related to Figure 6A.",
+                  "Source data 2. Related to Figure 6B.",
+                  "Source data 3. Related to Figure 6C.",
+                  "Source data 4. Related to Figure 6C.",
+                  "Source data 5. Related to Figure 6C.",
                   sep = " ")
 ```
 
@@ -385,7 +403,7 @@ We used the hierarchical ontology from the AHBA, which we obtained using the All
 
 ## Expression matrices and similarity matrices
 
-We created the mouse and human gene-by-region expression matrices from the mouse gene-by-voxel and human gene-by-sample expression matrices. First, we intersected the gene sets in these matrices with a list of 3331 homologous genes obtained from the NCBI HomoloGene database [@ncbi_database_2018], resulting in 2835 homologous genes present in both the mouse and human expression matrices. We then annotated each of the human samples with one of the 88 human atlas regions, and each of the mouse voxels with one of the 67 mouse atlas regions, discarding white matter and ventricular entries in the process. These labelled expression matrices were subsequently normalized as follows: For each matrix, we first standardized every gene across all voxels/samples using a z-scoring procedure. We then centered every voxel/sample by subtracting the average expression over all homologous genes. Finally, we generated the gene-by-region expression matrices by averaging the expression of every gene over the voxels/samples corresponding to each atlas region. Using these expression matrices, we generated the mouse-human similarity matrix by computing the Pearson correlation coefficient between all pairs of mouse and human regions. 
+We created the mouse and human gene-by-region expression matrices from the mouse gene-by-voxel and human gene-by-sample expression matrices. First, we intersected the gene sets in these matrices with a list of 3331 homologous genes obtained from the NCBI HomoloGene database [@ncbi_database_2018], resulting in 2835 homologous genes present in both the mouse and human expression matrices. We then annotated each of the human samples with one of the 88 human atlas regions, and each of the mouse voxels with one of the 67 mouse atlas regions, discarding white matter and ventricular entries in the process. These labelled expression matrices were subsequently normalized as follows: For each matrix, we first normalized each voxel/sample across all homologous genes using a z-scoring procedure to create a normalized gene expression signature for each voxel/sample. We then centered the distribution of expression signatures in gene space by subtracting the mean expression of each homologous gene over all voxels/samples. Finally, we generated the aggregated gene-by-region expression matrices by averaging the normalized expression of every gene over the voxels/samples corresponding to each atlas region. Using these expression matrices, we generated the mouse-human similarity matrix by computing the Pearson correlation coefficient between all pairs of mouse and human regions. 
 
 
 ## Gene enrichment analysis 
@@ -480,4 +498,26 @@ knitr::opts_chunk$set(echo = TRUE,
                       include = FALSE)
 ```
 
+# Source data files
 
+- Figure 1 - Source data 1: Mouse-human similarity matrix using homologous genes.
+- Figure 2 - Source data 1: Correlations between mouse and human brain regions in all latent spaces (1 of 3).
+- Figure 2 - Source data 2: Correlations between mouse and human brain regions in all latent spaces (2 of 3).
+- Figure 2 - Source data 3: Correlations between mouse and human brain regions in all latent spaces (3 of 3).
+- Figure 3 - Source data 1: Scaled similarity profiles of the mouse primary motor area. 
+- Figure 3 - Source data 2: Ranks at a similarity of 0.75 for mouse regions in the homologous gene space and all latent spaces.
+- Figure 3 - Source data 3: Logistic regression model estimates for mouse regions. 
+- Figure 4 - Source data 1: Ranks of canonical neuroanatomical pairs for mouse regions in the homologous gene space and all latent spaces.
+- Figure 4 - Source data 2: Logistic regression model estimates for mouse regions. 
+- Figure 5 - Source data 1: Maximal correlations of mouse isocortical regions in all latent spaces. 
+- Figure 5 - Source data 2: Correlations between mouse and human isocortical regions in all latent spaces.
+- Figure 5 - Source data 3: Scree plot data.
+- Figure 6 - Source data 1: Correlations between human striatal samples and mouse striatal targets in all latent spaces.
+- Figure 6 - Source data 2: Average latent space correlations of mouse striatal voxels with human regions. 
+- Figure 6 - Source data 3: Maximal correlations of mouse striatal voxels in all latent spaces (1 of 3).
+- Figure 6 - Source data 4: Maximal correlations of mouse striatal voxels in all latent spaces (2 of 3).
+- Figure 6 - Source data 5: Maximal correlations of mouse striatal voxels in all latent spaces (3 of 3).
+
+# Supplementary files
+
+- Supplementary file 1: Biological modules enriched in the homologous gene set. 
