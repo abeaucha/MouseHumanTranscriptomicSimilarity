@@ -42,3 +42,5 @@ analyses/captum_test.ipynb
 data/MOUSE_GO_bp_no_GO_iea_symbol.gmt
 analyses/*.html
 analyses/*.pdf
+manuscript/submissions/elife/TranscriptomicSimilarity_elife_to_track_changes_docx.*
+manuscript/submissions/elife/template_world_elife.Rmd
