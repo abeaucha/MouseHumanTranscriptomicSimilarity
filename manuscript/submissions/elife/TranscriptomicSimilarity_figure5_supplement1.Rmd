@@ -1,0 +1,520 @@
+---
+title: "Whole-brain comparison of rodent and human brains using spatial transcriptomics"
+subtitle: "Results 3, Figure 5, Supplement 1"
+author: "Antoine Beauchamp"
+date: 'October 25th, 2022'
+output: html_document
+---
+
+# Initialization
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      include = FALSE,
+                      cache.lazy = FALSE)
+```
+
+```{r packages}
+#Packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(pheatmap))
+suppressPackageStartupMessages(library(ggplotify))
+suppressPackageStartupMessages(library(ggnewscale))
+suppressPackageStartupMessages(library(RMINC))
+suppressPackageStartupMessages(library(MRIcrotome))
+suppressPackageStartupMessages(library(data.tree))
+suppressPackageStartupMessages(library(RColorBrewer))
+suppressPackageStartupMessages(library(viridis))
+```
+
+```{r functions}
+#Functions
+source("../../../functions/tree_tools.R")
+source("../../../functions/mincBuildArray.R")
+source("../../../functions/processing_tools.R")
+source("../../../functions/buildSimilarityMatrix.R")
+```
+
+```{r import}
+#Import data
+dfExprMouse <- as_tibble(data.table::fread("../../../data/MouseExpressionMatrix_voxel_coronal_maskcoronal_log2_grouped_imputed_labelled.csv", header = TRUE))
+dfExprHuman <- as_tibble(data.table::fread("../../../data/HumanExpressionMatrix_samples_pipeline_abagen_labelled.csv", header = TRUE))
+
+#Load mouse/human labels (Objects: listLabelsMouseReordered, listLabelsHumanReordered)
+load("../../../data/TreeLabelsReordered.RData")
+
+#Import MICe data tree
+load("../../../AMBA/data/MouseExpressionTree_DSURQE.RData")
+treeMouse <- Clone(treeMouseExpr)
+rm(treeMouseExpr)
+
+#Remove white matter and ventricles
+pruneAnatTree(treeMouse, 
+              nodes = c("fiber tracts", "ventricular systems"),
+              method = "AtNode")
+
+#Import AHBA data tree
+load("../../../AHBA/data/HumanExpressionTree.RData")
+treeHuman <- Clone(treeHumanExpr)
+rm(treeHumanExpr)
+
+#Fix human colour names (need to start with #)
+treeHuman$Do(function(node){
+  node$color_hex_triplet <- str_c("#", node$color_hex_triplet)
+})
+
+#Remove white matter and ventricles
+pruneAnatTree(treeHuman,
+              nodes = c("white matter", "sulci & spaces"),
+              method = "AtNode")
+
+#Import DSURQE labels and template
+dsurqeLabels <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_labels.mnc")
+dsurqeAnat <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_average.mnc")
+dsurqeMask <- mincGetVolume("../../../AMBA/data/imaging/DSURQE_40micron_mask.mnc")
+```
+
+```{r normalization}
+#Extract labels from data frames
+dfLabelsMouse <- dfExprMouse %>% select(contains("Region"))
+dfLabelsHuman <- dfExprHuman %>% select(contains("Region"))
+
+#Normalize mouse data
+dfExprMouse_scaled <- dfExprMouse %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsMouse)
+
+#Normalize human data
+dfExprHuman_scaled <- dfExprHuman %>% 
+  select(-contains("Region")) %>% 
+  as.matrix() %>% 
+  scaler(axis = "rows") %>% 
+  scaler(scale = FALSE, axis = "columns") %>% 
+  as_tibble() %>% 
+  bind_cols(dfLabelsHuman)
+
+#Extract genes list from mouse data (same as human)
+genes <- colnames(dfExprMouse_scaled)[!str_detect(colnames(dfExprMouse_scaled), "Region")]
+
+rm(dfExprMouse, dfExprHuman)
+```
+
+```{r initial-space-similarity}
+#Compute average gene expression for 67 mouse brain regions
+matExprMouse_scaled <- dfExprMouse_scaled %>% 
+  select(Region = Region67,
+         all_of(genes)) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+#Compute average gene expression for 88 human brain regions
+matExprHuman_scaled <- dfExprHuman_scaled %>% 
+  select(Region = Region88,
+         all_of(genes)) %>% 
+  group_by(Region) %>% 
+  summarise_all(mean) %>% 
+  ungroup() %>% 
+  column_to_rownames("Region") %>% 
+  as.matrix() %>% 
+  t()
+
+#Compute human-mouse similarity matrix in gene space
+matSim_H88M67_AllGenes <- buildSimilarityMatrix(x1 = matExprHuman_scaled, 
+                                                x2 = matExprMouse_scaled)
+
+#Order similarity matrix rows/columns according to brain organization
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,match(listLabelsMouseReordered$Region67_reordered, colnames(matSim_H88M67_AllGenes))]
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[match(listLabelsHumanReordered$Region88_reordered, rownames(matSim_H88M67_AllGenes)),]
+```
+
+```{r cortex-labels}
+labelsCortexMouse <- dfLabelsMouse %>% 
+  filter(Region11 == 'Isocortex') %>% 
+  select(Region67) %>% 
+  distinct() %>% 
+  pull()
+
+structsHuman_Cx_16 <- c("limbic lobe", "frontal lobe", "insula", "occipital lobe","parietal lobe", "temporal lobe")
+labelsCortexHuman <- dfLabelsHuman %>% 
+  filter(Region16 %in% structsHuman_Cx_16) %>% 
+  filter(!(Region88 %in% c("claustrum", "dentate gyrus", "CA1 field", "CA2 field", "CA3 field", "CA4 field", "subiculum"))) %>% 
+  select(Region16, Region88) %>% 
+  distinct() %>% 
+  pull(Region88)
+
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[,colnames(matSim_H88M67_AllGenes) %in% labelsCortexMouse]
+matSim_H88M67_AllGenes <- matSim_H88M67_AllGenes[rownames(matSim_H88M67_AllGenes) %in% labelsCortexHuman,]
+```
+
+```{r import-latent-space}
+#Path to MLP files
+pathMLP <- "../../../data/MLP_outcomes/"
+
+#Files containing latent space representations
+filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
+filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+
+#Import the mouse latent space data
+listMouseLatentSpace <- map(filesMLP_Mouse,
+                            function(x){
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+#Import the human latent space data
+listHumanLatentSpace <- map(filesMLP_Human,
+                            function(x){
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+```
+
+```{r latent-space-similarity}
+#Compute the latent space similarity matrices
+listSimLatentSpace <- map2(listHumanLatentSpace, listMouseLatentSpace,
+                           function(x1, x2){
+                             m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
+                             m <- m[,match(listLabelsMouseReordered$Region67_reordered, colnames(m))]
+                             m <- m[match(listLabelsHumanReordered$Region88_reordered, rownames(m)),]
+                             m <- m[,colnames(m) %in% labelsCortexMouse]
+                             m <- m[rownames(m) %in% labelsCortexHuman,]
+                           })
+names(listSimLatentSpace) <- str_c("MLP_v", 1:length(listSimLatentSpace))
+rm(listMouseLatentSpace, listHumanLatentSpace)
+```
+
+```{r import-latent-space-isocortex}
+#Path to MLP files
+pathMLP <- "../../../data/MLP_outcomes_isocortex/"
+
+#Files containing latent space representations
+filesMLP_Mouse <- list.files(pathMLP, pattern = "MouseTx", full.names = T)
+filesMLP_Human <- list.files(pathMLP, pattern = "HumanTx", full.names = T)
+
+#Import the mouse latent space data
+listMouseLatentSpace <- map(filesMLP_Mouse,
+                            function(x){
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+
+#Import the human latent space data
+listHumanLatentSpace <- map(filesMLP_Human,
+                            function(x){
+                              data.table::fread(x, header = TRUE) %>% 
+                                as_tibble() %>% 
+                                column_to_rownames("Region") %>% 
+                                as.matrix() %>% 
+                                t()
+                            })
+```
+
+```{r latent-space-similarity-isocortex}
+#Compute the latent space similarity matrices
+listSimLatentSpace_isocortex <- map2(listHumanLatentSpace, listMouseLatentSpace,
+                                     function(x1, x2){
+                                       m <- buildSimilarityMatrix(x1 = x1, x2 = x2)
+                                       m <- m[,match(listLabelsMouseReordered$Region67_reordered, colnames(m))]
+                                       m <- m[match(listLabelsHumanReordered$Region88_reordered, rownames(m)),]
+                                       m <- m[,colnames(m) %in% labelsCortexMouse]
+                                       m <- m[rownames(m) %in% labelsCortexHuman,]
+                                     })
+names(listSimLatentSpace_isocortex) <- str_c("MLP_v", 1:length(listSimLatentSpace_isocortex))
+rm(listMouseLatentSpace, listHumanLatentSpace)
+```
+
+```{r similarity-profiles}
+#' Compute scaled similarity profiles for every column in a similarity matrix
+#'
+#' @param similarity A similarity matrix
+#' @param scale A logical value indicating whether to scale the similarity profiles
+#'
+#' @return A tibble containing the scaled similarity profiles
+computeSimilarityProfiles <- function(similarity, scale = FALSE){
+  
+  profiles <- tibble()
+  for(seed in colnames(similarity)){
+    temp <- similarity[, seed] %>% 
+      enframe(name = "Target",
+              value = "Similarity") 
+      
+      if(scale){
+        temp <- temp %>% 
+          mutate(Similarity = (Similarity - min(Similarity))/(max(Similarity) - min(Similarity)))
+      }
+    
+    temp <- temp %>% 
+      mutate(TargetRank = as.numeric(factor(Target, levels = Target[order(Similarity, decreasing = TRUE)])),
+             Seed = seed)
+    profiles <- bind_rows(profiles, temp)
+  }
+  return(profiles)
+}
+
+#Include the original homologous gene similarity matrix
+listSimMats <- c(list("AllGenes" = matSim_H88M67_AllGenes),
+                 listSimLatentSpace)
+rm(listSimLatentSpace)
+
+#Create data frame with similarity profiles
+dfSimilarityProfiles <- map_df(.x = listSimMats,
+                               .f = computeSimilarityProfiles,
+                               .id = "Data",
+                               scale = TRUE)
+
+dfSimilarityProfiles_isocortex <- map_df(.x = listSimLatentSpace_isocortex,
+                                         .f = computeSimilarityProfiles,
+                                         .id = "Data",
+                                         scale = TRUE)
+```
+
+```{r canonical-pairs}
+#Import the data frame containing mouse-human canonical pairs
+dfCanonicalPairs_H88M67 <- read_csv("../../../data/MouseHumanMatches_H88M67.csv")
+
+mouseLabels_67 <- listLabelsMouseReordered$Region67_reordered %>% 
+  str_replace("Superior colliculus, sensory related", "Superior colliculus")
+
+#Extract the ranks for canonical pairs in all data sets
+dfCanonicalPairs_H88M67_Ranks <- dfSimilarityProfiles %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Target == Human) %>% 
+  mutate(Seed = str_replace(Seed, "Superior colliculus, sensory related", "Superior colliculus"),
+         Seed = fct_rev(factor(Seed, levels = mouseLabels_67))) %>% 
+  select(Data, Seed, Target, Similarity, TargetRank)
+
+dfCanonicalPairs_H88M67_Ranks_isocortex <- dfSimilarityProfiles_isocortex %>% 
+  inner_join(dfCanonicalPairs_H88M67,
+             by = c("Seed" = "Mouse")) %>% 
+  filter(Target == Human) %>% 
+  mutate(Seed = str_replace(Seed, "Superior colliculus, sensory related", "Superior colliculus"),
+         Seed = fct_rev(factor(Seed, levels = mouseLabels_67))) %>% 
+  select(Data, Seed, Target, Similarity, TargetRank)
+
+#Convert data frame to wide format to compute rank differences
+dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_Ranks %>% 
+  select(Data, Seed, TargetRank) %>% 
+  spread(key = "Data", value = "TargetRank")
+
+#Compute rank differences and convert back to long format
+dfCanonicalPairs_H88M67_RankDiffs <- dfCanonicalPairs_H88M67_RankDiffs %>% 
+  select(contains("MLP")) %>% 
+  map_dfc(function(x){x - dfCanonicalPairs_H88M67_RankDiffs$AllGenes}) %>% 
+  mutate(Seed = dfCanonicalPairs_H88M67_RankDiffs$Seed) %>% 
+  gather(key = "Data", value = "RankDiff", -Seed) %>% 
+  mutate(Seed = fct_rev(factor(Seed, levels = mouseLabels_67)))
+```
+
+# Figure 5 Supplement 1
+
+```{r fig5-supp1-distributions}
+#Prune mouse tree to 11 regions for cluster annotations
+treeMouse_11 <- Clone(treeMouse)
+pruneAnatTree(treeMouse_11,
+              nodes = listLabelsMouseReordered$Region11,
+              method = "BelowNode")
+
+#Prune human tree to 16 regions for cluster annotations
+treeHuman_16 <- Clone(treeHuman) 
+pruneAnatTree(treeHuman_16,
+              nodes = listLabelsHumanReordered$Region16,
+              method = "BelowNode")
+
+#Get colour annotation from trees
+coloursMouse <-  treeMouse_11$Get("color_hex_triplet", filterFun = isLeaf)
+indOrderMouseColours <- match(listLabelsMouseReordered$Region11_reordered, names(coloursMouse))
+coloursMouse <- coloursMouse[indOrderMouseColours]
+
+coloursHuman <- treeHuman_16$Get("color_hex_triplet", filterFun = isLeaf)
+indOrderHumanColours <- match(listLabelsHumanReordered$Region16_reordered, names(coloursHuman))
+coloursHuman <- coloursHuman[indOrderHumanColours]
+
+annotation_colours <- list(MouseRegion = coloursMouse,
+                           HumanRegion = coloursHuman)
+
+#Create a set of modified colours for clearer visualization. 
+#To be used for text colouring mostly
+annotation_colours_mod <- annotation_colours
+annotation_colours_mod$MouseRegion["Isocortex"] <- "#68EC68"
+annotation_colours_mod$MouseRegion["Cerebellar cortex"] <- "#E6E67B"
+annotation_colours_mod$MouseRegion["Cerebellar nuclei"] <- "#E6E67B"
+
+annotation_colours_mod$HumanRegion["insula"] <- "#E6E658"
+annotation_colours_mod$HumanRegion["diencephalon"] <- "#85DD63"
+annotation_colours_mod$HumanRegion["pons"] <- "#00E0A4"
+
+#Add a binary label for initial space vs latent space
+dfCanonicalPairs_H88M67_Ranks <- dfCanonicalPairs_H88M67_Ranks %>% 
+  mutate(Data2 = ifelse(Data == "AllGenes", "AllGenes", "MLP"),
+         Data2 = factor(Data2, levels = c("MLP", "AllGenes")))
+
+#Extract values for initial space
+dfCanonicalPairs_H88M67_Ranks_AllGenes <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data == "AllGenes")
+
+#Compute summary values for latent spaces
+dfCanonicalPairs_H88M67_Ranks_MLP_isocortex <- dfCanonicalPairs_H88M67_Ranks_isocortex %>% 
+  group_by(Seed) %>% 
+  summarise(RankMean = mean(TargetRank),
+            RankSdLower = RankMean - 2*sd(TargetRank),
+            RankSdUpper = RankMean + 2*sd(TargetRank)) %>% 
+  ungroup() %>% 
+  mutate(RankSdLower = ifelse(RankSdLower < 1, 1, RankSdLower))
+
+dfCanonicalPairs_H88M67_Ranks_MLP <- dfCanonicalPairs_H88M67_Ranks %>% 
+  filter(Data != "AllGenes") %>% 
+  group_by(Seed) %>% 
+  summarise(RankMean = mean(TargetRank),
+            RankSdLower = RankMean - 2*sd(TargetRank),
+            RankSdUpper = RankMean + 2*sd(TargetRank)) %>% 
+  ungroup() %>% 
+  mutate(RankSdLower = ifelse(RankSdLower < 1, 1, RankSdLower))
+
+#Create a data frame contain mouse region colours for annotation
+dfMouseColours <- annotation_colours_mod$MouseRegion %>% 
+  enframe(name = "Region11",
+          value = "Colour") %>% 
+  inner_join(dfLabelsMouse %>% 
+               select(Region11, Region67) %>% 
+               distinct(),
+             by = "Region11") %>% 
+  semi_join(dfCanonicalPairs_H88M67,
+            by = c("Region67" = "Mouse")) %>% 
+  mutate(Region67 = str_replace(Region67, "Superior colliculus, sensory related", "Superior colliculus"),
+         Region67 = fct_rev(factor(Region67, levels = mouseLabels_67))) %>% 
+  arrange(Region67)
+
+#Colour palette
+colPalette <- c("#B27700", "#00325C", 'red')
+
+#Create rank distributions plot
+fig5_supp1_distributions <- ggplot(dfCanonicalPairs_H88M67_Ranks_MLP,
+       aes(x = Seed)) + 
+  geom_pointrange(mapping = aes(y = RankMean,
+                                ymin = RankSdLower,
+                                ymax = RankSdUpper),
+                  col = colPalette[2],
+                  position = position_nudge(x = -0.1),
+                  size = 0.6,
+                  fatten = 2) + 
+  geom_pointrange(data = dfCanonicalPairs_H88M67_Ranks_MLP_isocortex,
+                  mapping = aes(y = RankMean,
+                                ymin = RankSdLower,
+                                ymax = RankSdUpper),
+                  position = position_nudge(x = 0.1),
+                  col = colPalette[3],
+                  size = 0.6,
+                  fatten = 2) + 
+  geom_point(data = dfCanonicalPairs_H88M67_Ranks_AllGenes, 
+             mapping = aes(y = TargetRank),
+             col = colPalette[1],
+             size = 2) +  
+  coord_flip(ylim = c(0,40)) + 
+  scale_y_continuous(breaks = c(1, seq(5, 40, by = 5)),
+                     # limits = c(0, 35),
+                     expand = c(0,0)) +
+  labs(x = "Mouse cortical region",
+       y = "Rank",
+       title = "Rank of canonical human neuroanatomical homologue") + 
+  theme_bw() +
+  theme(axis.text.y = element_text(size = 6,
+                                   face = "bold"),
+        title = element_text(size = 8))
+
+#Convert the ggplot object into a grob
+fig5_supp1_distributions_grob <- ggplotGrob(fig5_supp1_distributions) %>% grid.force()
+
+#Extract relevant grobs
+fig5_supp1_distributions_panel_grob <- getGrob(fig5_supp1_distributions_grob, "panel.7-5-7-5")
+fig5_supp1_distributions_ytext_grob <- getGrob(fig5_supp1_distributions_grob, "axis-l.7-4-7-4")
+fig5_supp1_distributions_ytitle_grob <- getGrob(fig5_supp1_distributions_grob, "ylab-l.7-3-7-3")
+fig5_supp1_distributions_xtext_grob <- getGrob(fig5_supp1_distributions_grob, "axis-b.8-5-8-5")
+fig5_supp1_distributions_xtitle_grob <- getGrob(fig5_supp1_distributions_grob, "xlab-b.9-5-9-5")
+
+dfCanonicalPairs_H88M67_Ranks <- dfCanonicalPairs_H88M67_Ranks %>% 
+  mutate(Data2 = ifelse(Data == "AllGenes", "AllGenes", "MLP"),
+         Data2 = factor(Data2, levels = c("MLP", "AllGenes")))
+
+tmp <- dfCanonicalPairs_H88M67_Ranks_AllGenes %>% 
+  select(Seed, Rank = TargetRank, Data = Data2) %>% 
+  bind_rows(dfCanonicalPairs_H88M67_Ranks_MLP %>% 
+              select(Seed, Rank = RankMean) %>% 
+              mutate(Data = "MLP")) %>% 
+  bind_rows(dfCanonicalPairs_H88M67_Ranks_MLP_isocortex %>% 
+  select(Seed, Rank = RankMean) %>% 
+    mutate(Data = "MLP_isocortex"))
+
+#Create a separate plot to make the legend
+fig5_supp1_distributions_legend <- ggplot(tmp, 
+                                    aes(x = Rank, y = Seed, col = Data)) + 
+  geom_point() + 
+  scale_colour_manual(name = "Data",
+                      values = colPalette,
+                      labels = c("Initial space", "Original latent space", "Cortex latent space")) + 
+  theme_bw() + 
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank())
+
+#Extract the legend grob from the plot
+fig5_supp1_distributions_legend_grob <- ggplotGrob(fig5_supp1_distributions_legend) %>% 
+  grid.force() %>% 
+  getGrob("guides.3-3-3-3")
+```
+
+# Figure grob
+
+```{r fig5-supp1-grob}
+#Grobs for figure plots
+fig5_supp1_plots_grob <- arrangeGrob(fig5_supp1_distributions_grob,
+                                     fig5_supp1_distributions_legend_grob,
+                                     heights = unit(c(4.5, 0.5), 'inch'))
+
+#Empty rectangle grob to form the border
+fig5_supp1_border_grob <- rectGrob(gp = gpar(fill = NA))
+
+#Grob for figure
+fig5_supp1_grob <- gTree(children = gList(fig5_supp1_plots_grob,
+                                          fig5_supp1_border_grob))
+
+#Width and height
+fig5_supp1_width <- 5
+fig5_supp1_height <- 5
+
+#Save as pdf
+pdf(file = 'Figure5_Supplement1.pdf',
+    width = fig5_supp1_width,
+    height = fig5_supp1_height)
+grid.newpage()
+grid.draw(fig5_supp1_grob)
+dev.off()
+
+#Save figure grob
+fileout <- "Figure5_Supplement1.RData"
+save(fig5_supp1_grob,
+     fig5_supp1_width,
+     fig5_supp1_height,
+     file = fileout)
+```
+
+
