@@ -24,4 +24,20 @@ minc_label_ops --convert data/imaging/DSURQE_CCFv3_nearest_200um.mnc data/imagin
 
 rm data/imaging/DSURQE_CCFv3_nearest_200um.mnc
 
+echo "Resampling DSURQE mask to Allen CCFv3 space..."
+mincresample \
+	-like data/imaging/average_template_200um.mnc \
+	-transform data/imaging/MICe_DSURQE.xfm \
+	data/imaging/DSURQE_40micron_mask.mnc \
+	data/imaging/DSURQE_CCFv3_mask_200um_tmp.mnc \
+	-nearest \
+	-clobber
+
+minc_label_ops --convert \
+	data/imaging/DSURQE_CCFv3_mask_200um_tmp.mnc \
+	data/imaging/DSURQE_CCFv3_mask_200um.mnc 
+
+
+rm data/imaging/DSURQE_CCFv3_mask_200um_tmp.mnc
+
 module purge
