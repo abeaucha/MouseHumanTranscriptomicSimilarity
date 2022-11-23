@@ -1101,7 +1101,7 @@ fig2_heatmap_labshuman_grob <- gTree(children = gList(fig2_heatmap_labshuman_tex
 
 ```{r results2-fig2-panelC-heatmap-title}
 #Text grob for panel C title
-fig2_heatmap_title_grob <- textGrob("Average latent space grey matter similarity",
+fig2_heatmap_title_grob <- textGrob("Average latent space gray matter similarity",
                                     x = 0,
                                     just = "left")
 ```

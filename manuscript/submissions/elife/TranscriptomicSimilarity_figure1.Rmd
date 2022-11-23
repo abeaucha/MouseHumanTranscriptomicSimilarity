@@ -438,7 +438,7 @@ fig1_heatmap_labshuman_grob <- gTree(children = gList(fig1_heatmap_labshuman_tex
 
 ```{r results1-fig1-panelA-heatmap-title}
 #Panel A title
-fig1_heatmap_title_grob <- textGrob("Transcriptomic similarity of mouse and human grey matter",
+fig1_heatmap_title_grob <- textGrob("Transcriptomic similarity of mouse and human gray matter",
                                     x = 0, y = 0.5,
                                     just = "left")
 ```
